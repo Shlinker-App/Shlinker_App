@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.linkwerk.android.library)
     alias(libs.plugins.linkwerk.hilt)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -8,5 +9,15 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.datastore.preferences)
+    api(projects.core.model)
+    api(libs.androidx.datastore)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.android)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
 }

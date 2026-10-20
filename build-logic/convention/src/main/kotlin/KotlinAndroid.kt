@@ -10,6 +10,7 @@ internal fun Project.configureKotlinAndroid(extension: CommonExtension) {
     extension.apply {
         compileSdk = libs.version("compileSdk").toInt()
         defaultConfig.minSdk = libs.version("minSdk").toInt()
+        defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         compileOptions.sourceCompatibility = JavaVersion.VERSION_21
         compileOptions.targetCompatibility = JavaVersion.VERSION_21
     }
