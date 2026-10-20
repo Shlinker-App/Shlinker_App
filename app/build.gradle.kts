@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.linkwerk.android.application)
     alias(libs.plugins.linkwerk.android.compose)
     alias(libs.plugins.linkwerk.hilt)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 // Release-Signierung nur, wenn key.properties lokal vorhanden ist (nie im Repo).
@@ -54,9 +55,17 @@ android {
 dependencies {
     implementation(projects.core.ui)
     implementation(projects.core.data)
+    implementation(projects.feature.servers)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
+    implementation(libs.kotlinx.serialization.json)
 }

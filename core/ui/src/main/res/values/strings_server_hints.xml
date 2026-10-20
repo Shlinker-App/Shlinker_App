@@ -8,6 +8,7 @@
     <string name="server_hint_tls_body">Linkwerk verbindet sich nur über HTTPS und akzeptiert derzeit nur Zertifikate öffentlich vertrauenswürdiger Stellen (z. B. Let\'s Encrypt).\n\nSelbst signierte Zertifikate oder eine eigene CA (z. B. im Homelab) werden noch nicht unterstützt – das kommt in einer späteren Version.\n\nHinweis: Eine in den Android-Einstellungen installierte Benutzer-CA reicht nicht aus. Apps vertrauen solchen Zertifikaten seit Android 7 standardmäßig nicht.</string>
 
     <string name="server_hint_url">Adresse deiner Shlink-Instanz, z. B. s.example.org oder example.org/shlink. „https://“ wird automatisch ergänzt.</string>
+    <string name="server_hint_api_key_title">API-Key</string>
     <string name="server_hint_api_key">Einen API-Key erzeugst du auf dem Server mit:\nshlink api-key:generate\n(Docker: docker exec -it &lt;container&gt; shlink api-key:generate)\n\nDer Key wird verschlüsselt im Android Keystore gespeichert, nie in Backups übertragen und nicht angezeigt.</string>
 
     <string name="server_error_url_empty">Bitte eine Server-Adresse eingeben.</string>

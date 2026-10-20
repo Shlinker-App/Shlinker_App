@@ -1,5 +1,6 @@
 package at.awit.linkwerk.core.network
 
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -38,4 +39,11 @@ object NetworkModule {
             socketTimeoutMillis = 20_000
         }
     }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+internal abstract class ConnectionModule {
+    @Binds
+    abstract fun bindConnectionTester(impl: KtorConnectionTester): ConnectionTester
 }
