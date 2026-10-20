@@ -22,6 +22,13 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - name: ktlint, Lint, Unit-Tests, Debug-Build
         run: ./gradlew ktlintCheck lintDebug testDebugUnitTest assembleDebug
+      - name: F-Droid-Check – keine proprietären Abhängigkeiten
+        run: |
+          ./gradlew :app:dependencies --configuration releaseRuntimeClasspath -q > deps.txt
+          if grep -iE 'com\.google\.(android\.gms|firebase)|com\.google\.android\.play|crashlytics|com\.android\.billingclient' deps.txt; then
+            echo "::error::Proprietäre Abhängigkeit gefunden – blockiert F-Droid"; exit 1
+          fi
+          echo "OK: keine proprietären Abhängigkeiten"
       - name: Screenshots (Roborazzi)
         run: ./gradlew recordRoborazziDebug
       - uses: actions/upload-artifact@v7
