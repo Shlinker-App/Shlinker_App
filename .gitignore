@@ -1,0 +1,19 @@
+# Gradle / Build
+.gradle/
+.kotlin/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Lokale Konfiguration – NIEMALS committen
+local.properties
+key.properties
+*.jks
+*.keystore
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
