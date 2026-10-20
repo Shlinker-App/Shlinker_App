@@ -1,0 +1,1 @@
+Erste Testversion: Server hinzufügen mit Verbindungstest.

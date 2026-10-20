@@ -1,0 +1,9 @@
+<p>Linkwerk is a native Android client for <a href="https://shlink.io">Shlink</a>, the self-hosted URL shortener.</p>
+<ul>
+<li>Multiple Shlink instances</li>
+<li>API keys encrypted in the Android Keystore</li>
+<li>Connection test with clear error messages</li>
+<li>Material You, light/dark mode</li>
+</ul>
+<p>Privacy: no Google Play Services, no tracking, no ads, no cloud backups. HTTPS only.</p>
+<p>Linkwerk is not an official Shlink project.</p>
