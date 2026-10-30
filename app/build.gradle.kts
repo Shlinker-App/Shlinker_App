@@ -19,8 +19,8 @@ android {
 
     defaultConfig {
         applicationId = "at.awit.shlinker"
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 3
+        versionName = "0.1.2"
     }
 
     signingConfigs {
@@ -52,10 +52,23 @@ android {
     }
 }
 
+androidComponents {
+    onVariants(selector().withBuildType("debug")) { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set(
+                output.versionName.zip(output.versionCode) { name, code ->
+                    "shlinker-$name-vc$code.apk"
+                },
+            )
+        }
+    }
+}
+
 dependencies {
     implementation(projects.core.ui)
     implementation(projects.core.data)
     implementation(projects.feature.servers)
+    implementation(projects.feature.shorturls)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

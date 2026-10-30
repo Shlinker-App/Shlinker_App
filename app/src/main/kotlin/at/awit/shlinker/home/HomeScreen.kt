@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -29,7 +30,7 @@ import at.awit.shlinker.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onAddServer: () -> Unit, viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(onAddServer: () -> Unit, onShortUrls: () -> Unit, viewModel: HomeViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
@@ -74,12 +75,13 @@ fun HomeScreen(onAddServer: () -> Unit, viewModel: HomeViewModel = hiltViewModel
                 )
             }
             item {
-                Text(
-                    stringResource(R.string.home_placeholder),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                Button(
+                    onClick = onShortUrls,
+                    enabled = state.activeId != null,
                     modifier = Modifier.padding(16.dp),
-                )
+                ) {
+                    Text(stringResource(R.string.home_short_urls))
+                }
             }
         }
     }

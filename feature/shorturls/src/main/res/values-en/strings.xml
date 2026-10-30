@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="short_urls_title">Shlinks</string>
+    <string name="short_urls_back">Back to server overview</string>
+    <string name="short_urls_refresh">Refresh</string>
+    <string name="short_urls_search">Search short URLs</string>
+    <string name="short_urls_empty">No short URLs on this server yet.</string>
+    <string name="short_urls_no_results">No matching short URLs found.</string>
+    <string name="short_urls_no_server">No active server. Please select a server.</string>
+    <string name="short_urls_copy">Copy %1$s</string>
+    <string name="short_urls_copied">Short URL copied</string>
+    <string name="short_urls_retry">Try again</string>
+    <string name="short_urls_key_missing">The API key is missing or cannot be decrypted. Please set up the server again with its API key.</string>
+    <string name="short_urls_key_invalid">The API key is invalid or does not have the required permissions.</string>
+    <string name="short_urls_invalid_response">The server did not return a valid short URL list.</string>
+    <string name="short_urls_host_not_found">The server hostname could not be resolved. Check your network, DNS and server address.</string>
+    <string name="short_urls_unreachable">The server cannot be reached. Check your network, VPN and server.</string>
+    <string name="short_urls_timeout">Loading timed out. Please try again.</string>
+    <string name="short_urls_certificate">The TLS certificate could not be verified. Check the certificate, server address and device time.</string>
+    <string name="short_urls_http_error">The server returned HTTP %1$d. Short URLs could not be loaded.</string>
+    <string name="short_urls_load_error">Short URLs could not be loaded. Please try again.</string>
+</resources>

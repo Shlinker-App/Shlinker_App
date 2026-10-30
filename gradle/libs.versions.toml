@@ -43,6 +43,7 @@ androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", vers
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "androidxDatastore" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidxDatastore" }
 androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "androidxPaging" }
+androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "androidxPaging" }
 androidx-hilt-lifecycle-viewmodel-compose = { module = "androidx.hilt:hilt-lifecycle-viewmodel-compose", version.ref = "androidxHilt" }
 
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }

@@ -8,3 +8,6 @@ data object HomeRoute : NavKey
 
 @Serializable
 data object AddServerRoute : NavKey
+
+@Serializable
+data object ShortUrlsRoute : NavKey

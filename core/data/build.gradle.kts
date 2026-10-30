@@ -12,6 +12,7 @@ dependencies {
     api(projects.core.network)
     implementation(projects.core.datastore)
     implementation(libs.kotlinx.coroutines.android)
+    api(libs.androidx.paging.runtime)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

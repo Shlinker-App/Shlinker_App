@@ -3,8 +3,8 @@
     <string name="app_name">Shlinker</string>
     <string name="placeholder_subtitle">Client für Shlink</string>
     <string name="home_active_server">Aktiver Server</string>
-    <string name="home_servers">Gespeicherte Server</string>
+    <string name="home_servers">Serverübersicht</string>
     <string name="home_add_server">Server hinzufügen</string>
-    <string name="home_placeholder">Hier entstehen als Nächstes Dashboard und Kurz-URL-Liste.</string>
+    <string name="home_short_urls">Shlinks anzeigen</string>
     <string name="home_server_active">aktiv</string>
 </resources>

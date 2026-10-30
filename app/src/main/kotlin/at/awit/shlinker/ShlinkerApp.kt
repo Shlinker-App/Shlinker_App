@@ -11,9 +11,11 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import at.awit.shlinker.feature.servers.AddServerRoute as AddServerScreenRoute
+import at.awit.shlinker.feature.shorturls.ShortUrlsRoute as ShortUrlsScreenRoute
 import at.awit.shlinker.home.HomeScreen
 import at.awit.shlinker.navigation.AddServerRoute
 import at.awit.shlinker.navigation.HomeRoute
+import at.awit.shlinker.navigation.ShortUrlsRoute
 
 @Composable
 fun ShlinkerApp(mainViewModel: MainViewModel) {
@@ -41,7 +43,13 @@ private fun AppNavigation(start: NavKey) {
         ),
         entryProvider = entryProvider {
             entry<HomeRoute> {
-                HomeScreen(onAddServer = { backStack.add(AddServerRoute) })
+                HomeScreen(
+                    onAddServer = { backStack.add(AddServerRoute) },
+                    onShortUrls = { backStack.add(ShortUrlsRoute) },
+                )
+            }
+            entry<ShortUrlsRoute> {
+                ShortUrlsScreenRoute(onBack = { backStack.removeLastOrNull() })
             }
             entry<AddServerRoute> {
                 val isFirstServer = backStack.size == 1

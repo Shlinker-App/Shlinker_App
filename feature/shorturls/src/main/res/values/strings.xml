@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="short_urls_title">Shlinks</string>
+    <string name="short_urls_back">Zurück zur Serverübersicht</string>
+    <string name="short_urls_refresh">Aktualisieren</string>
+    <string name="short_urls_search">Kurz-URLs suchen</string>
+    <string name="short_urls_empty">Noch keine Kurz-URLs auf diesem Server.</string>
+    <string name="short_urls_no_results">Keine passenden Kurz-URLs gefunden.</string>
+    <string name="short_urls_no_server">Kein aktiver Server. Bitte wähle einen Server aus.</string>
+    <string name="short_urls_copy">%1$s kopieren</string>
+    <string name="short_urls_copied">Kurz-URL kopiert</string>
+    <string name="short_urls_retry">Erneut versuchen</string>
+    <string name="short_urls_key_missing">Der API-Key fehlt oder kann nicht entschlüsselt werden. Bitte richte den Server mit seinem API-Key erneut ein.</string>
+    <string name="short_urls_key_invalid">Der API-Key ist ungültig oder hat nicht die nötigen Berechtigungen.</string>
+    <string name="short_urls_invalid_response">Der Server hat keine gültige Kurz-URL-Liste geliefert.</string>
+    <string name="short_urls_host_not_found">Der Servername konnte nicht aufgelöst werden. Prüfe Netzwerk, DNS und Serveradresse.</string>
+    <string name="short_urls_unreachable">Der Server ist nicht erreichbar. Prüfe Netzwerk, VPN und Server.</string>
+    <string name="short_urls_timeout">Zeitüberschreitung beim Laden. Bitte versuche es erneut.</string>
+    <string name="short_urls_certificate">Das TLS-Zertifikat des Servers konnte nicht bestätigt werden. Prüfe Zertifikat, Serveradresse und Gerätezeit.</string>
+    <string name="short_urls_http_error">Der Server meldet HTTP %1$d. Die Kurz-URLs konnten nicht geladen werden.</string>
+    <string name="short_urls_load_error">Die Kurz-URLs konnten nicht geladen werden. Bitte versuche es erneut.</string>
+</resources>

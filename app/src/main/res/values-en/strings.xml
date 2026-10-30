@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shlinker</string>
+    <string name="placeholder_subtitle">Client for Shlink</string>
+    <string name="home_active_server">Active server</string>
+    <string name="home_servers">Server Overview</string>
+    <string name="home_short_urls">Show shlinks</string>
+    <string name="home_add_server">Add server</string>
+    <string name="home_server_active">active</string>
+</resources>
