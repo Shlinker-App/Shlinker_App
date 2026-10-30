@@ -1,9 +1,9 @@
 plugins {
-    alias(libs.plugins.linkwerk.android.library)
+    alias(libs.plugins.shlinker.android.library)
 }
 
 android {
-    namespace = "at.awit.linkwerk.core.model"
+    namespace = "at.awit.shlinker.core.model"
 }
 
 dependencies {

@@ -26,8 +26,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
-          APK="linkwerk-${TAG#v}.apk"
+          APK="shlinker-${TAG#v}.apk"
           cp app/build/outputs/apk/debug/app-debug.apk "$APK"
           gh release create "$TAG" "$APK" --prerelease \
-            --title "Linkwerk – Testbuild ${TAG#v}" \
-            --notes "Debug-Testbuild (\`at.awit.linkwerk.debug\`, mit Debug-Schlüssel signiert). Installiert sich neben anderen Apps. Nicht für den produktiven Einsatz. Commit: ${GITHUB_SHA::7}"
+            --title "Shlinker – Testbuild ${TAG#v}" \
+            --notes "Debug-Testbuild (\`at.awit.shlinker.debug\`, mit Debug-Schlüssel signiert). Installiert sich neben anderen Apps. Nicht für den produktiven Einsatz. Commit: ${GITHUB_SHA::7}"

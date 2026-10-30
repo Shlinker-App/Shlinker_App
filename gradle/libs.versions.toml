@@ -94,7 +94,7 @@ ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradle" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 
 # Convention plugins (build-logic)
-linkwerk-android-application = { id = "linkwerk.android.application" }
-linkwerk-android-library = { id = "linkwerk.android.library" }
-linkwerk-android-compose = { id = "linkwerk.android.compose" }
-linkwerk-hilt = { id = "linkwerk.hilt" }
+shlinker-android-application = { id = "shlinker.android.application" }
+shlinker-android-library = { id = "shlinker.android.library" }
+shlinker-android-compose = { id = "shlinker.android.compose" }
+shlinker-hilt = { id = "shlinker.hilt" }

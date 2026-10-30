@@ -1,9 +1,9 @@
 import java.util.Properties
 
 plugins {
-    alias(libs.plugins.linkwerk.android.application)
-    alias(libs.plugins.linkwerk.android.compose)
-    alias(libs.plugins.linkwerk.hilt)
+    alias(libs.plugins.shlinker.android.application)
+    alias(libs.plugins.shlinker.android.compose)
+    alias(libs.plugins.shlinker.hilt)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -15,10 +15,10 @@ val keystoreProperties = Properties().apply {
 val hasReleaseKeystore = keystoreProperties.getProperty("storeFile") != null
 
 android {
-    namespace = "at.awit.linkwerk"
+    namespace = "at.awit.shlinker"
 
     defaultConfig {
-        applicationId = "at.awit.linkwerk"
+        applicationId = "at.awit.shlinker"
         versionCode = 1
         versionName = "0.1.0"
     }

@@ -1,10 +1,10 @@
 plugins {
-    alias(libs.plugins.linkwerk.android.library)
-    alias(libs.plugins.linkwerk.hilt)
+    alias(libs.plugins.shlinker.android.library)
+    alias(libs.plugins.shlinker.hilt)
 }
 
 android {
-    namespace = "at.awit.linkwerk.core.data"
+    namespace = "at.awit.shlinker.core.data"
 }
 
 dependencies {

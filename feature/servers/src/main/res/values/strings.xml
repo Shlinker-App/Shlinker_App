@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="add_server_title">Server hinzufügen</string>
-    <string name="add_server_intro">Verbinde Linkwerk mit deiner Shlink-Instanz. Die Verbindung wird vor dem Speichern geprüft.</string>
+    <string name="add_server_intro">Verbinde Shlinker mit deiner Shlink-Instanz. Die Verbindung wird vor dem Speichern geprüft.</string>
     <string name="add_server_name">Name (optional)</string>
     <string name="add_server_name_hint">Wird sonst aus der Adresse übernommen.</string>
     <string name="add_server_url">Server-Adresse</string>
@@ -24,7 +24,7 @@
     <string name="conn_error_cert_other">Die sichere Verbindung (TLS) konnte nicht aufgebaut werden.</string>
     <string name="conn_error_not_shlink">Unter dieser Adresse antwortet kein Shlink-Server (HTTP %1$d). Stimmt der Pfad? Läuft Shlink z. B. unter einem Unterpfad wie /shlink?</string>
     <string name="conn_error_unhealthy">Shlink ist erreichbar, meldet aber einen Fehler – meist ist die Datenbank nicht erreichbar.</string>
-    <string name="conn_error_unsupported_version">Shlink %1$s ist zu alt. Linkwerk benötigt mindestens Shlink 3.0.</string>
+    <string name="conn_error_unsupported_version">Shlink %1$s ist zu alt. Shlinker benötigt mindestens Shlink 3.0.</string>
     <string name="conn_error_invalid_key">Der API-Key ist ungültig oder wurde widerrufen.</string>
     <string name="conn_error_http">Unerwartete Antwort vom Server (HTTP %1$d).</string>
     <string name="conn_error_unknown">Unbekannter Fehler: %1$s</string>

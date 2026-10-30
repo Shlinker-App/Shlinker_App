@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Linkwerk</string>
+    <string name="app_name">Shlinker</string>
     <string name="placeholder_subtitle">Client für Shlink</string>
     <string name="home_active_server">Aktiver Server</string>
     <string name="home_servers">Gespeicherte Server</string>

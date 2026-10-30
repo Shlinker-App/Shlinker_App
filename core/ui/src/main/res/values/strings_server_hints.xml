@@ -5,7 +5,7 @@
         (nicht hinter einem Info-Icon verstecken).
     -->
     <string name="server_hint_tls_title">Zertifikate</string>
-    <string name="server_hint_tls_body">Linkwerk verbindet sich nur über HTTPS und akzeptiert derzeit nur Zertifikate öffentlich vertrauenswürdiger Stellen (z. B. Let\'s Encrypt).\n\nSelbst signierte Zertifikate oder eine eigene CA (z. B. im Homelab) werden noch nicht unterstützt – das kommt in einer späteren Version.\n\nHinweis: Eine in den Android-Einstellungen installierte Benutzer-CA reicht nicht aus. Apps vertrauen solchen Zertifikaten seit Android 7 standardmäßig nicht.</string>
+    <string name="server_hint_tls_body">Shlinker verbindet sich nur über HTTPS und akzeptiert derzeit nur Zertifikate öffentlich vertrauenswürdiger Stellen (z. B. Let\'s Encrypt).\n\nSelbst signierte Zertifikate oder eine eigene CA (z. B. im Homelab) werden noch nicht unterstützt – das kommt in einer späteren Version.\n\nHinweis: Eine in den Android-Einstellungen installierte Benutzer-CA reicht nicht aus. Apps vertrauen solchen Zertifikaten seit Android 7 standardmäßig nicht.</string>
 
     <string name="server_hint_url">Adresse deiner Shlink-Instanz, z. B. s.example.org oder example.org/shlink. „https://“ wird automatisch ergänzt.</string>
     <string name="server_hint_api_key_title">API-Key</string>

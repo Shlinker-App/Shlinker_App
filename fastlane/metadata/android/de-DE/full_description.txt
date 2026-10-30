@@ -1,4 +1,4 @@
-<p>Linkwerk ist ein nativer Android-Client für <a href="https://shlink.io">Shlink</a>, den selbst gehosteten URL-Shortener.</p>
+<p>Shlinker ist ein nativer Android-Client für <a href="https://shlink.io">Shlink</a>, den selbst gehosteten URL-Shortener.</p>
 <ul>
 <li>Mehrere Shlink-Instanzen</li>
 <li>API-Keys verschlüsselt im Android Keystore</li>
@@ -6,4 +6,4 @@
 <li>Material You, Hell-/Dunkelmodus</li>
 </ul>
 <p>Datenschutz: keine Google Play Services, kein Tracking, keine Werbung, keine Cloud-Backups. Nur HTTPS.</p>
-<p>Linkwerk ist kein offizielles Shlink-Projekt.</p>
+<p>Shlinker ist kein offizielles Shlink-Projekt.</p>

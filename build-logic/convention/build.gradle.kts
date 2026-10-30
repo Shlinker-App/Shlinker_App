@@ -2,7 +2,7 @@ plugins {
     `kotlin-dsl`
 }
 
-group = "at.awit.linkwerk.buildlogic"
+group = "at.awit.shlinker.buildlogic"
 
 kotlin {
     jvmToolchain(21)
@@ -19,19 +19,19 @@ dependencies {
 gradlePlugin {
     plugins {
         register("androidApplication") {
-            id = libs.plugins.linkwerk.android.application.get().pluginId
+            id = libs.plugins.shlinker.android.application.get().pluginId
             implementationClass = "AndroidApplicationConventionPlugin"
         }
         register("androidLibrary") {
-            id = libs.plugins.linkwerk.android.library.get().pluginId
+            id = libs.plugins.shlinker.android.library.get().pluginId
             implementationClass = "AndroidLibraryConventionPlugin"
         }
         register("androidCompose") {
-            id = libs.plugins.linkwerk.android.compose.get().pluginId
+            id = libs.plugins.shlinker.android.compose.get().pluginId
             implementationClass = "AndroidComposeConventionPlugin"
         }
         register("hilt") {
-            id = libs.plugins.linkwerk.hilt.get().pluginId
+            id = libs.plugins.shlinker.hilt.get().pluginId
             implementationClass = "HiltConventionPlugin"
         }
     }

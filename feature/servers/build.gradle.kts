@@ -1,12 +1,12 @@
 plugins {
-    alias(libs.plugins.linkwerk.android.library)
-    alias(libs.plugins.linkwerk.android.compose)
-    alias(libs.plugins.linkwerk.hilt)
+    alias(libs.plugins.shlinker.android.library)
+    alias(libs.plugins.shlinker.android.compose)
+    alias(libs.plugins.shlinker.hilt)
     alias(libs.plugins.roborazzi)
 }
 
 android {
-    namespace = "at.awit.linkwerk.feature.servers"
+    namespace = "at.awit.shlinker.feature.servers"
     testOptions.unitTests.isIncludeAndroidResources = true
 }
 

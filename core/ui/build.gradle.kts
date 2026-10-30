@@ -1,10 +1,10 @@
 plugins {
-    alias(libs.plugins.linkwerk.android.library)
-    alias(libs.plugins.linkwerk.android.compose)
+    alias(libs.plugins.shlinker.android.library)
+    alias(libs.plugins.shlinker.android.compose)
 }
 
 android {
-    namespace = "at.awit.linkwerk.core.ui"
+    namespace = "at.awit.shlinker.core.ui"
 }
 
 dependencies {

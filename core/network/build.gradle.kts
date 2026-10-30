@@ -1,11 +1,11 @@
 plugins {
-    alias(libs.plugins.linkwerk.android.library)
-    alias(libs.plugins.linkwerk.hilt)
+    alias(libs.plugins.shlinker.android.library)
+    alias(libs.plugins.shlinker.hilt)
     alias(libs.plugins.kotlin.serialization)
 }
 
 android {
-    namespace = "at.awit.linkwerk.core.network"
+    namespace = "at.awit.shlinker.core.network"
 }
 
 dependencies {
