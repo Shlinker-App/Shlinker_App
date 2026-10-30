@@ -9,12 +9,15 @@ on:
 jobs:
   release:
     runs-on: docker
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 45
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v7
       - name: JDK und Android SDK einrichten
-        run: ci/setup-android.sh
-      - run: ./gradlew --no-daemon assembleDebug
+        run: ci/setup-android.sh 2>&1 | tee -a ci.log
+      - run: ./gradlew --no-daemon assembleDebug 2>&1 | tee -a ci.log
       - name: Pre-Release mit APK anlegen
         env:
           TOKEN: ${{ forge.token }}
@@ -36,3 +39,8 @@ jobs:
           curl -fsS -X POST "$API/releases/$ID/assets?name=$APK" -H "Authorization: token $TOKEN" \
                -F "attachment=@$APK" > /dev/null
           echo "Release $TAG angelegt (ID $ID)"
+      - name: Log-Ende in Issue #1 posten
+        if: failure()
+        env:
+          TOKEN: ${{ forge.token }}
+        run: ci/report-failure.sh ci.log
