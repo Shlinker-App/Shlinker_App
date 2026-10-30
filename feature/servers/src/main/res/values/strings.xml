@@ -13,7 +13,8 @@
     <string name="add_server_connecting">Verbindung wird geprüft …</string>
     <string name="add_server_cancel">Abbrechen</string>
     <string name="add_server_back">Zurück</string>
-    <string name="server_save_duplicate">Dieser Server ist mit demselben API-Key bereits eingerichtet. Wähle das vorhandene Profil in der Serverübersicht. Ein anderer Name erstellt kein neues Profil.</string>
+    <string name="server_save_duplicate">Dieser Server ist mit demselben API-Key bereits eingerichtet.</string>
+    <string name="server_save_name_conflict">Für diese Serveradresse gibt es bereits ein Profil mit diesem Namen. Bitte wähle einen anderen Namen.</string>
     <string name="server_save_cannot_check">Ein vorhandener API-Key für diese Serveradresse fehlt oder kann nicht entschlüsselt werden. Die Dublettenprüfung ist deshalb nicht möglich; das neue Profil wurde nicht gespeichert.</string>
     <string name="server_save_storage">Das Serverprofil konnte nicht gespeichert werden. Bitte versuche es erneut.</string>
 

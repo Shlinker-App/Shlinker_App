@@ -139,10 +139,68 @@ class DefaultServerProfileRepositoryTest {
     @Test
     fun `andere Keys oder andere Basis URLs bleiben erlaubt`() = scope.runTest {
         repo.add("Same", "s.example.org", "key-1")
-        repo.add("Same", "s.example.org", "key-2")
+        repo.add("Other", "s.example.org", "key-2")
         repo.add("Same", "s.example.org/subpath", "key-1")
         repo.add("Same", "other.example.org", "key-1")
         assertEquals(4, repo.profiles.first().size)
+    }
+
+    @Test
+    fun `gleiche Namen mit anderem Key werden ohne Schreiben abgelehnt`() = scope.runTest {
+        repo.add("Home", "s.example.org", "key-1")
+        val beforeServers = servers.current
+        val beforeSecrets = secrets.current
+        for (name in listOf("Home", " home ", "HOME")) {
+            assertTrue(
+                runCatching { repo.add(name, "S.Example.org/rest/v3/", "key-2") }
+                    .exceptionOrNull() is ServerNameConflictException,
+            )
+        }
+        assertEquals(beforeServers, servers.current)
+        assertEquals(beforeSecrets, secrets.current)
+    }
+
+    @Test
+    fun `automatischer Hostname unterliegt der Namenspruefung`() = scope.runTest {
+        repo.add("", "s.example.org", "key-1")
+        assertTrue(
+            runCatching { repo.add(" ", "s.example.org", "key-2") }
+                .exceptionOrNull() is ServerNameConflictException,
+        )
+        assertEquals("Work", repo.add("Work", "s.example.org", "key-2").name)
+    }
+
+    @Test
+    fun `update prueft Namen auch bei Umbenennen oder Adressaenderung`() = scope.runTest {
+        repo.add("Home", "s.example.org", "key-1")
+        val second = repo.add("Work", "s.example.org", "key-2")
+        val third = repo.add("Home", "other.example.org", "key-3")
+        val beforeServers = servers.current
+        val beforeSecrets = secrets.current
+        assertTrue(
+            runCatching { repo.update(second.id, name = " home ") }
+                .exceptionOrNull() is ServerNameConflictException,
+        )
+        assertTrue(
+            runCatching { repo.update(third.id, url = "s.example.org", apiKey = "key-4") }
+                .exceptionOrNull() is ServerNameConflictException,
+        )
+        assertEquals(beforeServers, servers.current)
+        assertEquals(beforeSecrets, secrets.current)
+        assertEquals(
+            "Guest",
+            repo.update(third.id, name = "Guest", url = "s.example.org", apiKey = "key-4").name,
+        )
+    }
+
+    @Test
+    fun `parallele Anlage mit verschiedenen Keys behaelt eindeutige Namen`() = scope.runTest {
+        val results = listOf("key-1", "key-2").map { key ->
+            async { runCatching { repo.add("Home", "s.example.org", key) } }
+        }.awaitAll()
+        assertEquals(1, results.count { it.isSuccess })
+        assertTrue(results.single { it.isFailure }.exceptionOrNull() is ServerNameConflictException)
+        assertEquals(1, secrets.current.apiKeys.size)
     }
 
     @Test

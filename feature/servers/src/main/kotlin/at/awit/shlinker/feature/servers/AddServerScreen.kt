@@ -158,6 +158,7 @@ fun AddServerScreen(
                     stringResource(
                         when (error) {
                             ServerSaveError.DUPLICATE -> R.string.server_save_duplicate
+                            ServerSaveError.NAME_CONFLICT -> R.string.server_save_name_conflict
                             ServerSaveError.CANNOT_CHECK_DUPLICATE -> R.string.server_save_cannot_check
                             ServerSaveError.STORAGE -> R.string.server_save_storage
                         },

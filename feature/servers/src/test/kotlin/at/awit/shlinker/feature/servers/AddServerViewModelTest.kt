@@ -3,6 +3,7 @@ package at.awit.shlinker.feature.servers
 import at.awit.shlinker.core.data.ApiKeyResult
 import at.awit.shlinker.core.data.DuplicateCheckUnavailableException
 import at.awit.shlinker.core.data.DuplicateServerException
+import at.awit.shlinker.core.data.ServerNameConflictException
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.model.ServerProfile
 import at.awit.shlinker.core.model.ServerUrl
@@ -183,5 +184,27 @@ class AddServerViewModelTest {
         vm.onUrlChange("other.example.org")
         assertNull(vm.state.value.saveError)
         assertTrue(repo.added.isEmpty())
+    }
+
+    @Test
+    fun `Namenskonflikt bleibt korrigierbar und sendet kein Saved Event`() = runTest(dispatcher) {
+        repo.addFailure = ServerNameConflictException()
+        vm.onNameChange("Home")
+        vm.onUrlChange("s.example.org")
+        vm.onApiKeyChange("different-key")
+        vm.onSubmit()
+        advanceUntilIdle()
+        assertEquals(ServerSaveError.NAME_CONFLICT, vm.state.value.saveError)
+        assertFalse(vm.state.value.isConnecting)
+        assertTrue(repo.added.isEmpty())
+        assertNull(withTimeoutOrNull(1) { vm.events.firstOrNull() })
+        vm.onNameChange("Work")
+        assertNull(vm.state.value.saveError)
+        assertEquals("different-key", vm.state.value.apiKey)
+        repo.addFailure = null
+        vm.onSubmit()
+        advanceUntilIdle()
+        assertEquals("Work", repo.added.single().name)
+        assertEquals(AddServerEvent.Saved("id-1"), vm.events.first())
     }
 }

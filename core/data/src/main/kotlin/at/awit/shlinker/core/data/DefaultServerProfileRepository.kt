@@ -43,10 +43,12 @@ internal class DefaultServerProfileRepository @Inject constructor(
             mutationMutex.withLock {
                 val normalizedUrl = normalizeOrThrow(url)
                 val key = requireApiKey(apiKey)
+                val resolvedName = name.trim().ifEmpty { hostOf(normalizedUrl) }
                 checkDuplicate(normalizedUrl, key)
+                checkNameConflict(normalizedUrl, resolvedName)
                 val server = StoredServer(
                     id = UUID.randomUUID().toString(),
-                    name = name.trim().ifEmpty { hostOf(normalizedUrl) },
+                    name = resolvedName,
                     url = normalizedUrl,
                     createdAt = System.currentTimeMillis(),
                 )
@@ -75,12 +77,17 @@ internal class DefaultServerProfileRepository @Inject constructor(
                 val key = apiKey?.let(::requireApiKey)
                 val existing = servers.data.first().servers.firstOrNull { it.id == id }
                     ?: throw ServerNotFoundException(id)
+                val effectiveUrl = normalizedUrl ?: existing.url
+                val effectiveName = name?.trim()?.ifEmpty { hostOf(effectiveUrl) } ?: existing.name
                 if (normalizedUrl != null || key != null) {
                     val effectiveKey = key ?: when (val result = getApiKey(id)) {
                         is ApiKeyResult.Available -> result.apiKey
                         ApiKeyResult.Missing, ApiKeyResult.Unavailable -> throw DuplicateCheckUnavailableException()
                     }
                     checkDuplicate(normalizedUrl ?: existing.url, effectiveKey, excludingId = id)
+                }
+                if (name != null || normalizedUrl != null || key != null) {
+                    checkNameConflict(effectiveUrl, effectiveName, excludingId = id)
                 }
 
                 if (key != null) putSecret(id, key)
@@ -91,10 +98,9 @@ internal class DefaultServerProfileRepository @Inject constructor(
                             if (s.id != id) {
                                 s
                             } else {
-                                val newUrl = normalizedUrl ?: s.url
                                 s.copy(
-                                    url = newUrl,
-                                    name = name?.trim()?.ifEmpty { hostOf(newUrl) } ?: s.name,
+                                    url = effectiveUrl,
+                                    name = effectiveName,
                                 )
                             }
                         },
@@ -153,6 +159,15 @@ internal class DefaultServerProfileRepository @Inject constructor(
                 is ApiKeyResult.Available -> if (result.apiKey == apiKey) throw DuplicateServerException()
                 ApiKeyResult.Missing, ApiKeyResult.Unavailable -> throw DuplicateCheckUnavailableException()
             }
+        }
+    }
+
+    private suspend fun checkNameConflict(url: String, name: String, excludingId: String? = null) {
+        if (servers.data.first().servers.any {
+                it.id != excludingId && it.url == url && it.name.trim().equals(name, ignoreCase = true)
+            }
+        ) {
+            throw ServerNameConflictException()
         }
     }
 

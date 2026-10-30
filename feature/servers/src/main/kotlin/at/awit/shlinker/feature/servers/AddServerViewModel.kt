@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.awit.shlinker.core.data.DuplicateCheckUnavailableException
 import at.awit.shlinker.core.data.DuplicateServerException
+import at.awit.shlinker.core.data.ServerNameConflictException
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.model.ServerUrl
 import at.awit.shlinker.core.network.ConnectionError
@@ -36,7 +37,7 @@ data class AddServerUiState(
     val canSubmit: Boolean get() = !isConnecting && url.isNotBlank() && apiKey.isNotBlank()
 }
 
-enum class ServerSaveError { DUPLICATE, CANNOT_CHECK_DUPLICATE, STORAGE }
+enum class ServerSaveError { DUPLICATE, NAME_CONFLICT, CANNOT_CHECK_DUPLICATE, STORAGE }
 
 sealed interface AddServerEvent {
     data class Saved(val serverId: String) : AddServerEvent
@@ -56,7 +57,9 @@ class AddServerViewModel @Inject constructor(
 
     private var connectJob: Job? = null
 
-    fun onNameChange(value: String) = _state.update { it.copy(name = value) }
+    fun onNameChange(value: String) = _state.update {
+        it.copy(name = value, saveError = it.saveError.takeUnless { error -> error == ServerSaveError.NAME_CONFLICT })
+    }
 
     fun onUrlChange(value: String) = _state.update {
         it.copy(
@@ -98,6 +101,9 @@ class AddServerViewModel @Inject constructor(
                         repository.add(name = s.name, url = url, apiKey = apiKey)
                     } catch (_: DuplicateServerException) {
                         _state.update { it.copy(isConnecting = false, saveError = ServerSaveError.DUPLICATE) }
+                        return@launch
+                    } catch (_: ServerNameConflictException) {
+                        _state.update { it.copy(isConnecting = false, saveError = ServerSaveError.NAME_CONFLICT) }
                         return@launch
                     } catch (_: DuplicateCheckUnavailableException) {
                         _state.update {

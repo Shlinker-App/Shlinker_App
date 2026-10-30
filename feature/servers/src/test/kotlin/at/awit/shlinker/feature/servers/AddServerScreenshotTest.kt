@@ -77,8 +77,18 @@ class AddServerScreenshotTest {
             }
         }
         compose.onNodeWithText(
-            "Dieser Server ist mit demselben API-Key bereits eingerichtet. " +
-                "Wähle das vorhandene Profil in der Serverübersicht. Ein anderer Name erstellt kein neues Profil.",
+            "Dieser Server ist mit demselben API-Key bereits eingerichtet.",
+        ).assertIsDisplayed()
+    }
+
+    @Test fun nameConflictMessageIsVisible() {
+        compose.setContent {
+            Themed(false) {
+                Screen(AddServerUiState(saveError = ServerSaveError.NAME_CONFLICT))
+            }
+        }
+        compose.onNodeWithText(
+            "Für diese Serveradresse gibt es bereits ein Profil mit diesem Namen. Bitte wähle einen anderen Namen.",
         ).assertIsDisplayed()
     }
 
