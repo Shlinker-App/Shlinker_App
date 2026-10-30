@@ -3,6 +3,8 @@ package at.awit.shlinker.core.data
 import at.awit.shlinker.core.datastore.StoredSecrets
 import at.awit.shlinker.core.datastore.StoredServers
 import at.awit.shlinker.core.model.ServerUrl
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -118,5 +120,87 @@ class DefaultServerProfileRepositoryTest {
     @Test
     fun `toString verraet den Key nicht`() {
         assertFalse(ApiKeyResult.Available("geheim").toString().contains("geheim"))
+    }
+
+    @Test
+    fun `Dubletten werden unabhaengig vom Namen vor jedem Schreiben abgelehnt`() = scope.runTest {
+        val original = repo.add("Home", "s.example.org", "key")
+        val beforeServers = servers.current
+        val beforeSecrets = secrets.current
+        for (name in listOf("Home", "Other")) {
+            val error = runCatching { repo.add(name, "S.Example.org/rest/v3/", " key ") }.exceptionOrNull()
+            assertTrue(error is DuplicateServerException)
+            assertEquals(beforeServers, servers.current)
+            assertEquals(beforeSecrets, secrets.current)
+            assertEquals(original, repo.activeProfile.first())
+        }
+    }
+
+    @Test
+    fun `andere Keys oder andere Basis URLs bleiben erlaubt`() = scope.runTest {
+        repo.add("Same", "s.example.org", "key-1")
+        repo.add("Same", "s.example.org", "key-2")
+        repo.add("Same", "s.example.org/subpath", "key-1")
+        repo.add("Same", "other.example.org", "key-1")
+        assertEquals(4, repo.profiles.first().size)
+    }
+
+    @Test
+    fun `paralleles Hinzufuegen kann die Dublettenpruefung nicht umgehen`() = scope.runTest {
+        val results = List(2) {
+            async { runCatching { repo.add("Home", "s.example.org", "key") } }
+        }.awaitAll()
+        assertEquals(1, results.count { it.isSuccess })
+        assertTrue(results.single { it.isFailure }.exceptionOrNull() is DuplicateServerException)
+        assertEquals(1, servers.current.servers.size)
+        assertEquals(1, secrets.current.apiKeys.size)
+    }
+
+    @Test
+    fun `update verhindert Key oder URL Kollision ohne Seiteneffekte`() = scope.runTest {
+        repo.add("A", "s.example.org", "key-1")
+        val second = repo.add("B", "s.example.org", "key-2")
+        val third = repo.add("C", "other.example.org", "key-1")
+        val beforeServers = servers.current
+        val beforeSecrets = secrets.current
+        assertTrue(
+            runCatching {
+                repo.update(second.id, apiKey = "key-1")
+            }.exceptionOrNull() is DuplicateServerException,
+        )
+        assertTrue(
+            runCatching { repo.update(third.id, url = "S.Example.org/") }.exceptionOrNull() is DuplicateServerException,
+        )
+        assertEquals(beforeServers, servers.current)
+        assertEquals(beforeSecrets, secrets.current)
+    }
+
+    @Test
+    fun `update schliesst eigenes Profil aus und erlaubt Umbenennen`() = scope.runTest {
+        val original = repo.add("A", "s.example.org", "key")
+        val changed = repo.update(original.id, name = "New", url = "S.Example.org/", apiKey = " key ")
+        assertEquals("New", changed.name)
+        assertEquals(1, servers.current.servers.size)
+        cipher.broken = true
+        assertEquals("Renamed", repo.update(original.id, name = "Renamed").name)
+    }
+
+    @Test
+    fun `fehlende oder unlesbare Keys verhindern ungeprueftes Duplikat`() = scope.runTest {
+        repo.add("A", "s.example.org", "key")
+        val beforeServers = servers.current
+        cipher.broken = true
+        assertTrue(
+            runCatching { repo.add("B", "s.example.org", "key") }
+                .exceptionOrNull() is DuplicateCheckUnavailableException,
+        )
+        cipher.broken = false
+        secrets.updateData { StoredSecrets() }
+        assertTrue(
+            runCatching { repo.add("B", "s.example.org", "key") }
+                .exceptionOrNull() is DuplicateCheckUnavailableException,
+        )
+        assertEquals(beforeServers, servers.current)
+        assertTrue(secrets.current.apiKeys.isEmpty())
     }
 }

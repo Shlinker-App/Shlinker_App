@@ -1,23 +1,28 @@
 package at.awit.shlinker.feature.servers
 
 import at.awit.shlinker.core.data.ApiKeyResult
+import at.awit.shlinker.core.data.DuplicateCheckUnavailableException
+import at.awit.shlinker.core.data.DuplicateServerException
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.model.ServerProfile
 import at.awit.shlinker.core.model.ServerUrl
 import at.awit.shlinker.core.network.ConnectionError
 import at.awit.shlinker.core.network.ConnectionResult
 import at.awit.shlinker.core.network.ConnectionTester
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -116,12 +121,14 @@ class AddServerViewModelTest {
     }
 
     private class FakeRepository : ServerProfileRepository {
+        var addFailure: Exception? = null
         val added = mutableListOf<ServerProfile>()
         private val state = MutableStateFlow<List<ServerProfile>>(emptyList())
         override val profiles: Flow<List<ServerProfile>> = state
         override val activeProfile: Flow<ServerProfile?> = state.map { it.lastOrNull() }
 
         override suspend fun add(name: String, url: String, apiKey: String, makeActive: Boolean): ServerProfile {
+            addFailure?.let { throw it }
             val p = ServerProfile("id-${added.size + 1}", name.ifBlank { url }, url, 0L)
             added += p
             state.value = added.toList()
@@ -132,5 +139,49 @@ class AddServerViewModelTest {
         override suspend fun delete(id: String) = error("unused")
         override suspend fun setActive(id: String) = error("unused")
         override suspend fun getApiKey(id: String): ApiKeyResult = ApiKeyResult.Missing
+    }
+
+    @Test
+    fun `Dublettenfehler wird angezeigt ohne Saved Event und Eingaben bleiben erhalten`() = runTest(dispatcher) {
+        repo.addFailure = DuplicateServerException()
+        vm.onNameChange("Other")
+        vm.onUrlChange("s.example.org")
+        vm.onApiKeyChange("key")
+        vm.onSubmit()
+        advanceUntilIdle()
+        assertEquals(ServerSaveError.DUPLICATE, vm.state.value.saveError)
+        assertFalse(vm.state.value.isConnecting)
+        assertEquals("Other", vm.state.value.name)
+        assertEquals("key", vm.state.value.apiKey)
+        assertTrue(repo.added.isEmpty())
+        assertNull(withTimeoutOrNull(1) { vm.events.firstOrNull() })
+
+        vm.onNameChange("Another name")
+        assertEquals(ServerSaveError.DUPLICATE, vm.state.value.saveError)
+        vm.onApiKeyChange("different-key")
+        assertNull(vm.state.value.saveError)
+        repo.addFailure = null
+        vm.onSubmit()
+        advanceUntilIdle()
+        assertEquals(AddServerEvent.Saved("id-1"), vm.events.first())
+    }
+
+    @Test
+    fun `Pruef und Speicherfehler werden explizit angezeigt`() = runTest(dispatcher) {
+        vm.onUrlChange("s.example.org")
+        vm.onApiKeyChange("key")
+        for ((error, expected) in listOf(
+            DuplicateCheckUnavailableException() to ServerSaveError.CANNOT_CHECK_DUPLICATE,
+            IOException("disk") to ServerSaveError.STORAGE,
+        )) {
+            repo.addFailure = error
+            vm.onSubmit()
+            advanceUntilIdle()
+            assertEquals(expected, vm.state.value.saveError)
+            assertFalse(vm.state.value.isConnecting)
+        }
+        vm.onUrlChange("other.example.org")
+        assertNull(vm.state.value.saveError)
+        assertTrue(repo.added.isEmpty())
     }
 }

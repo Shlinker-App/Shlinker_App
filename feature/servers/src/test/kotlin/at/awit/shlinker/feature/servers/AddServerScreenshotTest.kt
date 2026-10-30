@@ -1,7 +1,9 @@
 package at.awit.shlinker.feature.servers
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import at.awit.shlinker.core.model.ServerUrl
 import at.awit.shlinker.core.network.CertificateProblem
@@ -67,6 +69,18 @@ class AddServerScreenshotTest {
         "add_server_connecting",
         state = AddServerUiState(url = "s.example.org", apiKey = "abc", isConnecting = true),
     )
+
+    @Test fun duplicateMessageIsVisible() {
+        compose.setContent {
+            Themed(false) {
+                Screen(AddServerUiState(saveError = ServerSaveError.DUPLICATE))
+            }
+        }
+        compose.onNodeWithText(
+            "Dieser Server ist mit demselben API-Key bereits eingerichtet. " +
+                "Wähle das vorhandene Profil in der Serverübersicht. Ein anderer Name erstellt kein neues Profil.",
+        ).assertIsDisplayed()
+    }
 
     @Composable
     private fun Themed(dark: Boolean, content: @Composable () -> Unit) =

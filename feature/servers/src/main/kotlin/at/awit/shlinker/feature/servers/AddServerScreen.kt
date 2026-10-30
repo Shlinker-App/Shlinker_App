@@ -153,6 +153,18 @@ fun AddServerScreen(
             AnimatedVisibility(visible = state.connectionError != null) {
                 state.connectionError?.let { ErrorCard(it) }
             }
+            state.saveError?.let { error ->
+                Text(
+                    stringResource(
+                        when (error) {
+                            ServerSaveError.DUPLICATE -> R.string.server_save_duplicate
+                            ServerSaveError.CANNOT_CHECK_DUPLICATE -> R.string.server_save_cannot_check
+                            ServerSaveError.STORAGE -> R.string.server_save_storage
+                        },
+                    ),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
 
             SubmitRow(state, onSubmit, onCancel)
 

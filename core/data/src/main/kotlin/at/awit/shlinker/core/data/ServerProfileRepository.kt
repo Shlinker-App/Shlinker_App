@@ -19,10 +19,15 @@ interface ServerProfileRepository {
      *
      * @throws InvalidServerUrlException bei ungültiger URL
      * @throws IllegalArgumentException bei leerem API-Key
+     * @throws DuplicateServerException bei gleicher normalisierter URL und gleichem API-Key
+     * @throws DuplicateCheckUnavailableException wenn ein passender gespeicherter Key nicht lesbar ist
      */
     suspend fun add(name: String, url: String, apiKey: String, makeActive: Boolean = true): ServerProfile
 
-    /** Ändert Name, URL und/oder API-Key. `null` = unverändert. */
+    /**
+     * Ändert Name, URL und/oder API-Key. `null` = unverändert.
+     * URL-/Key-Änderungen unterliegen derselben Dublettenprüfung wie [add].
+     */
     suspend fun update(id: String, name: String? = null, url: String? = null, apiKey: String? = null): ServerProfile
 
     /** Löscht Server und zugehörigen API-Key. Ist er aktiv, wird der nächste Server aktiv. */
@@ -50,3 +55,7 @@ class InvalidServerUrlException(val reason: ServerUrl.Reason) :
     IllegalArgumentException("Ungültige Server-URL: $reason")
 
 class ServerNotFoundException(id: String) : NoSuchElementException("Server $id nicht gefunden")
+
+class DuplicateServerException : IllegalArgumentException("Server profile already exists")
+
+class DuplicateCheckUnavailableException : IllegalStateException("Cannot verify existing server credentials")

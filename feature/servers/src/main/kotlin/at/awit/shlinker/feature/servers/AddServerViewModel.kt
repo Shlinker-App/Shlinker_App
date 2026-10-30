@@ -2,12 +2,15 @@ package at.awit.shlinker.feature.servers
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import at.awit.shlinker.core.data.DuplicateCheckUnavailableException
+import at.awit.shlinker.core.data.DuplicateServerException
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.model.ServerUrl
 import at.awit.shlinker.core.network.ConnectionError
 import at.awit.shlinker.core.network.ConnectionResult
 import at.awit.shlinker.core.network.ConnectionTester
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.io.IOException
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -26,11 +29,14 @@ data class AddServerUiState(
     val apiKeyMissing: Boolean = false,
     val isConnecting: Boolean = false,
     val connectionError: ConnectionError? = null,
+    val saveError: ServerSaveError? = null,
     /** Normalisierte URL als Vorschau, sobald gültig – zeigt, was tatsächlich gespeichert wird. */
     val normalizedUrlPreview: String? = null,
 ) {
     val canSubmit: Boolean get() = !isConnecting && url.isNotBlank() && apiKey.isNotBlank()
 }
+
+enum class ServerSaveError { DUPLICATE, CANNOT_CHECK_DUPLICATE, STORAGE }
 
 sealed interface AddServerEvent {
     data class Saved(val serverId: String) : AddServerEvent
@@ -57,12 +63,13 @@ class AddServerViewModel @Inject constructor(
             url = value,
             urlError = null,
             connectionError = null,
+            saveError = null,
             normalizedUrlPreview = (ServerUrl.normalize(value) as? ServerUrl.Result.Valid)?.url,
         )
     }
 
     fun onApiKeyChange(value: String) = _state.update {
-        it.copy(apiKey = value, apiKeyMissing = false, connectionError = null)
+        it.copy(apiKey = value, apiKeyMissing = false, connectionError = null, saveError = null)
     }
 
     /** Beim Verlassen des URL-Feldes prüfen – nicht schon beim Tippen meckern. */
@@ -83,11 +90,24 @@ class AddServerViewModel @Inject constructor(
         }
         val url = (normalized as ServerUrl.Result.Valid).url
 
-        _state.update { it.copy(isConnecting = true, connectionError = null) }
+        _state.update { it.copy(isConnecting = true, connectionError = null, saveError = null) }
         connectJob = viewModelScope.launch {
             when (val result = connectionTester.test(url, apiKey)) {
                 is ConnectionResult.Success -> {
-                    val profile = repository.add(name = s.name, url = url, apiKey = apiKey)
+                    val profile = try {
+                        repository.add(name = s.name, url = url, apiKey = apiKey)
+                    } catch (_: DuplicateServerException) {
+                        _state.update { it.copy(isConnecting = false, saveError = ServerSaveError.DUPLICATE) }
+                        return@launch
+                    } catch (_: DuplicateCheckUnavailableException) {
+                        _state.update {
+                            it.copy(isConnecting = false, saveError = ServerSaveError.CANNOT_CHECK_DUPLICATE)
+                        }
+                        return@launch
+                    } catch (_: IOException) {
+                        _state.update { it.copy(isConnecting = false, saveError = ServerSaveError.STORAGE) }
+                        return@launch
+                    }
                     _state.update { it.copy(isConnecting = false) }
                     _events.send(AddServerEvent.Saved(profile.id))
                 }
