@@ -29,17 +29,17 @@ jobs:
           echo "OK: keine proprietären Abhängigkeiten"
       - name: Screenshots (Roborazzi)
         run: ./gradlew --no-daemon recordRoborazziDebug
-      - uses: https://data.forgejo.org/actions/upload-artifact@v7
+      - uses: https://data.forgejo.org/forgejo/upload-artifact@v4
         with:
           name: shlinker-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 7
-      - uses: https://data.forgejo.org/actions/upload-artifact@v7
+      - uses: https://data.forgejo.org/forgejo/upload-artifact@v4
         with:
           name: screenshots
           path: '**/build/outputs/roborazzi/*.png'
           retention-days: 14
-      - uses: https://data.forgejo.org/actions/upload-artifact@v7
+      - uses: https://data.forgejo.org/forgejo/upload-artifact@v4
         if: always()
         with:
           name: reports
