@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -32,6 +33,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -39,6 +42,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import at.awit.shlinker.core.data.ServerNotFoundException
 import at.awit.shlinker.core.data.ShortUrlApiKeyException
 import at.awit.shlinker.core.network.ConnectionError
+import at.awit.shlinker.core.network.DeleteShortUrlException
+import at.awit.shlinker.core.network.DeleteShortUrlFailure
 import at.awit.shlinker.core.network.InvalidShortUrlResponseException
 import at.awit.shlinker.core.network.ShortUrlRequestException
 import at.awit.shlinker.core.network.UpdateShortUrlException
@@ -52,10 +57,16 @@ fun ShortUrlDetailsRoute(
     onBack: () -> Unit,
     onChanged: () -> Unit,
     viewModel: ShortUrlDetailsViewModel = hiltViewModel(),
+    tagsViewModel: TagSuggestionsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val tags by tagsViewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(serverId, shortCode, domain) { viewModel.load(serverId, shortCode, domain) }
-    LaunchedEffect(state.changeRevision) { if (state.changeRevision > 0) onChanged() }
+    LaunchedEffect(state.form != null, serverId) { if (state.form != null) tagsViewModel.load(serverId) }
+    LaunchedEffect(state.changeRevision) {
+        if (state.changeRevision > 0) onChanged()
+        if (state.deleted) onBack()
+    }
     ShortUrlDetailsScreen(
         state,
         onBack,
@@ -64,6 +75,11 @@ fun ShortUrlDetailsRoute(
         viewModel::change,
         viewModel::save,
         viewModel::cancelEdit,
+        viewModel::requestDelete,
+        viewModel::cancelDelete,
+        viewModel::delete,
+        tags,
+        { tagsViewModel.load(serverId, retry = true) },
     )
 }
 
@@ -77,6 +93,11 @@ internal fun ShortUrlDetailsScreen(
     onChange: (ShortUrlEditForm) -> Unit,
     onSave: () -> Unit,
     onCancelEdit: () -> Unit,
+    onRequestDelete: () -> Unit,
+    onCancelDelete: () -> Unit,
+    onDelete: () -> Unit,
+    tagSuggestions: TagSuggestionsState,
+    onRetryTags: () -> Unit,
 ) {
     var discard by remember { mutableStateOf(false) }
     val editing = state.form != null
@@ -89,6 +110,34 @@ internal fun ShortUrlDetailsScreen(
         }
     }
     BackHandler(enabled = editing || state.saving) { back() }
+    if (state.confirmingDelete) {
+        val maxDialogTextHeight = with(LocalDensity.current) {
+            LocalWindowInfo.current.containerSize.height.toDp() * 0.6f
+        }
+        AlertDialog(
+            onDismissRequest = onCancelDelete,
+            title = { Text(stringResource(R.string.delete_title)) },
+            text = {
+                Column(
+                    Modifier.heightIn(max = maxDialogTextHeight)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(stringResource(R.string.delete_warning))
+                    Text(stringResource(R.string.short_urls_server, state.serverName.orEmpty()))
+                    Text(state.details?.url?.shortUrl.orEmpty())
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onDelete) {
+                    Text(stringResource(R.string.delete_confirm), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onCancelDelete) { Text(stringResource(R.string.edit_picker_cancel)) }
+            },
+        )
+    }
     if (discard) {
         AlertDialog(
             onDismissRequest = { discard = false },
@@ -120,7 +169,7 @@ internal fun ShortUrlDetailsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onRefresh, enabled = !state.loading && !editing) {
+                    IconButton(onClick = onRefresh, enabled = !state.loading && !editing && !state.saving) {
                         Icon(Icons.Outlined.Refresh, stringResource(R.string.short_urls_refresh))
                     }
                 },
@@ -137,7 +186,8 @@ internal fun ShortUrlDetailsScreen(
             }
             if (state.loading) CircularProgressIndicator()
             if (!editing) {
-                state.error?.let { DetailsError(it, onRefresh) }
+                state.error?.let { DetailsError(it, onRefresh, reload = state.needsReload) }
+                if (state.saving) CircularProgressIndicator()
             }
             if (state.saved) Text(stringResource(R.string.edit_saved))
             val form = state.form
@@ -148,6 +198,8 @@ internal fun ShortUrlDetailsScreen(
                     !state.saving && !state.needsReload,
                     state.validation,
                     onChange,
+                    tagSuggestions,
+                    onRetryTags,
                 )
                 state.validation?.let {
                     Text(
@@ -174,7 +226,9 @@ internal fun ShortUrlDetailsScreen(
                 }
             } else {
                 state.details?.let { details ->
-                    Button(onClick = onEdit) { Text(stringResource(R.string.edit_action)) }
+                    Button(onClick = onEdit, enabled = !state.saving && !state.needsReload) {
+                        Text(stringResource(R.string.edit_action))
+                    }
                     val url = details.url
                     val unavailable = stringResource(R.string.details_unavailable)
                     val notSet = stringResource(R.string.details_not_set)
@@ -220,6 +274,9 @@ internal fun ShortUrlDetailsScreen(
                         DetailField(R.string.details_forward_query, booleanLabel(details.forwardQuery))
                         DetailField(R.string.details_redirect_rules, booleanLabel(details.hasRedirectRules))
                         Text(stringResource(R.string.details_redirect_hint), style = MaterialTheme.typography.bodySmall)
+                    }
+                    TextButton(onClick = onRequestDelete, enabled = !state.saving && !state.needsReload) {
+                        Text(stringResource(R.string.delete_action), color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -270,6 +327,14 @@ private fun booleanLabel(value: Boolean?): String = stringResource(
 
 @Composable
 private fun detailsErrorMessage(error: Exception): String = when {
+    error is DeleteShortUrlException -> stringResource(
+        when (error.failure) {
+            DeleteShortUrlFailure.UNAUTHORIZED -> R.string.short_urls_key_invalid
+            DeleteShortUrlFailure.NOT_FOUND -> R.string.delete_missing
+            DeleteShortUrlFailure.VISITS_THRESHOLD -> R.string.delete_threshold
+            DeleteShortUrlFailure.UNCERTAIN -> R.string.delete_uncertain
+        },
+    )
     error is UpdateShortUrlException -> stringResource(
         when (error.failure) {
             UpdateShortUrlFailure.INVALID_INPUT -> R.string.edit_error_invalid

@@ -4,10 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.awit.shlinker.core.data.ServerNotFoundException
 import at.awit.shlinker.core.data.ServerProfileRepository
+import at.awit.shlinker.core.data.ShortUrlDeleter
 import at.awit.shlinker.core.data.ShortUrlDetailsRepository
 import at.awit.shlinker.core.data.ShortUrlUpdater
 import at.awit.shlinker.core.model.ShortUrlDetails
 import at.awit.shlinker.core.model.isValidDestinationUrl
+import at.awit.shlinker.core.network.DeleteShortUrlException
+import at.awit.shlinker.core.network.DeleteShortUrlFailure
 import at.awit.shlinker.core.network.UpdateShortUrlException
 import at.awit.shlinker.core.network.UpdateShortUrlFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,6 +33,8 @@ data class ShortUrlDetailsState(
     val saved: Boolean = false,
     val needsReload: Boolean = false,
     val changeRevision: Int = 0,
+    val confirmingDelete: Boolean = false,
+    val deleted: Boolean = false,
 )
 
 enum class EditValidation { URL, SINCE, UNTIL, SINCE_RANGE, UNTIL_RANGE, LIMIT }
@@ -39,6 +44,7 @@ class ShortUrlDetailsViewModel @Inject constructor(
     private val profiles: ServerProfileRepository,
     private val repository: ShortUrlDetailsRepository,
     private val updater: ShortUrlUpdater,
+    private val deleter: ShortUrlDeleter,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ShortUrlDetailsState())
     val state = _state.asStateFlow()
@@ -69,7 +75,7 @@ class ShortUrlDetailsViewModel @Inject constructor(
 
     fun edit() {
         val s = _state.value
-        if (s.loading || s.saving || s.needsReload) return
+        if (s.loading || s.saving || s.needsReload || s.confirmingDelete || s.deleted) return
         val details = s.details ?: return
         _state.value =
             s.copy(form = ShortUrlEditForm.from(details), error = null, validation = null, saved = false)
@@ -122,6 +128,48 @@ class ShortUrlDetailsViewModel @Inject constructor(
                     error = e,
                     needsReload = uncertain,
                     changeRevision = s.changeRevision + if (uncertain) 1 else 0,
+                )
+            } catch (e: ServerNotFoundException) {
+                _state.value = _state.value.copy(saving = false, error = e)
+            } catch (e: IOException) {
+                _state.value = _state.value.copy(saving = false, error = e)
+            }
+        }
+    }
+
+    fun requestDelete() {
+        val s = _state.value
+        if (s.loading || s.saving || s.form != null || s.details == null || s.needsReload || s.deleted) return
+        _state.value = s.copy(confirmingDelete = true, error = null, saved = false)
+    }
+
+    fun cancelDelete() {
+        if (_state.value.saving) return
+        _state.value = _state.value.copy(confirmingDelete = false)
+    }
+
+    fun delete() {
+        val s = _state.value
+        if (!s.confirmingDelete || s.saving || s.needsReload || s.deleted) return
+        val requested = identity ?: return
+        _state.value = s.copy(saving = true, confirmingDelete = false, error = null, saved = false)
+        job = viewModelScope.launch {
+            try {
+                deleter.delete(requested.first, requested.second, requested.third)
+                _state.value = _state.value.copy(
+                    saving = false,
+                    details = null,
+                    deleted = true,
+                    changeRevision = s.changeRevision + 1,
+                )
+            } catch (e: DeleteShortUrlException) {
+                val mustReload =
+                    e.failure in listOf(DeleteShortUrlFailure.UNCERTAIN, DeleteShortUrlFailure.NOT_FOUND)
+                _state.value = _state.value.copy(
+                    saving = false,
+                    error = e,
+                    needsReload = mustReload,
+                    changeRevision = s.changeRevision + if (mustReload) 1 else 0,
                 )
             } catch (e: ServerNotFoundException) {
                 _state.value = _state.value.copy(saving = false, error = e)

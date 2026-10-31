@@ -178,6 +178,8 @@ class ShlinkDateTimeFieldTest {
                         true,
                         EditValidation.SINCE,
                         {},
+                        TagSuggestionsState(),
+                        {},
                     )
                 }
             }

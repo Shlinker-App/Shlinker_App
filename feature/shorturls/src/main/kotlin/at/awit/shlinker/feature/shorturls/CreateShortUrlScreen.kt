@@ -54,9 +54,12 @@ fun CreateShortUrlRoute(
     onBack: () -> Unit,
     onCreated: () -> Unit,
     viewModel: CreateShortUrlViewModel = hiltViewModel(),
+    tagsViewModel: TagSuggestionsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val tags by tagsViewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(serverId) { viewModel.load(serverId) }
+    LaunchedEffect(serverId) { tagsViewModel.load(serverId) }
     val needsRefresh =
         state.created != null || state.error == CreateError.UNCERTAIN || state.error == CreateError.SERVER
     BackHandler(enabled = state.busy || needsRefresh) {
@@ -79,6 +82,8 @@ fun CreateShortUrlRoute(
             }
         },
         snackbar,
+        tags,
+        { tagsViewModel.load(serverId, retry = true) },
     )
 }
 
@@ -92,6 +97,8 @@ internal fun CreateShortUrlScreen(
     onBack: () -> Unit,
     onCopy: (String) -> Unit,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
+    tagSuggestions: TagSuggestionsState,
+    onRetryTags: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -180,6 +187,9 @@ internal fun CreateShortUrlScreen(
                 )
                 TagInput(state.tags, state.tagInput, enabled) { tags, input ->
                     onChange(state.copy(tags = tags, tagInput = input))
+                }
+                TagSuggestions(tagSuggestions, state.tags, state.tagInput, enabled, onRetryTags) {
+                    onChange(state.copy(tags = (state.tags + it).distinct(), tagInput = ""))
                 }
                 if (state.serverName != null && state.appTag.enabled) {
                     Text(

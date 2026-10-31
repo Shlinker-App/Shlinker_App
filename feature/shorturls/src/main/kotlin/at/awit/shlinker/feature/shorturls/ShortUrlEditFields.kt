@@ -21,6 +21,8 @@ internal fun ShortUrlEditFields(
     enabled: Boolean,
     validation: EditValidation?,
     onChange: (ShortUrlEditForm) -> Unit,
+    suggestions: TagSuggestionsState,
+    onRetryTags: () -> Unit,
 ) {
     Text(stringResource(R.string.edit_intro), style = MaterialTheme.typography.bodyMedium)
     EditField(R.string.create_url, form.longUrl, enabled, validation == EditValidation.URL, KeyboardType.Uri) {
@@ -28,6 +30,9 @@ internal fun ShortUrlEditFields(
     }
     EditField(R.string.create_label_title, form.title, enabled) { onChange(form.copy(title = it)) }
     TagInput(form.tags, form.tagInput, enabled) { tags, input -> onChange(form.copy(tags = tags, tagInput = input)) }
+    TagSuggestions(suggestions, form.tags, form.tagInput, enabled, onRetryTags) {
+        onChange(form.copy(tags = (form.tags + it).distinct(), tagInput = ""))
+    }
     Text(stringResource(R.string.details_limits), style = MaterialTheme.typography.titleMedium)
     Text(stringResource(R.string.edit_dates_hint))
     ShlinkDateTimeField(

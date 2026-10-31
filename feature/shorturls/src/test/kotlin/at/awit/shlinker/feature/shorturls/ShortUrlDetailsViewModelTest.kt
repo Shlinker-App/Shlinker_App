@@ -3,6 +3,7 @@ package at.awit.shlinker.feature.shorturls
 import at.awit.shlinker.core.data.ApiKeyResult
 import at.awit.shlinker.core.data.ServerNotFoundException
 import at.awit.shlinker.core.data.ServerProfileRepository
+import at.awit.shlinker.core.data.ShortUrlDeleter
 import at.awit.shlinker.core.data.ShortUrlDetailsRepository
 import at.awit.shlinker.core.data.ShortUrlUpdater
 import at.awit.shlinker.core.model.ServerProfile
@@ -11,6 +12,9 @@ import at.awit.shlinker.core.model.ShortUrl
 import at.awit.shlinker.core.model.ShortUrlDetails
 import at.awit.shlinker.core.model.ShortUrlEdit
 import at.awit.shlinker.core.network.ConnectionError
+import at.awit.shlinker.core.network.DeleteShortUrlException
+import at.awit.shlinker.core.network.DeleteShortUrlFailure
+import at.awit.shlinker.core.network.DeleteShortUrlService
 import at.awit.shlinker.core.network.ShortUrlDetailsService
 import at.awit.shlinker.core.network.ShortUrlRequestException
 import at.awit.shlinker.core.network.UpdateShortUrlException
@@ -46,6 +50,18 @@ class ShortUrlDetailsViewModelTest {
     private val updates = mutableListOf<ShortUrlEdit>()
     private var updateFailure: IOException? = null
     private var updateGate: CompletableDeferred<Unit>? = null
+    private val deletions = mutableListOf<Pair<String, String?>>()
+    private var deleteFailure: IOException? = null
+    private var deleteGate: CompletableDeferred<Unit>? = null
+    private val deleteService = object : DeleteShortUrlService {
+        override suspend fun delete(serverUrl: String, apiKey: String, shortCode: String, domain: String?) {
+            assertEquals("https://s.example", serverUrl)
+            assertEquals("key", apiKey)
+            deletions += shortCode to domain
+            deleteGate?.await()
+            deleteFailure?.let { throw it }
+        }
+    }
     private val updateService = object : UpdateShortUrlService {
         override suspend fun update(serverUrl: String, apiKey: String, input: ShortUrlEdit): ShortUrlDetails {
             assertEquals("https://s.example", serverUrl)
@@ -100,6 +116,7 @@ class ShortUrlDetailsViewModelTest {
             profiles,
             ShortUrlDetailsRepository(profiles, service),
             ShortUrlUpdater(profiles, updateService),
+            ShortUrlDeleter(profiles, deleteService),
         )
     }
 
@@ -271,6 +288,93 @@ class ShortUrlDetailsViewModelTest {
         advanceUntilIdle()
         assertTrue(vm.state.value.saved)
         assertEquals(2, updates.size)
+    }
+
+    @Test fun deleteRequiresConfirmationAndUsesPinnedDomainWithoutDuplicateOrForcedRequest() = runTest(dispatcher) {
+        vm.load("1", "same", "custom.example")
+        advanceUntilIdle()
+        vm.delete()
+        assertTrue(deletions.isEmpty())
+        vm.requestDelete()
+        assertTrue(vm.state.value.confirmingDelete)
+        vm.cancelDelete()
+        vm.delete()
+        assertTrue(deletions.isEmpty())
+        vm.requestDelete()
+        deleteGate = CompletableDeferred()
+        vm.delete()
+        runCurrent()
+        assertTrue(vm.state.value.saving)
+        vm.delete()
+        vm.edit()
+        vm.requestDelete()
+        vm.load("1", "same", "custom.example", refresh = true)
+        assertNull(vm.state.value.form)
+        deleteGate!!.complete(Unit)
+        advanceUntilIdle()
+        assertEquals(listOf("same" to "custom.example"), deletions)
+        assertTrue(vm.state.value.deleted)
+        assertNull(vm.state.value.details)
+        assertEquals(1, vm.state.value.changeRevision)
+        assertEquals("other", profiles.activeProfile.value?.id)
+        vm.requestDelete()
+        vm.delete()
+        assertEquals(1, deletions.size)
+    }
+
+    @Test fun uncertainDeletionRequiresReloadInsteadOfAnotherDeleteOrEdit() = runTest(dispatcher) {
+        vm.load("1", "abc", null)
+        advanceUntilIdle()
+        vm.requestDelete()
+        deleteFailure = DeleteShortUrlException(DeleteShortUrlFailure.UNCERTAIN)
+        vm.delete()
+        advanceUntilIdle()
+        assertTrue(vm.state.value.needsReload)
+        assertFalse(vm.state.value.deleted)
+        assertEquals(1, vm.state.value.changeRevision)
+        vm.requestDelete()
+        vm.delete()
+        vm.edit()
+        assertNull(vm.state.value.form)
+        assertEquals(1, deletions.size)
+        vm.load("1", "abc", null, refresh = true)
+        advanceUntilIdle()
+        assertFalse(vm.state.value.needsReload)
+        assertFalse(vm.state.value.confirmingDelete)
+        assertEquals(1, deletions.size)
+    }
+
+    @Test fun thresholdRefusalIsVisibleAndDoesNotDeleteOrBypassProtection() = runTest(dispatcher) {
+        vm.load("1", "abc", null)
+        advanceUntilIdle()
+        vm.requestDelete()
+        deleteFailure = DeleteShortUrlException(DeleteShortUrlFailure.VISITS_THRESHOLD)
+        vm.delete()
+        advanceUntilIdle()
+        assertEquals(deleteFailure, vm.state.value.error)
+        assertFalse(vm.state.value.deleted)
+        assertFalse(vm.state.value.needsReload)
+        assertEquals(0, vm.state.value.changeRevision)
+        assertEquals(1, deletions.size)
+        assertEquals("abc", vm.state.value.details?.url?.shortCode)
+    }
+
+    @Test fun deleteIsUnavailableWhileEditingAndNotFoundIsNotClaimedAsOwnSuccessfulDeletion() = runTest(dispatcher) {
+        vm.load("1", "abc", null)
+        advanceUntilIdle()
+        vm.edit()
+        vm.requestDelete()
+        vm.delete()
+        assertFalse(vm.state.value.confirmingDelete)
+        assertTrue(deletions.isEmpty())
+        vm.cancelEdit()
+        vm.requestDelete()
+        deleteFailure = DeleteShortUrlException(DeleteShortUrlFailure.NOT_FOUND)
+        vm.delete()
+        advanceUntilIdle()
+        assertFalse(vm.state.value.deleted)
+        assertTrue(vm.state.value.needsReload)
+        assertEquals(1, vm.state.value.changeRevision)
     }
 
     private class Profiles : ServerProfileRepository {

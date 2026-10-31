@@ -18,6 +18,8 @@ import androidx.compose.ui.test.performTextReplacement
 import at.awit.shlinker.core.model.ShortUrl
 import at.awit.shlinker.core.model.ShortUrlDetails
 import at.awit.shlinker.core.network.ConnectionError
+import at.awit.shlinker.core.network.DeleteShortUrlException
+import at.awit.shlinker.core.network.DeleteShortUrlFailure
 import at.awit.shlinker.core.network.ShortUrlRequestException
 import at.awit.shlinker.core.network.UpdateShortUrlException
 import at.awit.shlinker.core.network.UpdateShortUrlFailure
@@ -38,6 +40,7 @@ class ShortUrlDetailsScreenTest {
     private var refreshed = false
     private var back = false
     private var submitted: ShortUrlEditForm? = null
+    private var deleted = false
     private val full = ShortUrlDetails(
         url = ShortUrl(
             "abc",
@@ -63,7 +66,10 @@ class ShortUrlDetailsScreenTest {
     private fun screen(state: ShortUrlDetailsState) {
         compose.setContent {
             ShlinkerTheme(dynamicColor = false) {
-                ShortUrlDetailsScreen(state, { back = true }, { refreshed = true }, {}, {}, {}, {})
+                ShortUrlDetailsScreen(
+                    state, { back = true }, { refreshed = true }, {}, {}, {}, {},
+                    {}, {}, {}, TagSuggestionsState(), {},
+                )
             }
         }
     }
@@ -144,6 +150,7 @@ class ShortUrlDetailsScreenTest {
                     { state = state.copy(form = it) },
                     { submitted = state.form },
                     { state = state.copy(form = null) },
+                    {}, {}, {}, TagSuggestionsState(tags = listOf("server-tag", "other")), {},
                 )
             }
         }
@@ -235,5 +242,95 @@ class ShortUrlDetailsScreenTest {
         compose.onNodeWithText("General").assertDoesNotExist()
         compose.onNodeWithText("Try again").performClick()
         assertEquals(true, refreshed)
+    }
+
+    private fun deletableScreen(saving: Boolean = false) {
+        compose.setContent {
+            var state by remember {
+                mutableStateOf(
+                    ShortUrlDetailsState(serverName = "Home", loading = false, details = full, saving = saving),
+                )
+            }
+            ShlinkerTheme(dynamicColor = false) {
+                ShortUrlDetailsScreen(
+                    state, { back = true }, { refreshed = true }, {}, {}, {}, {},
+                    { state = state.copy(confirmingDelete = true) },
+                    { state = state.copy(confirmingDelete = false) },
+                    { deleted = true },
+                    TagSuggestionsState(), {},
+                )
+            }
+        }
+    }
+
+    @Test fun deleteRequiresConfirmationShowsIdentityAndCanBeCancelledWithoutCallingDelete() {
+        deletableScreen()
+        compose.onNodeWithText("Delete shlink").performScrollTo().performClick()
+        compose.onNodeWithText("Delete this shlink?").assertIsDisplayed()
+        compose.onNodeWithText(
+            "Permanently delete this shlink and its visit history from the server? " +
+                "The short URL will stop working. This cannot be undone.",
+        ).assertIsDisplayed()
+        compose.onAllNodesWithText("https://custom.example/abc").fetchSemanticsNodes().let {
+            assertEquals(2, it.size)
+        }
+        assertEquals(false, deleted)
+        compose.onNodeWithText("Cancel").performClick()
+        assertEquals(false, deleted)
+        compose.onNodeWithText("Delete this shlink?").assertDoesNotExist()
+        compose.onNodeWithText("Delete shlink").performClick()
+        compose.onNodeWithText("Delete permanently").performClick()
+        assertEquals(true, deleted)
+    }
+
+    @Test fun deletingDisablesEditDeleteRefreshAndBack() {
+        deletableScreen(saving = true)
+        compose.onNodeWithContentDescription("Back to shlinks").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Refresh").assertIsNotEnabled()
+        compose.onNodeWithText("Edit").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Delete shlink").performScrollTo().assertIsNotEnabled()
+    }
+
+    @Test fun uncertainDeletionRequiresReloadAndDoesNotOfferAnotherDelete() {
+        screen(
+            ShortUrlDetailsState(
+                loading = false,
+                details = full,
+                needsReload = true,
+                error = DeleteShortUrlException(DeleteShortUrlFailure.UNCERTAIN),
+            ),
+        )
+        compose.onNodeWithText("Edit").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Delete shlink").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Reload details").performScrollTo().performClick()
+        assertEquals(true, refreshed)
+        assertEquals(false, deleted)
+    }
+
+    @Test fun thresholdRefusalExplainsProtectionWithoutReportingDeletion() {
+        screen(
+            ShortUrlDetailsState(
+                loading = false,
+                details = full,
+                error = DeleteShortUrlException(DeleteShortUrlFailure.VISITS_THRESHOLD),
+            ),
+        )
+        compose.onNodeWithText(
+            "Shlink refused deletion because this link exceeds the server’s visit threshold. " +
+                "The app will not bypass that protection.",
+        ).assertIsDisplayed()
+        assertEquals(false, deleted)
+        compose.onNodeWithText("General").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun editSuggestionsAddExactServerTagWithoutDuplicatingOrKeepingSearchFragment() {
+        editableScreen()
+        compose.onNodeWithText("Tags (optional)").performScrollTo().performTextReplacement("SERVER")
+        compose.onNodeWithContentDescription("Add tag server-tag").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Remove tag server-tag").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("Add tag server-tag").assertDoesNotExist()
+        compose.onNodeWithText("Save changes").performScrollTo().performClick()
+        assertEquals(listOf("one", "two", "server-tag"), submitted?.tags)
+        assertEquals("", submitted?.tagInput)
     }
 }

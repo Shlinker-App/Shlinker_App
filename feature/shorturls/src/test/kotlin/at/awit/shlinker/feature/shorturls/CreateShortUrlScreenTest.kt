@@ -33,8 +33,12 @@ class CreateShortUrlScreenTest {
     private var submitted: CreateShortUrlState? = null
     private var copied: String? = null
     private var back = false
+    private var retriedTags = false
 
-    private fun screen(initial: CreateShortUrlState) {
+    private fun screen(
+        initial: CreateShortUrlState,
+        suggestions: TagSuggestionsState = TagSuggestionsState(tags = listOf("server-tag", "other")),
+    ) {
         compose.setContent {
             var state by remember { mutableStateOf(initial) }
             ShlinkerTheme(dynamicColor = false) {
@@ -45,9 +49,38 @@ class CreateShortUrlScreenTest {
                     {},
                     { back = true },
                     { copied = it },
+                    tagSuggestions = suggestions,
+                    onRetryTags = { retriedTags = true },
                 )
             }
         }
+    }
+
+    @Test fun suggestionsCanBeSelectedAndRemovedWithoutDuplicateOrAccidentalPendingTag() {
+        screen(CreateShortUrlState(serverName = "Home", loading = false))
+        compose.onNodeWithText("Tags (optional)").performScrollTo().performTextReplacement("SERVER")
+        compose.onNodeWithContentDescription("Add tag server-tag").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Remove tag server-tag").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("Add tag server-tag").assertDoesNotExist()
+        compose.onNodeWithText("Destination URL").performScrollTo().performTextReplacement("https://example.org")
+        compose.onNodeWithText("Create").performScrollTo().performClick()
+        assertEquals(listOf("server-tag"), submitted?.tags)
+        assertEquals("", submitted?.tagInput)
+        compose.onNodeWithContentDescription("Remove tag server-tag").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Add tag server-tag").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun failedSuggestionsShowRetryButDoNotPreventManualTagsOrCreation() {
+        screen(
+            CreateShortUrlState(serverName = "Home", loading = false, longUrl = "https://example.org"),
+            TagSuggestionsState(error = java.io.IOException("offline")),
+        )
+        compose.onNodeWithText("Retry tag suggestions").performScrollTo().performClick()
+        assertTrue(retriedTags)
+        compose.onNodeWithText("Tags (optional)").performScrollTo().performTextReplacement("manual")
+        compose.onNodeWithText("Tags (optional)").performImeAction()
+        compose.onNodeWithText("Create").performScrollTo().performClick()
+        assertEquals(listOf("manual"), submitted?.tags)
     }
 
     @Test fun formCapturesAllApprovedFieldsAndSubmits() {

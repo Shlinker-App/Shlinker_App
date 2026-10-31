@@ -51,6 +51,12 @@ object NetworkModule {
 @InstallIn(SingletonComponent::class)
 internal abstract class ConnectionModule {
     @Binds
+    abstract fun bindDeleteShortUrlService(impl: KtorDeleteShortUrlService): DeleteShortUrlService
+
+    @Binds
+    abstract fun bindServerTagsService(impl: KtorServerTagsService): ServerTagsService
+
+    @Binds
     abstract fun bindUpdateShortUrlService(impl: KtorUpdateShortUrlService): UpdateShortUrlService
 
     @Binds

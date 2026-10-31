@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="delete_action">Delete shlink</string>
+    <string name="delete_title">Delete this shlink?</string>
+    <string name="delete_warning">Permanently delete this shlink and its visit history from the server? The short URL will stop working. This cannot be undone.</string>
+    <string name="delete_confirm">Delete permanently</string>
+    <string name="delete_threshold">Shlink refused deletion because this link exceeds the server’s visit threshold. The app will not bypass that protection.</string>
+    <string name="delete_uncertain">Deletion could not be confirmed. The shlink may already be deleted. Reload the details before trying again; no automatic retry was made.</string>
+    <string name="delete_missing">The server reports that this shlink does not exist or is not accessible for this domain. Reload the details or go back to the refreshed list.</string>
+    <string name="tags_suggestions">Existing server tags</string>
+    <string name="tags_loading">Loading tag suggestions…</string>
+    <string name="tags_load_error">Could not load tag suggestions. Check your connection and API key permissions. You can still enter tags manually.</string>
+    <string name="tags_retry">Retry tag suggestions</string>
+    <string name="tags_empty">No existing tags available. You can enter new tags above.</string>
+    <string name="tags_no_matches">No other matching suggestions. You can enter new tags above.</string>
+    <string name="tags_filter_hint">Up to 8 suggestions. Type in the tag field to narrow them down; tap a suggestion to add it.</string>
+    <string name="tags_add">Add tag %1$s</string>
     <string name="short_urls_details">Details</string>
     <string name="short_urls_visits">Visits: %1$s</string>
     <string name="details_title">Shlink details</string>
