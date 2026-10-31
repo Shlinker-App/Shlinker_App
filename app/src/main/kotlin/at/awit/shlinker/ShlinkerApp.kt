@@ -21,7 +21,9 @@ import at.awit.shlinker.navigation.AddServerRoute
 import at.awit.shlinker.navigation.CreateShortUrlRoute
 import at.awit.shlinker.navigation.EditServerRoute
 import at.awit.shlinker.navigation.HomeRoute
+import at.awit.shlinker.navigation.SettingsRoute
 import at.awit.shlinker.navigation.ShortUrlsRoute
+import at.awit.shlinker.settings.SettingsRoute as SettingsScreenRoute
 
 @Composable
 fun ShlinkerApp(mainViewModel: MainViewModel) {
@@ -51,7 +53,11 @@ private fun AppNavigation(start: NavKey) {
                     onAddServer = { backStack.add(AddServerRoute) },
                     onShortUrls = { backStack.add(ShortUrlsRoute) },
                     onEditServer = { backStack.add(EditServerRoute(it)) },
+                    onSettings = { backStack.add(SettingsRoute) },
                 )
+            }
+            entry<SettingsRoute> {
+                SettingsScreenRoute(onBack = { backStack.removeLastOrNull() })
             }
             entry<ShortUrlsRoute> {
                 ShortUrlsScreenRoute(

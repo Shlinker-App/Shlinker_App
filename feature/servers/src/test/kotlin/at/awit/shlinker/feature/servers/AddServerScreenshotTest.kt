@@ -23,6 +23,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import at.awit.shlinker.core.model.ServerUrl
 import at.awit.shlinker.core.network.CertificateProblem
@@ -56,6 +57,11 @@ class AddServerScreenshotTest {
     @Test fun leer() = shot("add_server_empty", state = AddServerUiState())
 
     @Test fun leerDunkel() = shot("add_server_empty_dark", dark = true, state = AddServerUiState())
+
+    @Test fun editBanner() = shot(
+        "edit_server_banner",
+        state = AddServerUiState(editing = true, name = "Home", url = "https://s.example.org"),
+    )
 
     @Test fun vorschau() = shot(
         "add_server_preview",
@@ -95,6 +101,7 @@ class AddServerScreenshotTest {
     fun englishFormIsUsedOnGermanDevice() {
         compose.setContent { Themed(false) { Screen(AddServerUiState()) } }
         compose.onNodeWithText("Add server").assertIsDisplayed()
+        compose.onNodeWithText("Editing an existing server").assertDoesNotExist()
         compose.onNodeWithText("Name (optional)").assertIsDisplayed()
         compose.onNodeWithText("Server address").assertIsDisplayed()
         compose.onAllNodesWithText("API key")[0].assertIsDisplayed()
@@ -130,10 +137,14 @@ class AddServerScreenshotTest {
             }
         }
         compose.onNodeWithText("Edit server").assertIsDisplayed()
-        compose.onNodeWithText("Leave blank to keep the saved API key.").assertIsDisplayed()
+        compose.onNodeWithText("Editing an existing server").assertIsDisplayed()
+        compose.onNodeWithText(
+            "Changes apply to this saved profile. You are not adding a new server.",
+        ).assertIsDisplayed()
+        compose.onNodeWithText("Leave blank to keep the saved API key.").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Paste").assertIsDisplayed()
         compose.onNodeWithContentDescription("Show API key").assertIsDisplayed()
-        compose.onNodeWithText("Connect & save").assertIsDisplayed()
+        compose.onNodeWithText("Connect & save").performScrollTo().assertIsDisplayed()
     }
 
     @Test fun pasteReadsOnlyOnClickAndKeepsKeyMasked() {

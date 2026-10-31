@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_back">Back to server overview</string>
+    <string name="settings_tag_title">App tag</string>
+    <string name="settings_tag_intro">Apply this setting to all servers. When enabled, the app adds this tag to newly created shlinks. Existing shlinks are not changed. The tag is visible on your Shlink server and can be removed there.</string>
+    <string name="settings_tag_enabled">Add app tag</string>
+    <string name="settings_tag_name">App tag name</string>
+    <string name="settings_tag_hint">One tag, without commas or line breaks. Spaces within the tag are allowed.</string>
+    <string name="settings_tag_invalid">Enter one non-empty tag without commas or line breaks.</string>
+    <string name="settings_load_error">Could not load settings. Please try again.</string>
+    <string name="settings_save_error">Could not save settings. Your changes have not been saved. Please try again.</string>
+    <string name="settings_saved">Settings saved</string>
+    <string name="settings_retry">Try again</string>
     <string name="app_name">Shlinker</string>
     <string name="placeholder_subtitle">Client for Shlink</string>
     <string name="home_active_server">Active server</string>

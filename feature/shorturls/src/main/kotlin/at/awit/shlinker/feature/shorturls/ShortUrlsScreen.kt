@@ -138,7 +138,12 @@ internal fun ShortUrlsScreen(
                     Column {
                         Text(stringResource(R.string.short_urls_title))
                         serverName?.let {
-                            Text(it, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                            Text(
+                                stringResource(R.string.short_urls_server, it),
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                         }
                     }
                 },
@@ -257,7 +262,16 @@ private fun shortUrlSortLabel(sort: ShortUrlSort): String = stringResource(
 private fun ShortUrlRow(url: ShortUrl, onCopy: (String) -> Unit) {
     ListItem(
         headlineContent = {
-            Text(url.title?.takeIf { it.isNotBlank() } ?: url.shortUrl, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(
+                url.title?.takeIf { it.isNotBlank() } ?: url.shortUrl,
+                color = if (url.title.isNullOrBlank()) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
         },
         supportingContent = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

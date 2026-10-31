@@ -7,13 +7,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import at.awit.shlinker.core.model.AppTagSettings
 import at.awit.shlinker.core.model.ShortUrl
 import at.awit.shlinker.core.ui.theme.ShlinkerTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,7 +62,7 @@ class CreateShortUrlScreenTest {
         assertEquals("Example", submitted?.title)
         assertEquals("slug", submitted?.slug)
         assertEquals("s.example", submitted?.domain)
-        assertEquals("one, two", submitted?.tags)
+        assertEquals(listOf("one", "two"), submitted?.tags)
     }
 
     @Test fun successOffersCopyAndDoneWithoutAnotherCreateButton() {
@@ -78,10 +82,19 @@ class CreateShortUrlScreenTest {
     }
 
     @Test fun inFlightRequestDisablesSubmitAndBack() {
-        screen(CreateShortUrlState(serverName = "Home", loading = false, longUrl = "https://example.org", busy = true))
+        screen(
+            CreateShortUrlState(
+                serverName = "Home",
+                loading = false,
+                longUrl = "https://example.org",
+                tags = listOf("work"),
+                busy = true,
+            ),
+        )
         compose.onNodeWithText("Create").performScrollTo().assertIsNotEnabled()
-        compose.onNodeWithText("Back to shlinks").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Back to shlinks").assertIsNotEnabled()
         compose.onNodeWithText("Destination URL").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Remove tag work").performScrollTo().assertIsNotEnabled()
     }
 
     @Test fun uncertainResultWarnsUserToCheckRefreshedList() {
@@ -97,5 +110,58 @@ class CreateShortUrlScreenTest {
             "The result could not be confirmed. The shlink may already have been created. Go back and check the refreshed list before trying again.",
         ).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Create").performScrollTo().assertIsNotEnabled()
+    }
+
+    @Test fun enterAddsTrimmedTagsAndChipsCanBeRemovedWithoutDuplicates() {
+        screen(CreateShortUrlState(serverName = "Home", loading = false, longUrl = "https://example.org"))
+        compose.onNodeWithText("Tags (optional)").performScrollTo().performTextReplacement("  first tag ")
+        compose.onNodeWithText("Tags (optional)").performImeAction()
+        compose.onNodeWithContentDescription("Remove tag first tag").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Tags (optional)").performScrollTo().performTextReplacement("first tag, second ,third")
+        compose.onNodeWithContentDescription("Remove tag second").performScrollTo().performClick()
+        compose.onNodeWithText("Create").performScrollTo().performClick()
+        assertEquals(listOf("first tag", "third"), submitted?.tags)
+    }
+
+    @Test fun creationTitleIsSeparateFromLabelledBackAndServerContext() {
+        screen(CreateShortUrlState(serverName = "Home", loading = false))
+        compose.onNodeWithText("Create shlink").assertIsDisplayed()
+        compose.onNodeWithText("Server: Home").assertIsDisplayed()
+        val backBounds = compose.onNodeWithText("Back to shlinks").fetchSemanticsNode().boundsInRoot
+        val titleBounds = compose.onNodeWithText("Create shlink").fetchSemanticsNode().boundsInRoot
+        assertTrue(backBounds.bottom < titleBounds.top)
+        compose.onNodeWithText("Back to shlinks").assertIsDisplayed().performClick()
+        assertEquals(true, back)
+        compose.onNodeWithText("Create shlink").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "en-w1280dp-h800dp-mdpi")
+    fun tabletLandscapeKeepsCustomAppTagAndTagChipsAccessible() {
+        screen(
+            CreateShortUrlState(
+                serverName = "Home",
+                loading = false,
+                longUrl = "https://example.org",
+                tags = (1..12).map { "Tag $it" },
+                appTag = AppTagSettings(name = "custom app"),
+            ),
+        )
+        compose.onNodeWithText("Server: Home").assertIsDisplayed()
+        compose.onNodeWithText(
+            "App tag: custom app — added automatically. Change or disable it in Settings.",
+        ).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("Remove tag Tag 12").performScrollTo().performClick()
+        compose.onNodeWithText("Create").performScrollTo().performClick()
+        assertEquals((1..11).map { "Tag $it" }, submitted?.tags)
+    }
+
+    @Test fun disabledAppTagDoesNotShowAutomaticTagHint() {
+        screen(
+            CreateShortUrlState(serverName = "Home", loading = false, appTag = AppTagSettings(enabled = false)),
+        )
+        compose.onNodeWithText(
+            "App tag: shlinker — added automatically. Change or disable it in Settings.",
+        ).assertDoesNotExist()
     }
 }

@@ -21,6 +21,8 @@ class JsonSerializerTest {
             sort = ServerSort.HOSTNAME_DESC,
             manualOrder = listOf("id1"),
             shortUrlSort = ShortUrlSort.MOST_VISITED,
+            appTagEnabled = false,
+            appTagName = "my app",
         )
         val out = ByteArrayOutputStream()
         serializer.writeTo(data, out)
@@ -40,6 +42,8 @@ class JsonSerializerTest {
              "activeServerId":"id1"}
         """.trimIndent()
         val stored = serializer.readFrom(ByteArrayInputStream(json.encodeToByteArray()))
+        assertEquals(true, stored.appTagEnabled)
+        assertEquals("shlinker", stored.appTagName)
         assertEquals(
             StoredServers(
                 servers = listOf(StoredServer("id1", "Home", "https://s.example.org", 42)),

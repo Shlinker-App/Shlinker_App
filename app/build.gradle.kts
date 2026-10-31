@@ -84,6 +84,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.reorderable)
     testImplementation(libs.junit)
+    testImplementation(projects.core.datastore)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)

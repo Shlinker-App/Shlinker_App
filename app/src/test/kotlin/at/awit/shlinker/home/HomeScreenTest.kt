@@ -42,6 +42,7 @@ class HomeScreenTest {
     private var reordered: List<String>? = null
     private var selected: String? = null
     private var edited: String? = null
+    private var settings = false
 
     private fun screen(
         empty: Boolean = false,
@@ -62,6 +63,7 @@ class HomeScreenTest {
                     onShortUrls = {},
                     onSelect = { selected = it },
                     onEditServer = { edited = it },
+                    onSettings = { settings = true },
                     onRename = { action = ServerActionState(server = it, name = it.name) },
                     onDelete = { action = ServerActionState(server = it, deleting = true) },
                     onNameChange = {
@@ -88,6 +90,13 @@ class HomeScreenTest {
                 )
             }
         }
+    }
+
+    @Test fun settingsActionDoesNotChangeTheSelectedServer() {
+        screen()
+        compose.onNodeWithContentDescription("Settings").performClick()
+        assertTrue(settings)
+        assertNull(selected)
     }
 
     @Test fun editMenuPassesProfileIdWithoutChangingSelection() {

@@ -1,8 +1,11 @@
 package at.awit.shlinker.feature.shorturls
 
+import androidx.datastore.core.DataStore
 import at.awit.shlinker.core.data.ApiKeyResult
+import at.awit.shlinker.core.data.AppTagSettingsRepository
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.data.ShortUrlCreator
+import at.awit.shlinker.core.datastore.StoredServers
 import at.awit.shlinker.core.model.CreateShortUrl
 import at.awit.shlinker.core.model.ServerProfile
 import at.awit.shlinker.core.model.ServerSort
@@ -36,6 +39,12 @@ class CreateShortUrlViewModelTest {
     private var calls = 0
     private var failure: CreateShortUrlException? = null
     private var gate: CompletableDeferred<Unit>? = null
+    private val stored = MutableStateFlow(StoredServers())
+    private val appTags = AppTagSettingsRepository(object : DataStore<StoredServers> {
+        override val data = stored
+        override suspend fun updateData(transform: suspend (StoredServers) -> StoredServers): StoredServers =
+            transform(stored.value).also { stored.value = it }
+    })
     private val service = object : CreateShortUrlService {
         override suspend fun create(serverUrl: String, apiKey: String, input: CreateShortUrl): ShortUrl {
             assertEquals("https://s.example", serverUrl)
@@ -51,7 +60,7 @@ class CreateShortUrlViewModelTest {
 
     @Before fun setup() {
         Dispatchers.setMain(dispatcher)
-        vm = CreateShortUrlViewModel(profiles, ShortUrlCreator(profiles, service))
+        vm = CreateShortUrlViewModel(profiles, ShortUrlCreator(profiles, service, appTags), appTags)
     }
 
     @After fun cleanup() = Dispatchers.resetMain()
@@ -65,7 +74,8 @@ class CreateShortUrlViewModelTest {
                 title = " Title ",
                 slug = " custom ",
                 domain = "s.example.org",
-                tags = " work, news,work, , ",
+                tags = listOf("work"),
+                tagInput = " news,work, , ",
             ),
         )
         gate = CompletableDeferred()
@@ -77,7 +87,13 @@ class CreateShortUrlViewModelTest {
         advanceUntilIdle()
         assertEquals(1, calls)
         assertEquals(
-            CreateShortUrl("https://example.org/path?a=1", "Title", "custom", "s.example.org", listOf("work", "news")),
+            CreateShortUrl(
+                "https://example.org/path?a=1",
+                "Title",
+                "custom",
+                "s.example.org",
+                listOf("work", "news", "shlinker"),
+            ),
             input,
         )
         assertEquals("https://s.example/abc", vm.state.value.created?.shortUrl)
@@ -110,7 +126,7 @@ class CreateShortUrlViewModelTest {
         vm.submit()
         advanceUntilIdle()
         assertNull(vm.state.value.error)
-        assertEquals(CreateShortUrl("https://example.org"), input)
+        assertEquals(CreateShortUrl("https://example.org", tags = listOf("shlinker")), input)
     }
 
     @Test fun serviceErrorsPreserveInputAndCanBeCorrected() = runTest(dispatcher) {

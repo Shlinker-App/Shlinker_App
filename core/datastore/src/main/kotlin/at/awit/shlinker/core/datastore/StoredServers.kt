@@ -13,6 +13,8 @@ data class StoredServers(
     val sort: ServerSort = ServerSort.MANUAL,
     val manualOrder: List<String> = emptyList(),
     val shortUrlSort: ShortUrlSort = ShortUrlSort.NEWEST,
+    val appTagEnabled: Boolean = true,
+    val appTagName: String = "shlinker",
 ) {
     companion object {
         const val CURRENT_VERSION = 1

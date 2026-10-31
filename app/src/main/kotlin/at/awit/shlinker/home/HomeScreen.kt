@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -62,6 +63,7 @@ fun HomeScreen(
     onAddServer: () -> Unit,
     onShortUrls: () -> Unit,
     onEditServer: (String) -> Unit,
+    onSettings: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -72,6 +74,7 @@ fun HomeScreen(
         viewModel::changeName, viewModel::confirm, viewModel::dismiss,
         viewModel::setSort, viewModel::reorder,
         onEditServer,
+        onSettings,
     )
 }
 
@@ -91,6 +94,7 @@ internal fun HomeContent(
     onSort: (ServerSort) -> Unit,
     onReorder: (List<String>) -> Unit,
     onEditServer: (String) -> Unit = {},
+    onSettings: () -> Unit = {},
 ) {
     var displayed by remember { mutableStateOf(state.servers) }
     var dragging by remember { mutableStateOf(false) }
@@ -115,6 +119,9 @@ internal fun HomeContent(
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
+                    IconButton(onClick = onSettings, enabled = controlsEnabled) {
+                        Icon(Icons.Outlined.Settings, stringResource(R.string.settings_title))
+                    }
                     IconButton(onClick = { sortMenu = true }, enabled = controlsEnabled) {
                         Icon(Icons.AutoMirrored.Filled.Sort, stringResource(R.string.home_sort))
                     }

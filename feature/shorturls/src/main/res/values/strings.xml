@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="create_title">Create shlink</string>
-    <string name="create_intro">Create a shlink on this server. Leave optional fields blank to use Shlink defaults.</string>
+    <string name="create_intro">Enter a destination URL. Leave optional fields blank to use Shlink defaults.</string>
     <string name="create_url">Destination URL</string>
     <string name="create_label_title">Title (optional)</string>
     <string name="create_slug">Custom slug (optional)</string>
     <string name="create_domain">Domain (optional)</string>
     <string name="create_domain_hint">Hostname only, e.g. s.example.org. Leave blank for the default domain. Your API key must allow this domain.</string>
     <string name="create_tags">Tags (optional)</string>
-    <string name="create_tags_hint">Separate tags with commas.</string>
+    <string name="create_tags_hint">Press Enter to add a tag. Commas also work, including when pasting. Tap a tag to remove it.</string>
+    <string name="create_tag_remove">Remove tag %1$s</string>
+    <string name="create_app_tag">App tag: %1$s — added automatically. Change or disable it in Settings.</string>
+    <string name="short_urls_server">Server: %1$s</string>
     <string name="create_submit">Create</string>
     <string name="create_cancel">Back to shlinks</string>
     <string name="create_done">Done</string>
@@ -16,7 +19,7 @@
     <string name="create_copy">Copy shlink</string>
     <string name="create_error_url">Enter a full HTTP or HTTPS destination URL without embedded credentials.</string>
     <string name="create_error_domain">Enter a hostname without protocol, port or path.</string>
-    <string name="create_error_load">Could not read the server profile or API key. Please try again.</string>
+    <string name="create_error_load">Could not read the server profile, API key or app settings. Please try again.</string>
     <string name="create_error_server_missing">This server profile no longer exists. Go back and select another server.</string>
     <string name="create_error_invalid">Shlink rejected the input. Check the destination URL, custom slug, domain and API key permissions.</string>
     <string name="create_error_conflict">This custom slug is already in use for this domain. Choose another slug.</string>

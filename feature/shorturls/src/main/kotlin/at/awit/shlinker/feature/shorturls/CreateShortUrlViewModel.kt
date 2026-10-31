@@ -2,12 +2,15 @@ package at.awit.shlinker.feature.shorturls
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import at.awit.shlinker.core.data.AppTagSettingsRepository
 import at.awit.shlinker.core.data.ServerNotFoundException
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.data.ShortUrlApiKeyException
 import at.awit.shlinker.core.data.ShortUrlCreator
+import at.awit.shlinker.core.model.AppTagSettings
 import at.awit.shlinker.core.model.CreateShortUrl
 import at.awit.shlinker.core.model.ShortUrl
+import at.awit.shlinker.core.model.parseTagInput
 import at.awit.shlinker.core.network.CreateShortUrlException
 import at.awit.shlinker.core.network.CreateShortUrlFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,7 +28,9 @@ data class CreateShortUrlState(
     val title: String = "",
     val slug: String = "",
     val domain: String = "",
-    val tags: String = "",
+    val tags: List<String> = emptyList(),
+    val tagInput: String = "",
+    val appTag: AppTagSettings = AppTagSettings(),
     val loading: Boolean = true,
     val busy: Boolean = false,
     val error: CreateError? = null,
@@ -38,6 +43,7 @@ enum class CreateError { URL, DOMAIN, LOAD, MISSING_SERVER, MISSING_KEY, INVALID
 class CreateShortUrlViewModel @Inject constructor(
     private val profiles: ServerProfileRepository,
     private val creator: ShortUrlCreator,
+    private val appTags: AppTagSettingsRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CreateShortUrlState())
     val state = _state.asStateFlow()
@@ -50,9 +56,11 @@ class CreateShortUrlViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val server = profiles.profiles.first().firstOrNull { it.id == id }
+                val appTag = appTags.settings.first()
                 _state.value = _state.value.copy(
                     loading = false,
                     serverName = server?.name,
+                    appTag = appTag,
                     error = if (server == null) CreateError.MISSING_SERVER else null,
                 )
             } catch (_: IOException) {
@@ -115,7 +123,7 @@ class CreateShortUrlViewModel @Inject constructor(
                         s.title.trim().ifEmpty { null },
                         s.slug.trim().ifEmpty { null },
                         domain.ifEmpty { null },
-                        s.tags.split(',').map { it.trim() }.filter { it.isNotEmpty() }.distinct(),
+                        (s.tags + parseTagInput(s.tagInput)).distinct(),
                     ),
                 )
                 _state.value = _state.value.copy(busy = false, created = created)

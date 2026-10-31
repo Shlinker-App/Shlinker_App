@@ -1,9 +1,12 @@
 package at.awit.shlinker.feature.shorturls
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasScrollAction
@@ -13,9 +16,12 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.paging.LoadState
 import androidx.paging.LoadStates
 import androidx.paging.Pager
@@ -55,6 +61,7 @@ class ShortUrlsScreenTest {
     private var wentBack = false
     private var creating = false
     private var selectedSort: ShortUrlSort? = null
+    private var primary = Color.Unspecified
     private val loadedEmpty = PagingData.empty<ShortUrl>(
         sourceLoadStates = LoadStates(
             refresh = LoadState.NotLoading(true),
@@ -68,6 +75,7 @@ class ShortUrlsScreenTest {
             var sort by remember { mutableStateOf(ShortUrlSort.NEWEST) }
             var error by remember { mutableStateOf(sortError) }
             ShlinkerTheme(dynamicColor = false) {
+                primary = MaterialTheme.colorScheme.primary
                 ShortUrlsScreen(
                     urls = flow.collectAsLazyPagingItems(),
                     search = search,
@@ -104,6 +112,24 @@ class ShortUrlsScreenTest {
         assertText("Newest first")
     }
 
+    @Test fun titlelessAndTitledShlinksUseTheSameLinkColorAndKeepCopyAction() {
+        val urls = listOf(
+            ShortUrl("one", "https://s.example/one", "https://example.org/one", null, emptyList()),
+            ShortUrl("two", "https://s.example/two", "https://example.org/two", "Title", emptyList()),
+            ShortUrl("three", "https://s.example/three", "https://example.org/three", "  ", emptyList()),
+        )
+        screen(flowOf(PagingData.from(urls)))
+        for (url in urls) {
+            val layouts = mutableListOf<TextLayoutResult>()
+            compose.onNodeWithText(url.shortUrl, useUnmergedTree = true)
+                .performScrollTo()
+                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertEquals(primary, layouts.single().layoutInput.style.color)
+            compose.onNodeWithContentDescription("Copy ${url.shortUrl}").performClick()
+            assertEquals(url.shortUrl, copied)
+        }
+    }
+
     @Test fun listShowsUrlsAndTagsAndCopiesShortUrl() {
         screen(
             flowOf(
@@ -122,7 +148,7 @@ class ShortUrlsScreenTest {
         )
         assertText("Article")
         assertText("Shlinks")
-        assertText("Testserver")
+        assertText("Server: Testserver")
         assertText("https://example.org/article")
         assertText("work")
         compose.onNodeWithContentDescription("Copy https://s.example/abc").performClick()
@@ -173,7 +199,7 @@ class ShortUrlsScreenTest {
     fun englishTitleAndServerNameAreVisible() {
         screen(flowOf(loadedEmpty))
         assertText("Shlinks")
-        assertText("Testserver")
+        assertText("Server: Testserver")
         assertText("No shlinks on this server yet.")
         compose.onNodeWithContentDescription("Back to server overview").assertIsDisplayed()
     }

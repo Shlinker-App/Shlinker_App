@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="edit_server_banner_title">Editing an existing server</string>
+    <string name="edit_server_banner_body">Changes apply to this saved profile. You are not adding a new server.</string>
     <string name="add_server_title">Add server</string>
     <string name="edit_server_title">Edit server</string>
     <string name="edit_server_intro">Update this server profile. The connection is checked before saving. Changing the address does not move shlinks between servers.</string>
