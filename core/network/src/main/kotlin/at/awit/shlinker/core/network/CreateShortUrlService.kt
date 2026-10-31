@@ -41,6 +41,8 @@ internal class KtorCreateShortUrlService @Inject constructor(private val client:
                             input.tags.takeIf {
                                 it.isNotEmpty()
                             },
+                            input.forwardQuery,
+                            input.crawlable,
                         ),
                     ),
                 )
@@ -93,4 +95,6 @@ private data class CreateDto(
     val customSlug: String? = null,
     val domain: String? = null,
     val tags: List<String>? = null,
+    val forwardQuery: Boolean? = null,
+    val crawlable: Boolean? = null,
 )

@@ -93,6 +93,7 @@ class CreateShortUrlViewModelTest {
                 "custom",
                 "s.example.org",
                 listOf("work", "news", "shlinker"),
+                forwardQuery = false,
             ),
             input,
         )
@@ -126,7 +127,7 @@ class CreateShortUrlViewModelTest {
         vm.submit()
         advanceUntilIdle()
         assertNull(vm.state.value.error)
-        assertEquals(CreateShortUrl("https://example.org", tags = listOf("shlinker")), input)
+        assertEquals(CreateShortUrl("https://example.org", tags = listOf("shlinker"), forwardQuery = false), input)
     }
 
     @Test fun serviceErrorsPreserveInputAndCanBeCorrected() = runTest(dispatcher) {

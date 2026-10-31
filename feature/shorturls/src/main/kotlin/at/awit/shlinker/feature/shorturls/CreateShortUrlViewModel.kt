@@ -9,7 +9,9 @@ import at.awit.shlinker.core.data.ShortUrlApiKeyException
 import at.awit.shlinker.core.data.ShortUrlCreator
 import at.awit.shlinker.core.model.AppTagSettings
 import at.awit.shlinker.core.model.CreateShortUrl
+import at.awit.shlinker.core.model.ShlinkDefaults
 import at.awit.shlinker.core.model.ShortUrl
+import at.awit.shlinker.core.model.isValidDestinationUrl
 import at.awit.shlinker.core.model.parseTagInput
 import at.awit.shlinker.core.network.CreateShortUrlException
 import at.awit.shlinker.core.network.CreateShortUrlFailure
@@ -31,6 +33,7 @@ data class CreateShortUrlState(
     val tags: List<String> = emptyList(),
     val tagInput: String = "",
     val appTag: AppTagSettings = AppTagSettings(),
+    val defaults: ShlinkDefaults = ShlinkDefaults(),
     val loading: Boolean = true,
     val busy: Boolean = false,
     val error: CreateError? = null,
@@ -56,11 +59,12 @@ class CreateShortUrlViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val server = profiles.profiles.first().firstOrNull { it.id == id }
-                val appTag = appTags.settings.first()
+                val preferences = appTags.preferences.first()
                 _state.value = _state.value.copy(
                     loading = false,
                     serverName = server?.name,
-                    appTag = appTag,
+                    appTag = preferences.appTag,
+                    defaults = preferences.shlinkDefaults,
                     error = if (server == null) CreateError.MISSING_SERVER else null,
                 )
             } catch (_: IOException) {
@@ -80,16 +84,7 @@ class CreateShortUrlViewModel @Inject constructor(
         val id = serverId ?: return
         if (s.busy || s.loading || s.serverName == null || s.created != null || s.error == CreateError.UNCERTAIN) return
         val url = s.longUrl.trim()
-        val uri = try {
-            URI(url)
-        } catch (_: java.net.URISyntaxException) {
-            null
-        }
-        if (uri == null ||
-            uri.scheme?.lowercase() !in listOf("https", "http") ||
-            uri.host.isNullOrBlank() ||
-            uri.userInfo != null
-        ) {
+        if (!isValidDestinationUrl(url)) {
             _state.value = s.copy(error = CreateError.URL)
             return
         }

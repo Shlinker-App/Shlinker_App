@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="settings_defaults_title">New shlink defaults</string>
+    <string name="settings_defaults_hint">Shared across all servers. Applies only when creating new shlinks, not when viewing or editing existing ones. Per-server overrides will follow later.</string>
+    <string name="settings_forward_query">Forward query parameters</string>
+    <string name="settings_forward_hint">Off by default: parameters appended to a short URL are not forwarded to the destination URL.</string>
+    <string name="settings_crawlable">Crawlable</string>
+    <string name="settings_crawlable_hint">Allow search engines to crawl the short URL via Shlink’s robots.txt. Server default leaves this decision to Shlink.</string>
+    <string name="settings_server_default">Server default</string>
+    <string name="settings_yes">Yes</string>
+    <string name="settings_no">No</string>
     <string name="settings_title">Settings</string>
     <string name="settings_back">Back to server overview</string>
     <string name="settings_tag_title">App tag</string>

@@ -77,6 +77,7 @@ private fun AppNavigation(start: NavKey) {
                     shortCode = route.shortCode,
                     domain = route.domain,
                     onBack = { backStack.removeLastOrNull() },
+                    onChanged = { refreshKey++ },
                 )
             }
             entry<CreateShortUrlRoute> { route ->

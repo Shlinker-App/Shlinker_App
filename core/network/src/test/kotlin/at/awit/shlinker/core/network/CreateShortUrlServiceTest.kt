@@ -43,7 +43,15 @@ class CreateShortUrlServiceTest {
             val result = service.create(
                 "https://s.example/shlink",
                 "secret",
-                CreateShortUrl("https://example.org", "Title", "slug", "custom.example", listOf("work")),
+                CreateShortUrl(
+                    "https://example.org",
+                    "Title",
+                    "slug",
+                    "custom.example",
+                    listOf("work"),
+                    forwardQuery = false,
+                    crawlable = false,
+                ),
             )
             val sent = requireNotNull(request)
             assertEquals("POST", sent.method.value)
@@ -55,6 +63,8 @@ class CreateShortUrlServiceTest {
             assertEquals("slug", body["customSlug"]?.jsonPrimitive?.content)
             assertEquals("custom.example", body["domain"]?.jsonPrimitive?.content)
             assertEquals("Title", body["title"]?.jsonPrimitive?.content)
+            assertEquals("false", body["forwardQuery"]?.jsonPrimitive?.content)
+            assertEquals("false", body["crawlable"]?.jsonPrimitive?.content)
             assertEquals("https://s.example/abc", result.shortUrl)
             assertEquals(listOf("work"), result.tags)
         } finally {

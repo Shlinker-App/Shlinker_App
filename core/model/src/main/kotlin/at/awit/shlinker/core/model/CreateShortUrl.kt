@@ -6,4 +6,6 @@ data class CreateShortUrl(
     val customSlug: String? = null,
     val domain: String? = null,
     val tags: List<String> = emptyList(),
+    val forwardQuery: Boolean? = null,
+    val crawlable: Boolean? = null,
 )

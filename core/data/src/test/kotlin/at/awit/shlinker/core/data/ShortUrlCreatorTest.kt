@@ -5,6 +5,7 @@ import at.awit.shlinker.core.datastore.StoredSecrets
 import at.awit.shlinker.core.datastore.StoredServers
 import at.awit.shlinker.core.model.AppTagSettings
 import at.awit.shlinker.core.model.CreateShortUrl
+import at.awit.shlinker.core.model.ShlinkDefaults
 import at.awit.shlinker.core.model.ShortUrl
 import at.awit.shlinker.core.network.CreateShortUrlService
 import java.io.IOException
@@ -46,9 +47,13 @@ class ShortUrlCreatorTest {
         val input = CreateShortUrl("https://example.org", tags = listOf("work", "shlinker"))
         creator.create(first.id, input)
         assertEquals(listOf("work", "shlinker"), sent.last().tags)
-        settings.save(AppTagSettings(name = " my app "))
+        assertEquals(false, sent.last().forwardQuery)
+        assertEquals(null, sent.last().crawlable)
+        settings.save(AppTagSettings(name = " my app "), ShlinkDefaults(true, false))
         val created = creator.create(second.id, input)
         assertEquals(listOf("work", "shlinker", "my app"), created.tags)
+        assertEquals(true, sent.last().forwardQuery)
+        assertEquals(false, sent.last().crawlable)
         settings.save(AppTagSettings(false, "my app"))
         creator.create(first.id, input)
         assertEquals(listOf("work", "shlinker"), sent.last().tags)

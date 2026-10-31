@@ -23,6 +23,8 @@ class JsonSerializerTest {
             shortUrlSort = ShortUrlSort.MOST_VISITED,
             appTagEnabled = false,
             appTagName = "my app",
+            forwardQuery = true,
+            crawlable = false,
         )
         val out = ByteArrayOutputStream()
         serializer.writeTo(data, out)
@@ -44,6 +46,8 @@ class JsonSerializerTest {
         val stored = serializer.readFrom(ByteArrayInputStream(json.encodeToByteArray()))
         assertEquals(true, stored.appTagEnabled)
         assertEquals("shlinker", stored.appTagName)
+        assertEquals(false, stored.forwardQuery)
+        assertEquals(null, stored.crawlable)
         assertEquals(
             StoredServers(
                 servers = listOf(StoredServer("id1", "Home", "https://s.example.org", 42)),

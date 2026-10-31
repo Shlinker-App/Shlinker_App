@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="short_urls_details">Details</string>
-    <string name="short_urls_visits">Visits (total): %1$s</string>
+    <string name="short_urls_visits">Visits: %1$s</string>
     <string name="details_title">Shlink details</string>
-    <string name="details_read_only">Read-only preview. Editing will be added after this layout has been reviewed.</string>
     <string name="details_general">General</string>
     <string name="details_label_title">Title</string>
     <string name="details_short_url">Short URL</string>
@@ -27,12 +26,26 @@
     <string name="details_forward_query">Forward query parameters</string>
     <string name="details_redirect_rules">Has redirect rules</string>
     <string name="details_redirect_hint">This indicates whether rules exist. Displaying and editing individual redirect rules will follow later.</string>
-    <string name="details_creation_options">Creation options</string>
-    <string name="details_code_length">Current short code length</string>
-    <string name="details_code_length_hint">Measured from the existing code. Shlink does not return the originally requested length or whether a custom slug was entered.</string>
-    <string name="details_reuse">Use existing URL if found</string>
-    <string name="details_creation_only">Creation-only option — not stored</string>
-    <string name="details_reuse_hint">Shlink does not return whether reuse was requested when this shlink was created.</string>
+    <string name="edit_title">Edit shlink</string>
+    <string name="edit_action">Edit</string>
+    <string name="edit_intro">Editing an existing shlink. Its short URL, code and domain stay unchanged. Only changed fields are sent; app defaults and the automatic app tag are not applied.</string>
+    <string name="edit_save">Save changes</string>
+    <string name="edit_cancel">Cancel editing</string>
+    <string name="edit_saved">Shlink updated</string>
+    <string name="edit_dates_hint">Optional dates: ISO 8601 with time zone, e.g. 2026-12-01T10:00:00+01:00. Clear a date to remove that limit. The end must be after the start.</string>
+    <string name="edit_limit_hint">Leave empty for no visit limit. Otherwise enter a whole number greater than zero.</string>
+    <string name="edit_crawlable_hint">Allow search engines to crawl this short URL via Shlink’s robots.txt.</string>
+    <string name="edit_forward_hint">Append query parameters from the short URL to the destination URL. No prevents this forwarding.</string>
+    <string name="edit_unknown_boolean">The server did not provide this value. Leave unselected to keep it unchanged.</string>
+    <string name="edit_error_dates">Enter valid dates with time zones. The end must be after the start.</string>
+    <string name="edit_error_limit">Enter a whole number greater than zero, or leave empty for no limit.</string>
+    <string name="edit_error_invalid">Shlink rejected the changes. Check the fields and API key permissions.</string>
+    <string name="edit_error_uncertain">The result could not be confirmed. Changes may already be saved. Reload the details before editing or saving again.</string>
+    <string name="edit_reload">Reload details</string>
+    <string name="edit_discard_title">Discard changes?</string>
+    <string name="edit_discard_hint">Your unsaved edits will be discarded. The shlink will not be changed.</string>
+    <string name="edit_discard">Discard</string>
+    <string name="edit_keep">Keep editing</string>
     <string name="details_not_set">Not set</string>
     <string name="details_unlimited">No limit</string>
     <string name="details_unavailable">Not provided by server</string>
@@ -43,6 +56,8 @@
     <string name="details_load_error">Could not load shlink details. Check your connection and server profile, then try again.</string>
     <string name="create_title">Create shlink</string>
     <string name="create_intro">Enter a destination URL. Leave optional fields blank to use Shlink defaults.</string>
+    <string name="create_behavior_defaults">New shlink defaults — Forward query parameters: %1$s; Crawlable: %2$s. Change these in Settings.</string>
+    <string name="create_server_default">Server default</string>
     <string name="create_url">Destination URL</string>
     <string name="create_label_title">Title (optional)</string>
     <string name="create_slug">Custom slug (optional)</string>

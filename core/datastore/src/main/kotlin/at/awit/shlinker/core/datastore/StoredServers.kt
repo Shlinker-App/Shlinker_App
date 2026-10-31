@@ -15,6 +15,8 @@ data class StoredServers(
     val shortUrlSort: ShortUrlSort = ShortUrlSort.NEWEST,
     val appTagEnabled: Boolean = true,
     val appTagName: String = "shlinker",
+    val forwardQuery: Boolean = false,
+    val crawlable: Boolean? = null,
 ) {
     companion object {
         const val CURRENT_VERSION = 1

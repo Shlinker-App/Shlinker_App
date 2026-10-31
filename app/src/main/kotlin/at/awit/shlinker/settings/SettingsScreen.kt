@@ -3,6 +3,7 @@ package at.awit.shlinker.settings
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,12 +39,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import at.awit.shlinker.R
 import at.awit.shlinker.core.model.AppTagSettings
+import at.awit.shlinker.core.model.ShlinkDefaults
 
 @Composable
 fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     BackHandler(enabled = state.saving) {}
-    SettingsScreen(state, viewModel::change, viewModel::save, viewModel::load, onBack)
+    SettingsScreen(state, viewModel::change, viewModel::save, viewModel::load, onBack, viewModel::changeDefaults)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,6 +56,7 @@ internal fun SettingsScreen(
     onSave: () -> Unit,
     onRetry: () -> Unit,
     onBack: () -> Unit,
+    onDefaultsChange: (ShlinkDefaults) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -104,6 +108,41 @@ internal fun SettingsScreen(
                 if (state.invalidName) {
                     Text(stringResource(R.string.settings_tag_invalid), color = MaterialTheme.colorScheme.error)
                 }
+                Text(stringResource(R.string.settings_defaults_title), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.settings_defaults_hint))
+                val forwardLabel = stringResource(R.string.settings_forward_query)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(forwardLabel, Modifier.weight(1f))
+                    Switch(
+                        checked = state.defaults.forwardQuery,
+                        onCheckedChange = { onDefaultsChange(state.defaults.copy(forwardQuery = it)) },
+                        enabled = enabled,
+                        modifier = Modifier.semantics { contentDescription = forwardLabel },
+                    )
+                }
+                Text(stringResource(R.string.settings_forward_hint))
+                Text(stringResource(R.string.settings_crawlable), style = MaterialTheme.typography.titleMedium)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(null, false, true).forEach { value ->
+                        FilterChip(
+                            selected = state.defaults.crawlable == value,
+                            onClick = { onDefaultsChange(state.defaults.copy(crawlable = value)) },
+                            enabled = enabled,
+                            label = {
+                                Text(
+                                    stringResource(
+                                        when (value) {
+                                            null -> R.string.settings_server_default
+                                            false -> R.string.settings_no
+                                            true -> R.string.settings_yes
+                                        },
+                                    ),
+                                )
+                            },
+                        )
+                    }
+                }
+                Text(stringResource(R.string.settings_crawlable_hint))
                 if (state.saveFailed) {
                     Text(stringResource(R.string.settings_save_error), color = MaterialTheme.colorScheme.error)
                 }

@@ -163,7 +163,7 @@ class ShortUrlsScreenTest {
         assertText("Server: Testserver")
         assertText("https://example.org/article")
         assertText("work")
-        assertText("Visits (total): 12345678901")
+        assertText("Visits: 12345678901")
         compose.onNodeWithContentDescription("Copy https://s.example/abc").performClick()
         assertEquals("https://s.example/abc", copied)
         compose.onNodeWithContentDescription("Back to server overview").performClick()
@@ -234,7 +234,7 @@ class ShortUrlsScreenTest {
     @Test fun unknownVisitsAreNotDisplayedAsZeroAndDetailsDoesNotOpenOrShare() {
         val url = ShortUrl("one", "https://s.example/one", "https://example.org", null, emptyList())
         screen(flowOf(PagingData.from(listOf(url))))
-        assertText("Visits (total): Not provided by server")
+        assertText("Visits: Not provided by server")
         compose.onNodeWithText("Details").performClick()
         assertEquals(url, detailed)
         assertNull(opened)

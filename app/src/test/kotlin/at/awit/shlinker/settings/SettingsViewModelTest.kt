@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import at.awit.shlinker.core.data.AppTagSettingsRepository
 import at.awit.shlinker.core.datastore.StoredServers
 import at.awit.shlinker.core.model.AppTagSettings
+import at.awit.shlinker.core.model.ShlinkDefaults
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -51,7 +52,9 @@ class SettingsViewModelTest {
         val vm = SettingsViewModel(repository)
         advanceUntilIdle()
         assertEquals(AppTagSettings(), vm.state.value.appTag)
+        assertEquals(ShlinkDefaults(false, null), vm.state.value.defaults)
         vm.change(AppTagSettings(false, " custom app "))
+        vm.changeDefaults(ShlinkDefaults(true, false))
         vm.save()
         advanceUntilIdle()
         assertTrue(vm.state.value.saved)
@@ -59,6 +62,7 @@ class SettingsViewModelTest {
         val reopened = SettingsViewModel(repository)
         advanceUntilIdle()
         assertEquals(vm.state.value.appTag, reopened.state.value.appTag)
+        assertEquals(ShlinkDefaults(true, false), reopened.state.value.defaults)
         assertEquals(1, writes)
     }
 

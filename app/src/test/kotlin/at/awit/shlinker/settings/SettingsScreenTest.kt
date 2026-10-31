@@ -15,6 +15,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import at.awit.shlinker.core.model.AppTagSettings
+import at.awit.shlinker.core.model.ShlinkDefaults
 import at.awit.shlinker.core.ui.theme.ShlinkerTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -32,6 +33,7 @@ class SettingsScreenTest {
     private var saved: AppTagSettings? = null
     private var retried = false
     private var back = false
+    private var defaults: ShlinkDefaults? = null
 
     private fun screen(initial: SettingsState = SettingsState(loading = false)) {
         compose.setContent {
@@ -40,9 +42,13 @@ class SettingsScreenTest {
                 SettingsScreen(
                     state,
                     { state = state.copy(appTag = it) },
-                    { saved = state.appTag },
+                    {
+                        saved = state.appTag
+                        defaults = state.defaults
+                    },
                     { retried = true },
                     { back = true },
+                    { state = state.copy(defaults = it) },
                 )
             }
         }
@@ -82,5 +88,18 @@ class SettingsScreenTest {
         compose.onNodeWithText("App tag name").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText("Save").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithContentDescription("Back to server overview").assertIsNotEnabled()
+    }
+
+    @Test fun creationDefaultsCanBeChangedAndSavedIndependentlyOfTag() {
+        screen()
+        compose.onNodeWithContentDescription("Forward query parameters").performScrollTo().assertIsOff()
+        compose.onNodeWithContentDescription("Forward query parameters").performClick().assertIsOn()
+        compose.onNodeWithText("No").performScrollTo().performClick()
+        compose.onNodeWithText("Save").performScrollTo().performClick()
+        assertEquals(ShlinkDefaults(true, false), defaults)
+        assertEquals(AppTagSettings(), saved)
+        compose.onNodeWithText("Server default").performScrollTo().performClick()
+        compose.onNodeWithText("Save").performScrollTo().performClick()
+        assertEquals(ShlinkDefaults(true, null), defaults)
     }
 }

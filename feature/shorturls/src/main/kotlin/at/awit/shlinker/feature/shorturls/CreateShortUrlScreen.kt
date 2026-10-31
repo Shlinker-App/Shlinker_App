@@ -125,6 +125,19 @@ internal fun CreateShortUrlScreen(
                 TextButton(onClick = onBack) { Text(stringResource(R.string.create_done)) }
             } else {
                 Text(stringResource(R.string.create_intro))
+                Text(
+                    stringResource(
+                        R.string.create_behavior_defaults,
+                        stringResource(if (state.defaults.forwardQuery) R.string.details_yes else R.string.details_no),
+                        stringResource(
+                            when (state.defaults.crawlable) {
+                                null -> R.string.create_server_default
+                                true -> R.string.details_yes
+                                false -> R.string.details_no
+                            },
+                        ),
+                    ),
+                )
                 val enabled = !state.busy && state.serverName != null
                 OutlinedTextField(
                     state.longUrl,
@@ -165,7 +178,9 @@ internal fun CreateShortUrlScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
                     isError = state.error == CreateError.DOMAIN,
                 )
-                TagInput(state, enabled, onChange)
+                TagInput(state.tags, state.tagInput, enabled) { tags, input ->
+                    onChange(state.copy(tags = tags, tagInput = input))
+                }
                 if (state.serverName != null && state.appTag.enabled) {
                     Text(
                         stringResource(R.string.create_app_tag, state.appTag.name),
@@ -208,18 +223,23 @@ internal fun CreateShortUrlScreen(
 }
 
 @Composable
-private fun TagInput(state: CreateShortUrlState, enabled: Boolean, onChange: (CreateShortUrlState) -> Unit) {
+internal fun TagInput(
+    tags: List<String>,
+    tagInput: String,
+    enabled: Boolean,
+    onChange: (List<String>, String) -> Unit,
+) {
     fun commit(input: String) {
-        onChange(state.copy(tags = (state.tags + parseTagInput(input)).distinct(), tagInput = ""))
+        onChange((tags + parseTagInput(input)).distinct(), "")
     }
     Column {
         OutlinedTextField(
-            state.tagInput,
+            tagInput,
             { input ->
                 if (input.any { it == ',' || it == '\n' || it == '\r' }) {
                     commit(input)
                 } else {
-                    onChange(state.copy(tagInput = input))
+                    onChange(tags, input)
                 }
             },
             label = { Text(stringResource(R.string.create_tags)) },
@@ -227,15 +247,15 @@ private fun TagInput(state: CreateShortUrlState, enabled: Boolean, onChange: (Cr
             enabled = enabled,
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, autoCorrectEnabled = false),
-            keyboardActions = KeyboardActions(onDone = { commit(state.tagInput) }),
+            keyboardActions = KeyboardActions(onDone = { commit(tagInput) }),
             modifier = Modifier.fillMaxWidth(),
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            state.tags.forEach { tag ->
+            tags.forEach { tag ->
                 val remove = stringResource(R.string.create_tag_remove, tag)
                 InputChip(
                     selected = false,
-                    onClick = { onChange(state.copy(tags = state.tags - tag)) },
+                    onClick = { onChange(tags - tag, tagInput) },
                     label = { Text(tag) },
                     trailingIcon = { Icon(Icons.Filled.Close, contentDescription = null) },
                     enabled = enabled,

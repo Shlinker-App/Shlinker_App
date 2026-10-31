@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.awit.shlinker.core.data.AppTagSettingsRepository
 import at.awit.shlinker.core.model.AppTagSettings
+import at.awit.shlinker.core.model.ShlinkDefaults
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.IOException
 import javax.inject.Inject
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 
 data class SettingsState(
     val appTag: AppTagSettings = AppTagSettings(),
+    val defaults: ShlinkDefaults = ShlinkDefaults(),
     val loading: Boolean = true,
     val saving: Boolean = false,
     val loadFailed: Boolean = false,
@@ -36,7 +38,12 @@ class SettingsViewModel @Inject constructor(private val repository: AppTagSettin
         _state.value = _state.value.copy(loading = true, loadFailed = false)
         viewModelScope.launch {
             try {
-                _state.value = SettingsState(appTag = repository.settings.first(), loading = false)
+                val preferences = repository.preferences.first()
+                _state.value = SettingsState(
+                    appTag = preferences.appTag,
+                    defaults = preferences.shlinkDefaults,
+                    loading = false,
+                )
             } catch (_: IOException) {
                 _state.value = _state.value.copy(loading = false, loadFailed = true)
             }
@@ -58,7 +65,7 @@ class SettingsViewModel @Inject constructor(private val repository: AppTagSettin
         _state.value = state.copy(saving = true, saveFailed = false, saved = false)
         viewModelScope.launch {
             try {
-                repository.save(state.appTag)
+                repository.save(state.appTag, state.defaults)
                 _state.value = _state.value.copy(
                     appTag = state.appTag.copy(name = state.appTag.name.trim()),
                     saving = false,
@@ -68,5 +75,10 @@ class SettingsViewModel @Inject constructor(private val repository: AppTagSettin
                 _state.value = _state.value.copy(saving = false, saveFailed = true)
             }
         }
+    }
+
+    fun changeDefaults(value: ShlinkDefaults) {
+        if (_state.value.loading || _state.value.saving || _state.value.loadFailed) return
+        _state.value = _state.value.copy(defaults = value, saveFailed = false, saved = false)
     }
 }

@@ -4,6 +4,7 @@ import at.awit.shlinker.core.datastore.StoredServer
 import at.awit.shlinker.core.datastore.StoredServers
 import at.awit.shlinker.core.model.AppTagSettings
 import at.awit.shlinker.core.model.ServerSort
+import at.awit.shlinker.core.model.ShlinkDefaults
 import at.awit.shlinker.core.model.ShortUrlSort
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -38,5 +39,29 @@ class AppTagSettingsRepositoryTest {
                 assertEquals(StoredServers(), store.current)
             }
         }
+    }
+
+    @Test fun creationDefaultsPersistAtomicallyWithTagAndPreserveUnrelatedState() = runTest {
+        val original = StoredServers(
+            activeServerId = "1",
+            manualOrder = listOf("1"),
+            shortUrlSort = ShortUrlSort.MOST_VISITED,
+        )
+        val store = InMemoryDataStore(original)
+        val repo = AppTagSettingsRepository(store)
+        assertEquals(ShlinkDefaults(false, null), repo.preferences.first().shlinkDefaults)
+        repo.save(AppTagSettings(false, " custom "), ShlinkDefaults(true, false))
+        assertEquals(
+            original.copy(appTagEnabled = false, appTagName = "custom", forwardQuery = true, crawlable = false),
+            store.current,
+        )
+        assertEquals(
+            ShlinkDefaults(true, false),
+            AppTagSettingsRepository(store).preferences.first().shlinkDefaults,
+        )
+        repo.save(AppTagSettings(true, "changed"))
+        assertEquals(ShlinkDefaults(true, false), repo.preferences.first().shlinkDefaults)
+        repo.save(AppTagSettings(), ShlinkDefaults(false, null))
+        assertEquals(ShlinkDefaults(false, null), repo.preferences.first().shlinkDefaults)
     }
 }
