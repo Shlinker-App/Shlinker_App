@@ -3,6 +3,7 @@ package at.awit.shlinker.feature.shorturls
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -13,6 +14,10 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.AltRoute
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.QrCode
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -31,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -100,6 +106,8 @@ internal fun ShortUrlDetailsScreen(
     onRetryTags: () -> Unit,
 ) {
     var discard by remember { mutableStateOf(false) }
+    var qrUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    qrUrl?.let { ShlinkQrDialog(it) { qrUrl = null } }
     val editing = state.form != null
     val cancelEdit = {
         if (state.details?.let { state.form?.hasChanges(it) } == true) discard = true else onCancelEdit()
@@ -226,8 +234,32 @@ internal fun ShortUrlDetailsScreen(
                 }
             } else {
                 state.details?.let { details ->
-                    Button(onClick = onEdit, enabled = !state.saving && !state.needsReload) {
-                        Text(stringResource(R.string.edit_action))
+                    DetailsSection(stringResource(R.string.details_actions)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = onEdit, enabled = !state.saving && !state.needsReload) {
+                                Icon(Icons.Outlined.Edit, contentDescription = null)
+                                Text(stringResource(R.string.edit_action))
+                            }
+                            TextButton(
+                                onClick = { qrUrl = details.url.shortUrl },
+                                enabled = !state.saving && !state.needsReload,
+                            ) {
+                                Icon(Icons.Outlined.QrCode, contentDescription = null)
+                                Text(stringResource(R.string.qr_show))
+                            }
+                            TextButton(onClick = {}, enabled = false) {
+                                Icon(Icons.Outlined.BarChart, contentDescription = null)
+                                Text(stringResource(R.string.details_statistics))
+                            }
+                            TextButton(onClick = {}, enabled = false) {
+                                Icon(Icons.AutoMirrored.Outlined.AltRoute, contentDescription = null)
+                                Text(stringResource(R.string.details_rules_action))
+                            }
+                        }
+                        Text(
+                            stringResource(R.string.details_actions_planned),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                     }
                     val url = details.url
                     val unavailable = stringResource(R.string.details_unavailable)

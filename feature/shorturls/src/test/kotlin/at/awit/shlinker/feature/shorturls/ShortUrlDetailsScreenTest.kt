@@ -6,7 +6,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -72,6 +75,22 @@ class ShortUrlDetailsScreenTest {
                 )
             }
         }
+    }
+
+    @Test fun actionsShowWorkingQrAndExplicitlyDisabledFutureFeatures() {
+        screen(ShortUrlDetailsState(serverName = "Home", loading = false, details = full))
+        compose.onNodeWithText("Actions").assertIsDisplayed()
+        compose.onNodeWithText("Statistics").assertIsNotEnabled()
+        compose.onNodeWithText("Redirect rules").assertIsNotEnabled()
+        compose.onNodeWithText("QR code").assertDoesNotExist()
+        compose.onNodeWithText("Show QR code").performClick()
+        compose.onNodeWithText("QR code").assertIsDisplayed()
+        compose.onNode(hasText("https://custom.example/abc") and hasAnyAncestor(isDialog())).assertIsDisplayed()
+        compose.onNodeWithText("Close").performClick()
+        compose.onNodeWithText("QR code").assertDoesNotExist()
+        assertEquals(false, refreshed)
+        assertEquals(false, back)
+        assertEquals(false, deleted)
     }
 
     @Test fun detailLayoutIncludesReturnedFieldsAndEditButNoCreationOnlySection() {
@@ -288,6 +307,7 @@ class ShortUrlDetailsScreenTest {
         compose.onNodeWithContentDescription("Back to shlinks").assertIsNotEnabled()
         compose.onNodeWithContentDescription("Refresh").assertIsNotEnabled()
         compose.onNodeWithText("Edit").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Show QR code").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText("Delete shlink").performScrollTo().assertIsNotEnabled()
     }
 

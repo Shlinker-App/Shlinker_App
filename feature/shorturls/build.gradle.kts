@@ -18,6 +18,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.zxing.core)
 
     testImplementation(libs.junit)
     testImplementation(projects.core.datastore)

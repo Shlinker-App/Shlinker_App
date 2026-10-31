@@ -4,8 +4,8 @@ import android.content.ClipData
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.QrCode
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,6 +46,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -150,6 +152,8 @@ internal fun ShortUrlsScreen(
     onCreate: () -> Unit = {},
 ) {
     var sortMenu by remember { mutableStateOf(false) }
+    var qrUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    qrUrl?.let { ShlinkQrDialog(it) { qrUrl = null } }
     val listState = rememberLazyListState()
     LaunchedEffect(search, serverName, sort) { listState.scrollToItem(0) }
     val refresh = urls.loadState.refresh
@@ -262,7 +266,7 @@ internal fun ShortUrlsScreen(
                     }
                     items(count = urls.itemCount) { index ->
                         urls[index]?.let { url ->
-                            ShortUrlRow(url, onCopy, onOpen, onShare, onDetails)
+                            ShortUrlRow(url, onCopy, onOpen, onShare, onDetails, onQr = { qrUrl = it })
                             HorizontalDivider()
                         }
                     }
@@ -296,6 +300,7 @@ private fun ShortUrlRow(
     onOpen: (String) -> Unit,
     onShare: (String) -> Unit,
     onDetails: (ShortUrl) -> Unit,
+    onQr: (String) -> Unit,
 ) {
     val openLabel = stringResource(R.string.short_urls_open, url.shortUrl)
     val linkModifier = Modifier.clickable(
@@ -334,13 +339,16 @@ private fun ShortUrlRow(
                 if (url.tags.isNotEmpty()) {
                     Text(url.tags.joinToString(" · "), style = MaterialTheme.typography.labelMedium)
                 }
-                Row(
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
                 ) {
                     TextButton(onClick = { onDetails(url) }) {
                         Icon(Icons.Outlined.Info, contentDescription = null)
                         Text(stringResource(R.string.short_urls_details))
+                    }
+                    IconButton(onClick = { onQr(url.shortUrl) }) {
+                        Icon(Icons.Outlined.QrCode, stringResource(R.string.qr_show_for, url.shortUrl))
                     }
                     IconButton(onClick = { onShare(url.shortUrl) }) {
                         Icon(Icons.Outlined.Share, stringResource(R.string.short_urls_share, url.shortUrl))

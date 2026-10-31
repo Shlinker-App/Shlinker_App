@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="qr_title">QR code</string>
+    <string name="qr_show">Show QR code</string>
+    <string name="qr_show_for">Show QR code for %1$s</string>
+    <string name="qr_description">QR code for %1$s</string>
+    <string name="qr_hint">Scan this code on another device to open the short URL. Generated on this device without contacting the server. Scanning and opening the link may count as a visit.</string>
+    <string name="qr_invalid">Cannot generate a QR code: the short URL is not a valid HTTP or HTTPS address.</string>
+    <string name="qr_failed">Could not encode this short URL as a QR code. It may be too long.</string>
+    <string name="qr_window_small">This window is too small to display the complete QR code. Rotate your device or enlarge the window.</string>
+    <string name="qr_close">Close</string>
+    <string name="details_actions">Actions</string>
+    <string name="details_statistics">Statistics</string>
+    <string name="details_rules_action">Redirect rules</string>
+    <string name="details_actions_planned">Statistics and redirect rule management are planned for upcoming test versions.</string>
     <string name="delete_action">Delete shlink</string>
     <string name="delete_title">Delete this shlink?</string>
     <string name="delete_warning">Permanently delete this shlink and its visit history from the server? The short URL will stop working. This cannot be undone.</string>

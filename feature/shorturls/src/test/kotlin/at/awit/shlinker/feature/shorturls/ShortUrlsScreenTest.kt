@@ -12,7 +12,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -57,6 +59,7 @@ import org.robolectric.annotation.Implements
 @Config(sdk = [35], qualifiers = "de-w411dp-h891dp-xxhdpi", shadows = [ShadowPagingUiDispatcher::class])
 class ShortUrlsScreenTest {
     @get:Rule val compose = createComposeRule()
+    private val restoration = StateRestorationTester(compose)
 
     private var copied: String? = null
     private var opened: String? = null
@@ -77,7 +80,7 @@ class ShortUrlsScreenTest {
     )
 
     private fun screen(flow: Flow<PagingData<ShortUrl>>, search: String = "", sortError: Boolean = false) {
-        compose.setContent {
+        restoration.setContent {
             var sort by remember { mutableStateOf(ShortUrlSort.NEWEST) }
             var error by remember { mutableStateOf(sortError) }
             ShlinkerTheme(dynamicColor = false) {
@@ -112,6 +115,49 @@ class ShortUrlsScreenTest {
         }
 
         compose.onNodeWithText(text).assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "en-w320dp-h640dp-mdpi")
+    fun qrActionUsesShortUrlOnDemandAndDoesNotOpenShareCopyOrNavigate() {
+        val short = "https://custom.example/AbC"
+        screen(
+            flowOf(PagingData.from(listOf(ShortUrl("AbC", short, "https://destination.example", null, emptyList())))),
+        )
+        assertText(short)
+        compose.onNodeWithText("QR code").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Show QR code for $short").performScrollTo().performClick()
+        compose.onNodeWithText("QR code").assertIsDisplayed()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithContentDescription("QR code for $short").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Close").performClick()
+        compose.onNodeWithText("QR code").assertDoesNotExist()
+        assertNull(opened)
+        assertNull(shared)
+        assertNull(copied)
+        assertNull(detailed)
+    }
+
+    @Test fun qrDialogRestoresSelectedUrlAndSwitchesToAnotherLinkOnlyWhenRequested() {
+        val first = ShortUrl("one", "https://s.example/one", "https://destination.example/one", null, emptyList())
+        val second = ShortUrl("two", "https://other.example/two", "https://destination.example/two", null, emptyList())
+        screen(flowOf(PagingData.from(listOf(first, second))))
+        assertText(first.shortUrl)
+        compose.onNodeWithContentDescription("Show QR code for ${first.shortUrl}").performScrollTo().performClick()
+        restoration.emulateSavedInstanceStateRestore()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithContentDescription("QR code for ${first.shortUrl}").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Close").performClick()
+        compose.onNodeWithContentDescription("Show QR code for ${second.shortUrl}").performScrollTo().performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithContentDescription(
+                "QR code for ${second.shortUrl}",
+            ).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithContentDescription("QR code for ${first.shortUrl}").assertDoesNotExist()
+        assertNull(opened)
     }
 
     @Test fun createActionWorksWithAnEmptyOrFilteredList() {
