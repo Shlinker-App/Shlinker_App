@@ -61,6 +61,7 @@ class ShortUrlServiceTest {
         assertEquals("Article", page.items.single().title)
         assertEquals(listOf("news", "work"), page.items.single().tags)
         assertEquals("https://example.org/article", page.items.single().longUrl)
+        assertEquals(12L, page.items.single().visits)
     }
 
     @Test fun emptyResponseAndBlankSearch() = runTest {
@@ -85,6 +86,29 @@ class ShortUrlServiceTest {
         val page = service(response.replace("\"Article\"", "null"))
             .list("https://s.example", "secret", 2, 30, "")
         assertEquals(null, page.items.single().title)
+    }
+
+    @Test fun visitCountsSupportLargeValuesZeroLegacyAndMissingWithoutGuessing() = runTest {
+        for ((json, expected) in listOf(
+            "\"visitsSummary\":{\"total\":12345678901}" to 12345678901L,
+            "\"visitsSummary\":{\"total\":0}" to 0L,
+            "\"visitsCount\":42" to 42L,
+            "\"other\":true" to null,
+        )) {
+            val page = service(response.replace("\"visitsSummary\":{\"total\":12}", json))
+                .list("https://s.example", "secret", 2, 30, "")
+            assertEquals(expected, page.items.single().visits)
+        }
+        failure<InvalidShortUrlResponseException> {
+            service(response.replace("\"total\":12", "\"total\":-1"))
+                .list("https://s.example", "secret", 2, 30, "")
+        }
+    }
+
+    @Test fun domainIdentityIsPreservedForDetailNavigation() = runTest {
+        val page = service(response.replace("\"domain\":null", "\"domain\":\"custom.example\""))
+            .list("https://s.example", "secret", 2, 30, "")
+        assertEquals("custom.example", page.items.single().domain)
     }
 
     @Test fun authorizationErrorsAreExplicit() = runTest {

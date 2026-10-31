@@ -72,16 +72,17 @@ internal class KtorCreateShortUrlService @Inject constructor(private val client:
             throw CreateShortUrlException(failure)
         }
         val dto = try {
-            json.decodeFromString<CreatedDto>(response.bodyAsText())
+            json.decodeFromString<ShortUrlDto>(response.bodyAsText())
         } catch (_: SerializationException) {
             throw CreateShortUrlException(CreateShortUrlFailure.UNCERTAIN)
         } catch (_: IOException) {
             throw CreateShortUrlException(CreateShortUrlFailure.UNCERTAIN)
         }
-        if (dto.shortUrl.isBlank() || dto.shortCode.isBlank()) {
+        return try {
+            dto.toModel()
+        } catch (_: InvalidShortUrlResponseException) {
             throw CreateShortUrlException(CreateShortUrlFailure.UNCERTAIN)
         }
-        return ShortUrl(dto.shortCode, dto.shortUrl, dto.longUrl, dto.title, dto.tags)
     }
 }
 
@@ -92,13 +93,4 @@ private data class CreateDto(
     val customSlug: String? = null,
     val domain: String? = null,
     val tags: List<String>? = null,
-)
-
-@Serializable
-private data class CreatedDto(
-    val shortCode: String,
-    val shortUrl: String,
-    val longUrl: String,
-    val title: String? = null,
-    val tags: List<String> = emptyList(),
 )

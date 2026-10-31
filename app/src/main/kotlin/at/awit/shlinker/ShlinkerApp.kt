@@ -15,6 +15,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import at.awit.shlinker.feature.servers.AddServerRoute as AddServerScreenRoute
 import at.awit.shlinker.feature.shorturls.CreateShortUrlRoute as CreateShortUrlScreenRoute
+import at.awit.shlinker.feature.shorturls.ShortUrlDetailsRoute as ShortUrlDetailsScreenRoute
 import at.awit.shlinker.feature.shorturls.ShortUrlsRoute as ShortUrlsScreenRoute
 import at.awit.shlinker.home.HomeScreen
 import at.awit.shlinker.navigation.AddServerRoute
@@ -22,6 +23,7 @@ import at.awit.shlinker.navigation.CreateShortUrlRoute
 import at.awit.shlinker.navigation.EditServerRoute
 import at.awit.shlinker.navigation.HomeRoute
 import at.awit.shlinker.navigation.SettingsRoute
+import at.awit.shlinker.navigation.ShortUrlDetailsRoute
 import at.awit.shlinker.navigation.ShortUrlsRoute
 import at.awit.shlinker.settings.SettingsRoute as SettingsScreenRoute
 
@@ -63,7 +65,18 @@ private fun AppNavigation(start: NavKey) {
                 ShortUrlsScreenRoute(
                     onBack = { backStack.removeLastOrNull() },
                     onCreate = { backStack.add(CreateShortUrlRoute(it)) },
+                    onDetails = { serverId, url ->
+                        backStack.add(ShortUrlDetailsRoute(serverId, url.shortCode, url.domain))
+                    },
                     refreshKey = refreshKey,
+                )
+            }
+            entry<ShortUrlDetailsRoute> { route ->
+                ShortUrlDetailsScreenRoute(
+                    serverId = route.serverId,
+                    shortCode = route.shortCode,
+                    domain = route.domain,
+                    onBack = { backStack.removeLastOrNull() },
                 )
             }
             entry<CreateShortUrlRoute> { route ->

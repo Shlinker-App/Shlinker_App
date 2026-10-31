@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,6 +46,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
@@ -70,6 +72,7 @@ import kotlinx.coroutines.launch
 fun ShortUrlsRoute(
     onBack: () -> Unit,
     onCreate: (String) -> Unit,
+    onDetails: (String, ShortUrl) -> Unit,
     refreshKey: Int = 0,
     viewModel: ShortUrlsViewModel = hiltViewModel(),
 ) {
@@ -122,6 +125,7 @@ fun ShortUrlsRoute(
         sortError = sortError,
         onDismissSortError = viewModel::dismissSortError,
         onCreate = { server?.id?.let(onCreate) },
+        onDetails = { url -> server?.id?.let { onDetails(it, url) } },
     )
 }
 
@@ -136,6 +140,7 @@ internal fun ShortUrlsScreen(
     onCopy: (String) -> Unit,
     onOpen: (String) -> Unit,
     onShare: (String) -> Unit,
+    onDetails: (ShortUrl) -> Unit,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
     sort: ShortUrlSort = ShortUrlSort.NEWEST,
     onSortChange: (ShortUrlSort) -> Unit = {},
@@ -257,7 +262,7 @@ internal fun ShortUrlsScreen(
                     }
                     items(count = urls.itemCount) { index ->
                         urls[index]?.let { url ->
-                            ShortUrlRow(url, onCopy, onOpen, onShare)
+                            ShortUrlRow(url, onCopy, onOpen, onShare, onDetails)
                             HorizontalDivider()
                         }
                     }
@@ -285,7 +290,13 @@ private fun shortUrlSortLabel(sort: ShortUrlSort): String = stringResource(
 )
 
 @Composable
-private fun ShortUrlRow(url: ShortUrl, onCopy: (String) -> Unit, onOpen: (String) -> Unit, onShare: (String) -> Unit) {
+private fun ShortUrlRow(
+    url: ShortUrl,
+    onCopy: (String) -> Unit,
+    onOpen: (String) -> Unit,
+    onShare: (String) -> Unit,
+    onDetails: (ShortUrl) -> Unit,
+) {
     val openLabel = stringResource(R.string.short_urls_open, url.shortUrl)
     val linkModifier = Modifier.clickable(
         role = Role.Button,
@@ -294,42 +305,49 @@ private fun ShortUrlRow(url: ShortUrl, onCopy: (String) -> Unit, onOpen: (String
     )
     ListItem(
         headlineContent = {
+            // Reserve the title line even when absent; the URL always keeps its own style and position.
             Text(
-                url.title?.takeIf { it.isNotBlank() } ?: url.shortUrl,
-                color = if (url.title.isNullOrBlank()) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
+                url.title?.takeIf { it.isNotBlank() }.orEmpty(),
+                style = MaterialTheme.typography.titleMedium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = if (url.title.isNullOrBlank()) linkModifier else Modifier,
             )
         },
         supportingContent = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (!url.title.isNullOrBlank()) {
-                    Text(
-                        url.shortUrl,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = linkModifier,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+                Text(
+                    url.shortUrl,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = linkModifier,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 Text(url.longUrl, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(
+                    stringResource(
+                        R.string.short_urls_visits,
+                        url.visits?.toString() ?: stringResource(R.string.details_unavailable),
+                    ),
+                    style = MaterialTheme.typography.labelMedium,
+                )
                 if (url.tags.isNotEmpty()) {
                     Text(url.tags.joinToString(" · "), style = MaterialTheme.typography.labelMedium)
                 }
-            }
-        },
-        trailingContent = {
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                IconButton(onClick = { onShare(url.shortUrl) }) {
-                    Icon(Icons.Outlined.Share, stringResource(R.string.short_urls_share, url.shortUrl))
-                }
-                IconButton(onClick = { onCopy(url.shortUrl) }) {
-                    Icon(Icons.Outlined.ContentCopy, stringResource(R.string.short_urls_copy, url.shortUrl))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+                ) {
+                    TextButton(onClick = { onDetails(url) }) {
+                        Icon(Icons.Outlined.Info, contentDescription = null)
+                        Text(stringResource(R.string.short_urls_details))
+                    }
+                    IconButton(onClick = { onShare(url.shortUrl) }) {
+                        Icon(Icons.Outlined.Share, stringResource(R.string.short_urls_share, url.shortUrl))
+                    }
+                    IconButton(onClick = { onCopy(url.shortUrl) }) {
+                        Icon(Icons.Outlined.ContentCopy, stringResource(R.string.short_urls_copy, url.shortUrl))
+                    }
                 }
             }
         },
@@ -345,7 +363,7 @@ private fun LoadError(error: Throwable, retry: () -> Unit) {
 }
 
 @Composable
-private fun errorMessage(error: Throwable): String = when (error) {
+internal fun errorMessage(error: Throwable): String = when (error) {
     is ShortUrlApiKeyException -> stringResource(R.string.short_urls_key_missing)
     is InvalidShortUrlResponseException -> stringResource(R.string.short_urls_invalid_response)
     is ShortUrlRequestException -> when (val reason = error.error) {

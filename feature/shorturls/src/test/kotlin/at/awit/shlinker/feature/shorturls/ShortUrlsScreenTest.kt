@@ -66,6 +66,8 @@ class ShortUrlsScreenTest {
     private var creating = false
     private var selectedSort: ShortUrlSort? = null
     private var primary = Color.Unspecified
+    private var bodyFontSize = androidx.compose.ui.unit.TextUnit.Unspecified
+    private var detailed: ShortUrl? = null
     private val loadedEmpty = PagingData.empty<ShortUrl>(
         sourceLoadStates = LoadStates(
             refresh = LoadState.NotLoading(true),
@@ -80,6 +82,7 @@ class ShortUrlsScreenTest {
             var error by remember { mutableStateOf(sortError) }
             ShlinkerTheme(dynamicColor = false) {
                 primary = MaterialTheme.colorScheme.primary
+                bodyFontSize = MaterialTheme.typography.bodyMedium.fontSize
                 ShortUrlsScreen(
                     urls = flow.collectAsLazyPagingItems(),
                     search = search,
@@ -90,6 +93,7 @@ class ShortUrlsScreenTest {
                     onCopy = { copied = it },
                     onOpen = { opened = it },
                     onShare = { shared = it },
+                    onDetails = { detailed = it },
                     sort = sort,
                     onSortChange = {
                         selectedSort = it
@@ -131,6 +135,7 @@ class ShortUrlsScreenTest {
                 .performScrollTo()
                 .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
             assertEquals(primary, layouts.single().layoutInput.style.color)
+            assertEquals(bodyFontSize, layouts.single().layoutInput.style.fontSize)
             compose.onNodeWithContentDescription("Copy ${url.shortUrl}").performClick()
             assertEquals(url.shortUrl, copied)
         }
@@ -147,6 +152,7 @@ class ShortUrlsScreenTest {
                             "https://example.org/article",
                             "Article",
                             listOf("work"),
+                            visits = 12345678901L,
                         ),
                     ),
                 ),
@@ -157,6 +163,7 @@ class ShortUrlsScreenTest {
         assertText("Server: Testserver")
         assertText("https://example.org/article")
         assertText("work")
+        assertText("Visits (total): 12345678901")
         compose.onNodeWithContentDescription("Copy https://s.example/abc").performClick()
         assertEquals("https://s.example/abc", copied)
         compose.onNodeWithContentDescription("Back to server overview").performClick()
@@ -220,6 +227,45 @@ class ShortUrlsScreenTest {
         assertEquals(url.shortUrl, copied)
         compose.onNodeWithText(url.shortUrl, useUnmergedTree = true).assertIsDisplayed().performClick()
         assertEquals(url.shortUrl, opened)
+        compose.onNodeWithText("Details").assertIsDisplayed().performClick()
+        assertEquals(url, detailed)
+    }
+
+    @Test fun unknownVisitsAreNotDisplayedAsZeroAndDetailsDoesNotOpenOrShare() {
+        val url = ShortUrl("one", "https://s.example/one", "https://example.org", null, emptyList())
+        screen(flowOf(PagingData.from(listOf(url))))
+        assertText("Visits (total): Not provided by server")
+        compose.onNodeWithText("Details").performClick()
+        assertEquals(url, detailed)
+        assertNull(opened)
+        assertNull(shared)
+        assertNull(copied)
+    }
+
+    @Test fun titlelessUrlKeepsBodyStyleAndBlankTitleSlotInsteadOfMovingIntoHeadline() {
+        val first = ShortUrl("one", "https://s.example/one", "https://example.org/one", "A title", emptyList())
+        val second = first.copy(
+            shortCode = "two",
+            shortUrl = "https://s.example/two",
+            longUrl = "https://example.org/two",
+            title = null,
+        )
+        screen(flowOf(PagingData.from(listOf(first, second))))
+        val firstLink = compose.onNodeWithText(first.shortUrl, useUnmergedTree = true)
+            .fetchSemanticsNode().boundsInRoot
+        val title = compose.onNodeWithText("A title", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val secondLink = compose.onNodeWithText(second.shortUrl, useUnmergedTree = true)
+            .performScrollTo().fetchSemanticsNode().boundsInRoot
+        val secondTarget = compose.onNodeWithText(second.longUrl, useUnmergedTree = true)
+            .fetchSemanticsNode().boundsInRoot
+        assertTrue(title.bottom <= firstLink.top)
+        assertTrue(secondLink.bottom <= secondTarget.top)
+        val layouts = mutableListOf<TextLayoutResult>()
+        compose.onNodeWithText(second.shortUrl, useUnmergedTree = true)
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        assertEquals(bodyFontSize, layouts.single().layoutInput.style.fontSize)
+        compose.onAllNodesWithText(second.shortUrl, useUnmergedTree = true).fetchSemanticsNodes()
+            .also { assertEquals(1, it.size) }
     }
 
     @Test fun sortMenuSupportsAllFourOrdersAndShowsCurrentChoice() {

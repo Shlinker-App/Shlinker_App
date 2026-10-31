@@ -20,3 +20,6 @@ data class EditServerRoute(val id: String) : NavKey
 
 @Serializable
 data class CreateShortUrlRoute(val serverId: String) : NavKey
+
+@Serializable
+data class ShortUrlDetailsRoute(val serverId: String, val shortCode: String, val domain: String?) : NavKey

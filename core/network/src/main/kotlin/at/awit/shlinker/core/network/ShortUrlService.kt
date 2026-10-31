@@ -1,6 +1,5 @@
 package at.awit.shlinker.core.network
 
-import at.awit.shlinker.core.model.ShortUrl
 import at.awit.shlinker.core.model.ShortUrlPage
 import at.awit.shlinker.core.model.ShortUrlSort
 import io.ktor.client.HttpClient
@@ -70,7 +69,7 @@ internal class KtorShortUrlService @Inject constructor(private val client: HttpC
             throw InvalidShortUrlResponseException()
         }
         return ShortUrlPage(
-            items = dto.data.map { ShortUrl(it.shortCode, it.shortUrl, it.longUrl, it.title, it.tags) },
+            items = dto.data.map { it.toModel() },
             currentPage = pagination.currentPage,
             pagesCount = pagination.pagesCount,
         )
@@ -85,12 +84,3 @@ private data class ShortUrlsDto(val data: List<ShortUrlDto>, val pagination: Pag
 
 @Serializable
 private data class PaginationDto(val currentPage: Int, val pagesCount: Int)
-
-@Serializable
-private data class ShortUrlDto(
-    val shortCode: String,
-    val shortUrl: String,
-    val longUrl: String,
-    val title: String? = null,
-    val tags: List<String> = emptyList(),
-)
