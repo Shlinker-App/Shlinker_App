@@ -2,6 +2,7 @@ package at.awit.shlinker.feature.shorturls
 
 import at.awit.shlinker.core.model.ShortUrlDetails
 import at.awit.shlinker.core.model.ShortUrlEdit
+import at.awit.shlinker.core.model.parseShlinkDate
 import at.awit.shlinker.core.model.parseTagInput
 
 data class ShortUrlEditForm(
@@ -15,6 +16,29 @@ data class ShortUrlEditForm(
     val crawlable: Boolean?,
     val forwardQuery: Boolean?,
 ) {
+    fun hasChanges(original: ShortUrlDetails): Boolean {
+        val initial = from(original)
+        // Include unfinished/invalid drafts, but stop warning once all edits have been reverted.
+        return copy(tagInput = "") != initial || tagInput.isNotBlank()
+    }
+
+    fun dateValidation(original: ShortUrlDetails): EditValidation? {
+        val since = validSince.trim().takeIf { it.isNotEmpty() }?.let {
+            parseShlinkDate(it) ?: return EditValidation.SINCE
+        }
+        val until = validUntil.trim().takeIf { it.isNotEmpty() }?.let {
+            parseShlinkDate(it) ?: return EditValidation.UNTIL
+        }
+        if (since != null && until != null && !until.isAfter(since)) {
+            return if (validUntil == original.validUntil.orEmpty() && validSince != original.validSince.orEmpty()) {
+                EditValidation.SINCE_RANGE
+            } else {
+                EditValidation.UNTIL_RANGE
+            }
+        }
+        return null
+    }
+
     fun toInput(original: ShortUrlDetails) = ShortUrlEdit(
         original = original,
         longUrl = longUrl.trim(),

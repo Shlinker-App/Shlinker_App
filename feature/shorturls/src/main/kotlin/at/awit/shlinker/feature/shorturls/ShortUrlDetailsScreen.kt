@@ -80,9 +80,12 @@ internal fun ShortUrlDetailsScreen(
 ) {
     var discard by remember { mutableStateOf(false) }
     val editing = state.form != null
+    val cancelEdit = {
+        if (state.details?.let { state.form?.hasChanges(it) } == true) discard = true else onCancelEdit()
+    }
     val back = {
         if (!state.saving) {
-            if (editing && !state.needsReload) discard = true else onBack()
+            if (editing && !state.needsReload) cancelEdit() else onBack()
         }
     }
     BackHandler(enabled = editing || state.saving) { back() }
@@ -151,7 +154,8 @@ internal fun ShortUrlDetailsScreen(
                         stringResource(
                             when (it) {
                                 EditValidation.URL -> R.string.create_error_url
-                                EditValidation.DATES -> R.string.edit_error_dates
+                                EditValidation.SINCE, EditValidation.UNTIL -> R.string.edit_error_dates
+                                EditValidation.SINCE_RANGE, EditValidation.UNTIL_RANGE -> R.string.edit_error_date_range
                                 EditValidation.LIMIT -> R.string.edit_error_limit
                             },
                         ),
@@ -165,7 +169,7 @@ internal fun ShortUrlDetailsScreen(
                 Button(onClick = onSave, enabled = !state.saving && !state.needsReload) {
                     Text(stringResource(R.string.edit_save))
                 }
-                TextButton(onClick = { discard = true }, enabled = !state.saving && !state.needsReload) {
+                TextButton(onClick = cancelEdit, enabled = !state.saving && !state.needsReload) {
                     Text(stringResource(R.string.edit_cancel))
                 }
             } else {

@@ -32,7 +32,7 @@ data class ShortUrlDetailsState(
     val changeRevision: Int = 0,
 )
 
-enum class EditValidation { URL, DATES, LIMIT }
+enum class EditValidation { URL, SINCE, UNTIL, SINCE_RANGE, UNTIL_RANGE, LIMIT }
 
 @HiltViewModel
 class ShortUrlDetailsViewModel @Inject constructor(
@@ -97,8 +97,7 @@ class ShortUrlDetailsViewModel @Inject constructor(
             !isValidDestinationUrl(input.longUrl) -> EditValidation.URL
             form.maxVisits.isNotBlank() && (maxVisits == null || maxVisits < 1) ->
                 EditValidation.LIMIT
-            !input.isValid -> EditValidation.DATES
-            else -> null
+            else -> form.dateValidation(original)
         }
         if (validation != null) {
             _state.value = s.copy(validation = validation)

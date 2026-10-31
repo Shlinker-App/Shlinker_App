@@ -190,11 +190,12 @@ class ShortUrlDetailsViewModelTest {
         val cases = listOf(
             form.copy(longUrl = "file:///tmp/no") to EditValidation.URL,
             form.copy(longUrl = "https://user:pass@example.org") to EditValidation.URL,
-            form.copy(validSince = "2026-12-01") to EditValidation.DATES,
+            form.copy(validSince = "2026-12-01") to EditValidation.SINCE,
+            form.copy(validUntil = "2026-12-01") to EditValidation.UNTIL,
             form.copy(
                 validSince = "2026-12-02T00:00:00Z",
                 validUntil = "2026-12-01T00:00:00Z",
-            ) to EditValidation.DATES,
+            ) to EditValidation.UNTIL_RANGE,
             form.copy(maxVisits = "0") to EditValidation.LIMIT,
             form.copy(maxVisits = "-1") to EditValidation.LIMIT,
             form.copy(maxVisits = "1.5") to EditValidation.LIMIT,

@@ -32,7 +32,15 @@
     <string name="edit_save">Save changes</string>
     <string name="edit_cancel">Cancel editing</string>
     <string name="edit_saved">Shlink updated</string>
-    <string name="edit_dates_hint">Optional dates: ISO 8601 with time zone, e.g. 2026-12-01T10:00:00+01:00. Clear a date to remove that limit. The end must be after the start.</string>
+    <string name="edit_dates_hint">Choose an optional date from the calendar, then a time. Clear a date to remove that limit. The end must be after the start.</string>
+    <string name="edit_date_zone">Time zone: %1$s (device)</string>
+    <string name="edit_choose_date">Choose %1$s</string>
+    <string name="edit_clear_date">Clear %1$s</string>
+    <string name="edit_date_next">Next: time</string>
+    <string name="edit_picker_cancel">Cancel</string>
+    <string name="edit_picker_apply">Apply</string>
+    <string name="edit_date_gap">This local time does not exist due to a daylight-saving change. Choose another time.</string>
+    <string name="edit_error_date_range">The end must be after the start. Adjust the highlighted date.</string>
     <string name="edit_limit_hint">Leave empty for no visit limit. Otherwise enter a whole number greater than zero.</string>
     <string name="edit_crawlable_hint">Allow search engines to crawl this short URL via Shlink’s robots.txt.</string>
     <string name="edit_forward_hint">Append query parameters from the short URL to the destination URL. No prevents this forwarding.</string>

@@ -158,7 +158,7 @@ class ShortUrlDetailsScreenTest {
         compose.onNodeWithContentDescription("Remove tag one").performScrollTo().performClick()
         compose.onNodeWithText("Tags (optional)").performScrollTo().performTextReplacement("three")
         compose.onNodeWithText("Tags (optional)").performImeAction()
-        compose.onNodeWithText("Enabled until").performScrollTo().performTextReplacement("")
+        compose.onNodeWithText("Clear Enabled until").performScrollTo().performClick()
         compose.onNodeWithText("Maximum visits allowed").performScrollTo().performTextReplacement("")
         compose.onNodeWithText("Save changes").performScrollTo().performClick()
         assertEquals("https://new.example", submitted?.longUrl)
@@ -184,6 +184,25 @@ class ShortUrlDetailsScreenTest {
         compose.onNodeWithText("Example title").performScrollTo().assertIsDisplayed()
         assertEquals(null, submitted)
         assertEquals(false, back)
+    }
+
+    @Test fun unchangedEditCancelsWithoutDiscardDialog() {
+        editableScreen()
+        compose.onNodeWithText("Cancel editing").performScrollTo().performClick()
+        compose.onNodeWithText("Discard changes?").assertDoesNotExist()
+        compose.onNodeWithText("Edit").performScrollTo().assertIsDisplayed()
+        assertEquals(null, submitted)
+        assertEquals(false, back)
+    }
+
+    @Test fun revertedEditUsesToolbarBackWithoutDiscardDialog() {
+        editableScreen()
+        compose.onNodeWithText("Title (optional)").performScrollTo().performTextReplacement("Draft")
+        compose.onNodeWithText("Title (optional)").performTextReplacement("Example title")
+        compose.onNodeWithContentDescription("Cancel editing").performClick()
+        compose.onNodeWithText("Discard changes?").assertDoesNotExist()
+        compose.onNodeWithText("Edit").performScrollTo().assertIsDisplayed()
+        assertEquals(null, submitted)
     }
 
     @Test fun savingDisablesSaveCancelRefreshAndBack() {

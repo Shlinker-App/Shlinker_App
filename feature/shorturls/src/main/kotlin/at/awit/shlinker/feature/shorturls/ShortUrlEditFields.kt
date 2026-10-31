@@ -30,10 +30,20 @@ internal fun ShortUrlEditFields(
     TagInput(form.tags, form.tagInput, enabled) { tags, input -> onChange(form.copy(tags = tags, tagInput = input)) }
     Text(stringResource(R.string.details_limits), style = MaterialTheme.typography.titleMedium)
     Text(stringResource(R.string.edit_dates_hint))
-    EditField(R.string.details_valid_since, form.validSince, enabled, validation == EditValidation.DATES) {
+    ShlinkDateTimeField(
+        R.string.details_valid_since,
+        form.validSince,
+        enabled,
+        validation in listOf(EditValidation.SINCE, EditValidation.SINCE_RANGE),
+    ) {
         onChange(form.copy(validSince = it))
     }
-    EditField(R.string.details_valid_until, form.validUntil, enabled, validation == EditValidation.DATES) {
+    ShlinkDateTimeField(
+        R.string.details_valid_until,
+        form.validUntil,
+        enabled,
+        validation in listOf(EditValidation.UNTIL, EditValidation.UNTIL_RANGE),
+    ) {
         onChange(form.copy(validUntil = it))
     }
     Text(stringResource(R.string.edit_limit_hint))
