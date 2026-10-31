@@ -3,16 +3,20 @@ package at.awit.shlinker.feature.shorturls
 import androidx.datastore.core.DataStore
 import at.awit.shlinker.core.data.ApiKeyResult
 import at.awit.shlinker.core.data.AppTagSettingsRepository
+import at.awit.shlinker.core.data.ServerDomainsRepository
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.data.ShortUrlCreator
 import at.awit.shlinker.core.datastore.StoredServers
 import at.awit.shlinker.core.model.CreateShortUrl
+import at.awit.shlinker.core.model.ServerDomain
 import at.awit.shlinker.core.model.ServerProfile
 import at.awit.shlinker.core.model.ServerSort
 import at.awit.shlinker.core.model.ShortUrl
 import at.awit.shlinker.core.network.CreateShortUrlException
 import at.awit.shlinker.core.network.CreateShortUrlFailure
 import at.awit.shlinker.core.network.CreateShortUrlService
+import at.awit.shlinker.core.network.ServerDomainsService
+import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -57,10 +61,29 @@ class CreateShortUrlViewModelTest {
         }
     }
     private lateinit var vm: CreateShortUrlViewModel
+    private var domains = listOf(ServerDomain("s.example", true))
+    private var domainsFailure: IOException? = null
+    private var domainsGate: CompletableDeferred<Unit>? = null
+    private var domainCalls = 0
 
     @Before fun setup() {
         Dispatchers.setMain(dispatcher)
-        vm = CreateShortUrlViewModel(profiles, ShortUrlCreator(profiles, service, appTags), appTags)
+        vm = CreateShortUrlViewModel(
+            profiles,
+            ShortUrlCreator(profiles, service, appTags),
+            appTags,
+            ServerDomainsRepository(
+                profiles,
+                object : ServerDomainsService {
+                    override suspend fun get(serverUrl: String, apiKey: String): List<ServerDomain> {
+                        domainCalls++
+                        domainsGate?.await()
+                        domainsFailure?.let { throw it }
+                        return domains
+                    }
+                },
+            ),
+        )
     }
 
     @After fun cleanup() = Dispatchers.resetMain()
@@ -74,6 +97,7 @@ class CreateShortUrlViewModelTest {
                 title = " Title ",
                 slug = " custom ",
                 domain = "s.example.org",
+                manualDomain = true,
                 tags = listOf("work"),
                 tagInput = " news,work, , ",
             ),
@@ -118,12 +142,12 @@ class CreateShortUrlViewModelTest {
             "user@s.example",
             "s.example?x=1",
         )) {
-            vm.change(vm.state.value.copy(longUrl = "https://example.org", domain = domain))
+            vm.change(vm.state.value.copy(longUrl = "https://example.org", domain = domain, manualDomain = true))
             vm.submit()
             assertEquals(CreateError.DOMAIN, vm.state.value.error)
         }
         assertEquals(0, calls)
-        vm.change(vm.state.value.copy(domain = ""))
+        vm.change(vm.state.value.copy(domain = "s.example", manualDomain = false))
         vm.submit()
         advanceUntilIdle()
         assertNull(vm.state.value.error)
@@ -178,6 +202,112 @@ class CreateShortUrlViewModelTest {
         advanceUntilIdle()
         assertEquals(CreateError.UNCERTAIN, vm.state.value.error)
         assertEquals("Updated", vm.state.value.title)
+        assertEquals(1, calls)
+    }
+
+    @Test fun soleCustomDomainIsExplicitlySentInsteadOfOmittingDomainForWrongServerDefault() = runTest(dispatcher) {
+        domains = listOf(ServerDomain("custom.example", false))
+        vm.load("1")
+        advanceUntilIdle()
+        assertEquals("custom.example", vm.state.value.domain)
+        assertTrue(vm.state.value.domainReady)
+        vm.change(vm.state.value.copy(longUrl = "https://example.org"))
+        vm.submit()
+        advanceUntilIdle()
+        assertEquals("custom.example", input?.domain)
+    }
+
+    @Test fun multipleDomainsPreferDefaultButRequireChoiceWhenNoDefaultIsVisible() = runTest(dispatcher) {
+        domains = listOf(ServerDomain("a.example", false), ServerDomain("s.example", true))
+        vm.load("1")
+        advanceUntilIdle()
+        assertEquals("s.example", vm.state.value.domain)
+        domains = listOf(ServerDomain("a.example", false), ServerDomain("b.example", false))
+        vm.loadDomains()
+        advanceUntilIdle()
+        assertEquals("", vm.state.value.domain)
+        assertFalse(vm.state.value.domainReady)
+        vm.change(vm.state.value.copy(longUrl = "https://example.org"))
+        vm.submit()
+        assertEquals(CreateError.DOMAIN, vm.state.value.error)
+        assertEquals(0, calls)
+        vm.change(vm.state.value.copy(domain = "b.example"))
+        vm.submit()
+        advanceUntilIdle()
+        assertEquals("b.example", input?.domain)
+    }
+
+    @Test fun domainFailureNeverAssumesApiHostnameAndExplicitManualEntryCanContinue() = runTest(dispatcher) {
+        domainsFailure = IOException("offline")
+        vm.load("1")
+        advanceUntilIdle()
+        assertTrue(vm.state.value.domainError is IOException)
+        assertFalse(vm.state.value.domainReady)
+        assertEquals("", vm.state.value.domain)
+        vm.change(vm.state.value.copy(longUrl = "https://example.org"))
+        vm.submit()
+        assertEquals(0, calls)
+        vm.change(vm.state.value.copy(manualDomain = true, domain = "manual.example"))
+        vm.submit()
+        advanceUntilIdle()
+        assertEquals("manual.example", input?.domain)
+    }
+
+    @Test fun retryPreservesFormAndExplicitManualDomainAndDuplicateLoadsAreBounded() = runTest(dispatcher) {
+        domainsGate = CompletableDeferred()
+        vm.load("1")
+        runCurrent()
+        vm.loadDomains()
+        assertEquals(1, domainCalls)
+        vm.change(vm.state.value.copy(longUrl = "https://example.org", title = "Keep"))
+        assertFalse(vm.state.value.domainReady)
+        domainsGate?.complete(Unit)
+        advanceUntilIdle()
+        vm.change(vm.state.value.copy(manualDomain = true, domain = "manual.example"))
+        vm.loadDomains()
+        advanceUntilIdle()
+        assertEquals("Keep", vm.state.value.title)
+        assertEquals("manual.example", vm.state.value.domain)
+        assertTrue(vm.state.value.manualDomain)
+        assertEquals(2, domainCalls)
+    }
+
+    @Test fun profileSwitchCancelsStaleDomainResultsAndResetsDomainAndDraft() = runTest(dispatcher) {
+        domainsGate = CompletableDeferred()
+        vm.load("1")
+        runCurrent()
+        val oldGate = domainsGate
+        vm.change(vm.state.value.copy(longUrl = "https://old.example", manualDomain = true, domain = "old.example"))
+        domainsGate = null
+        domains = listOf(ServerDomain("new.example", false))
+        profiles.profiles.value += ServerProfile("2", "Second", "https://second.example", 1)
+        vm.load("2")
+        advanceUntilIdle()
+        oldGate?.complete(Unit)
+        runCurrent()
+        assertEquals("Second", vm.state.value.serverName)
+        assertEquals("new.example", vm.state.value.domain)
+        assertFalse(vm.state.value.manualDomain)
+        assertEquals("", vm.state.value.longUrl)
+    }
+
+    @Test fun emptyDomainsNeverCreateWithAnInferredDefaultAndRetrySelectsNewKnownDefault() = runTest(dispatcher) {
+        domains = emptyList()
+        vm.load("1")
+        advanceUntilIdle()
+        assertEquals(emptyList<ServerDomain>(), vm.state.value.domains)
+        assertEquals("", vm.state.value.domain)
+        vm.change(vm.state.value.copy(longUrl = "https://example.org"))
+        vm.submit()
+        assertEquals(CreateError.DOMAIN, vm.state.value.error)
+        assertEquals(0, calls)
+        domains = listOf(ServerDomain("short.example", true))
+        vm.loadDomains()
+        advanceUntilIdle()
+        assertEquals("short.example", vm.state.value.domain)
+        vm.submit()
+        advanceUntilIdle()
+        assertNull(input?.domain)
         assertEquals(1, calls)
     }
 

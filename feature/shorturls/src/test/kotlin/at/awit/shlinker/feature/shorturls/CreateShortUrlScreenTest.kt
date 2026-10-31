@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -14,6 +15,7 @@ import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import at.awit.shlinker.core.model.AppTagSettings
+import at.awit.shlinker.core.model.ServerDomain
 import at.awit.shlinker.core.model.ShortUrl
 import at.awit.shlinker.core.ui.theme.ShlinkerTheme
 import org.junit.Assert.assertEquals
@@ -34,13 +36,22 @@ class CreateShortUrlScreenTest {
     private var copied: String? = null
     private var back = false
     private var retriedTags = false
+    private var retriedDomains = false
 
     private fun screen(
         initial: CreateShortUrlState,
         suggestions: TagSuggestionsState = TagSuggestionsState(tags = listOf("server-tag", "other")),
     ) {
         compose.setContent {
-            var state by remember { mutableStateOf(initial) }
+            var state by remember {
+                mutableStateOf(
+                    if (initial.domains == null && !initial.domainsLoading && initial.domainError == null) {
+                        initial.copy(domains = listOf(ServerDomain("s.example", true)), domain = "s.example")
+                    } else {
+                        initial
+                    },
+                )
+            }
             ShlinkerTheme(dynamicColor = false) {
                 CreateShortUrlScreen(
                     state,
@@ -51,6 +62,7 @@ class CreateShortUrlScreenTest {
                     { copied = it },
                     tagSuggestions = suggestions,
                     onRetryTags = { retriedTags = true },
+                    onRetryDomains = { retriedDomains = true },
                 )
             }
         }
@@ -88,7 +100,8 @@ class CreateShortUrlScreenTest {
         compose.onNodeWithText("Destination URL").performTextReplacement("https://example.org")
         compose.onNodeWithText("Title (optional)").performTextReplacement("Example")
         compose.onNodeWithText("Custom slug (optional)").performScrollTo().performTextReplacement("slug")
-        compose.onNodeWithText("Domain (optional)").performScrollTo().performTextReplacement("s.example")
+        compose.onNodeWithText("Other domain…").performScrollTo().performClick()
+        compose.onNodeWithText("Domain name").performScrollTo().performTextReplacement("s.example")
         compose.onNodeWithText("Tags (optional)").performScrollTo().performTextReplacement("one, two")
         compose.onNodeWithText("Create").performScrollTo().performClick()
         assertEquals("https://example.org", submitted?.longUrl)
@@ -196,5 +209,70 @@ class CreateShortUrlScreenTest {
         compose.onNodeWithText(
             "App tag: shlinker — added automatically. Change or disable it in Settings.",
         ).assertDoesNotExist()
+    }
+
+    @Test fun soleDomainIsDisplayedWithoutDropdownAndManualOverrideIsExplicit() {
+        screen(CreateShortUrlState(serverName = "Home", loading = false, longUrl = "https://example.org"))
+        compose.onNodeWithText("s.example (server default)").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Domain: s.example (server default)").assertDoesNotExist()
+        compose.onNodeWithText("Other domain…").performScrollTo().performClick()
+        compose.onNodeWithText(
+            "Hostname only, e.g. s.example.org. Enter the domain explicitly; an empty field does not select a default. Your API key must allow this domain.",
+        ).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Create").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Domain name").performScrollTo().performTextReplacement("manual.example")
+        compose.onNodeWithText("Create").performScrollTo().performClick()
+        assertEquals("manual.example", submitted?.domain)
+        assertTrue(submitted?.manualDomain == true)
+        compose.onNodeWithText("Use s.example").performScrollTo().performClick()
+        compose.onNodeWithText("Domain name").assertDoesNotExist()
+    }
+
+    @Test fun multipleDomainsCanBeSelectedWithoutFreeTypingAndHintDoesNotClaimAllFieldsAreEditable() {
+        screen(
+            CreateShortUrlState(
+                serverName = "Home",
+                loading = false,
+                longUrl = "https://example.org",
+                domains = listOf(ServerDomain("one.example", true), ServerDomain("two.example", false)),
+                domain = "one.example",
+            ),
+        )
+        compose.onNodeWithText(
+            "Keep creation quick: validity dates, visit limits and further settings can be adjusted afterwards in the shlink details.",
+        ).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Domain: one.example (server default)").performScrollTo().performClick()
+        compose.onNodeWithText("two.example").performClick()
+        compose.onNodeWithText("Create").performScrollTo().performClick()
+        assertEquals("two.example", submitted?.domain)
+        compose.onNodeWithText("Domain name").assertDoesNotExist()
+    }
+
+    @Test fun failedDomainLoadIsVisibleRetryableAndRequiresExplicitManualDomain() {
+        screen(
+            CreateShortUrlState(
+                serverName = "Home",
+                loading = false,
+                longUrl = "https://example.org",
+                domainError = java.io.IOException("offline"),
+            ),
+        )
+        compose.onNodeWithText("Retry domains").performScrollTo().performClick()
+        assertTrue(retriedDomains)
+        compose.onNodeWithText("Create").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Other domain…").performScrollTo().performClick()
+        compose.onNodeWithText("Domain name").performScrollTo().performTextReplacement("manual.example")
+        compose.onNodeWithText("Create").performScrollTo().assertIsEnabled().performClick()
+        assertEquals("manual.example", submitted?.domain)
+    }
+
+    @Test fun loadingDomainsDoesNotBlockDestinationInputButDisablesCreation() {
+        screen(
+            CreateShortUrlState(serverName = "Home", loading = false, domainsLoading = true),
+        )
+        compose.onNodeWithText("Destination URL").performScrollTo().performTextReplacement("https://example.org")
+        compose.onNodeWithText("Loading known domains for this API key…").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Create").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Other domain…").assertDoesNotExist()
     }
 }

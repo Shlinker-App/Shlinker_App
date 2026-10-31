@@ -84,6 +84,7 @@ fun CreateShortUrlRoute(
         snackbar,
         tags,
         { tagsViewModel.load(serverId, retry = true) },
+        viewModel::loadDomains,
     )
 }
 
@@ -99,6 +100,7 @@ internal fun CreateShortUrlScreen(
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
     tagSuggestions: TagSuggestionsState,
     onRetryTags: () -> Unit,
+    onRetryDomains: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -132,6 +134,11 @@ internal fun CreateShortUrlScreen(
                 TextButton(onClick = onBack) { Text(stringResource(R.string.create_done)) }
             } else {
                 Text(stringResource(R.string.create_intro))
+                Text(
+                    stringResource(R.string.create_details_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 Text(
                     stringResource(
                         R.string.create_behavior_defaults,
@@ -177,14 +184,7 @@ internal fun CreateShortUrlScreen(
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
                 )
-                OutlinedTextField(
-                    state.domain, { onChange(state.copy(domain = it)) },
-                    label = { Text(stringResource(R.string.create_domain)) },
-                    supportingText = { Text(stringResource(R.string.create_domain_hint)) },
-                    enabled = enabled, singleLine = true, modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
-                    isError = state.error == CreateError.DOMAIN,
-                )
+                CreateDomainField(state, enabled, onChange, onRetryDomains)
                 TagInput(state.tags, state.tagInput, enabled) { tags, input ->
                     onChange(state.copy(tags = tags, tagInput = input))
                 }
@@ -223,7 +223,10 @@ internal fun CreateShortUrlScreen(
                 if (state.busy) CircularProgressIndicator()
                 Button(
                     onClick = onSubmit,
-                    enabled = enabled && state.longUrl.isNotBlank() && state.error != CreateError.UNCERTAIN,
+                    enabled = enabled &&
+                        state.domainReady &&
+                        state.longUrl.isNotBlank() &&
+                        state.error != CreateError.UNCERTAIN,
                 ) {
                     Text(stringResource(R.string.create_submit))
                 }

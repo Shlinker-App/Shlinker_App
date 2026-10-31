@@ -3,22 +3,25 @@ package at.awit.shlinker.feature.shorturls
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.awit.shlinker.core.data.AppTagSettingsRepository
+import at.awit.shlinker.core.data.ServerDomainsRepository
 import at.awit.shlinker.core.data.ServerNotFoundException
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.data.ShortUrlApiKeyException
 import at.awit.shlinker.core.data.ShortUrlCreator
 import at.awit.shlinker.core.model.AppTagSettings
 import at.awit.shlinker.core.model.CreateShortUrl
+import at.awit.shlinker.core.model.ServerDomain
 import at.awit.shlinker.core.model.ShlinkDefaults
 import at.awit.shlinker.core.model.ShortUrl
 import at.awit.shlinker.core.model.isValidDestinationUrl
+import at.awit.shlinker.core.model.isValidShlinkDomain
 import at.awit.shlinker.core.model.parseTagInput
 import at.awit.shlinker.core.network.CreateShortUrlException
 import at.awit.shlinker.core.network.CreateShortUrlFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.IOException
-import java.net.URI
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -30,6 +33,10 @@ data class CreateShortUrlState(
     val title: String = "",
     val slug: String = "",
     val domain: String = "",
+    val domains: List<ServerDomain>? = null,
+    val domainsLoading: Boolean = false,
+    val domainError: Exception? = null,
+    val manualDomain: Boolean = false,
     val tags: List<String> = emptyList(),
     val tagInput: String = "",
     val appTag: AppTagSettings = AppTagSettings(),
@@ -38,7 +45,12 @@ data class CreateShortUrlState(
     val busy: Boolean = false,
     val error: CreateError? = null,
     val created: ShortUrl? = null,
-)
+) {
+    val domainReady: Boolean
+        get() = !domainsLoading &&
+            domain.isNotBlank() &&
+            (manualDomain || domains?.any { it.domain == domain } == true)
+}
 
 enum class CreateError { URL, DOMAIN, LOAD, MISSING_SERVER, MISSING_KEY, INVALID, CONFLICT, AUTH, SERVER, UNCERTAIN }
 
@@ -47,16 +59,28 @@ class CreateShortUrlViewModel @Inject constructor(
     private val profiles: ServerProfileRepository,
     private val creator: ShortUrlCreator,
     private val appTags: AppTagSettingsRepository,
+    private val domainsRepository: ServerDomainsRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CreateShortUrlState())
     val state = _state.asStateFlow()
     private var serverId: String? = null
+    private var loadJob: Job? = null
+    private var domainsJob: Job? = null
 
     fun load(id: String) {
+        if (_state.value.busy) return
         if (serverId == id && !_state.value.loading && _state.value.serverName != null) return
+        loadJob?.cancel()
+        domainsJob?.cancel()
+        val sameServer = serverId == id
         serverId = id
-        _state.value = _state.value.copy(loading = true, error = null)
-        viewModelScope.launch {
+        _state.value = if (sameServer) {
+            _state.value.copy(loading = true, error = null, domainsLoading = false)
+        } else {
+            CreateShortUrlState()
+        }
+        loadDomains()
+        loadJob = viewModelScope.launch {
             try {
                 val server = profiles.profiles.first().firstOrNull { it.id == id }
                 val preferences = appTags.preferences.first()
@@ -69,6 +93,35 @@ class CreateShortUrlViewModel @Inject constructor(
                 )
             } catch (_: IOException) {
                 _state.value = _state.value.copy(loading = false, error = CreateError.LOAD)
+            }
+        }
+    }
+
+    fun loadDomains() {
+        val id = serverId ?: return
+        val s = _state.value
+        if (s.busy || s.created != null || s.domainsLoading) return
+        _state.value = s.copy(domainsLoading = true, domainError = null)
+        domainsJob = viewModelScope.launch {
+            try {
+                val domains = domainsRepository.get(id)
+                val current = _state.value
+                val selected = when {
+                    current.manualDomain -> current.domain
+                    domains.any { it.domain == current.domain } -> current.domain
+                    domains.size == 1 -> domains.single().domain
+                    else -> domains.firstOrNull { it.isDefault }?.domain.orEmpty()
+                }
+                _state.value = current.copy(
+                    domains = domains,
+                    domainsLoading = false,
+                    domainError = null,
+                    domain = selected,
+                )
+            } catch (e: ServerNotFoundException) {
+                _state.value = _state.value.copy(domainsLoading = false, domains = null, domainError = e)
+            } catch (e: IOException) {
+                _state.value = _state.value.copy(domainsLoading = false, domains = null, domainError = e)
             }
         }
     }
@@ -89,24 +142,9 @@ class CreateShortUrlViewModel @Inject constructor(
             return
         }
         val domain = s.domain.trim()
-        if (domain.isNotEmpty()) {
-            val host = try {
-                URI("https://$domain")
-            } catch (_: java.net.URISyntaxException) {
-                null
-            }
-            if (host == null ||
-                host.host.isNullOrBlank() ||
-                host.rawAuthority != domain ||
-                host.port != -1 ||
-                host.userInfo != null ||
-                !host.rawPath.isNullOrEmpty() ||
-                host.query != null ||
-                host.fragment != null
-            ) {
-                _state.value = s.copy(error = CreateError.DOMAIN)
-                return
-            }
+        if (!s.domainReady || !isValidShlinkDomain(domain)) {
+            _state.value = s.copy(error = CreateError.DOMAIN)
+            return
         }
         _state.value = s.copy(busy = true, error = null)
         viewModelScope.launch {
@@ -117,7 +155,10 @@ class CreateShortUrlViewModel @Inject constructor(
                         url,
                         s.title.trim().ifEmpty { null },
                         s.slug.trim().ifEmpty { null },
-                        domain.ifEmpty { null },
+                        domain.takeUnless {
+                            !s.manualDomain &&
+                                s.domains?.any { it.domain == domain && it.isDefault } == true
+                        },
                         (s.tags + parseTagInput(s.tagInput)).distinct(),
                     ),
                 )

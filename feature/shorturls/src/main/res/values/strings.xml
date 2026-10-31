@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="create_details_hint">Keep creation quick: validity dates, visit limits and further settings can be adjusted afterwards in the shlink details.</string>
+    <string name="create_domain_label">Short URL domain</string>
+    <string name="create_domain_default">%1$s (server default)</string>
+    <string name="create_domain_selected">Domain: %1$s</string>
+    <string name="create_domain_choose">Choose a domain</string>
+    <string name="create_domain_other">Other domain…</string>
+    <string name="create_domain_manual">Domain name</string>
+    <string name="create_domain_use">Use %1$s</string>
+    <string name="create_domains_loading">Loading known domains for this API key…</string>
+    <string name="create_domains_empty">No known domains were returned. Enter a domain explicitly to continue.</string>
+    <string name="create_domains_failed">Could not load known domains. Retry or explicitly enter a domain using Other domain. No server domain was assumed.</string>
+    <string name="create_domains_auth">The API key is unavailable or cannot load domains. Check the server profile or retry. A manual domain does not bypass key permissions.</string>
+    <string name="create_domains_invalid">The server returned missing or invalid domain data. Retry or enter a domain explicitly. No default was assumed.</string>
+    <string name="create_domains_retry">Retry domains</string>
+    <string name="create_domains_hint">Known domains visible to this key, not a complete list of permissions. Shlink validates manually entered domains when creating the link. The API server address is not necessarily the short URL domain.</string>
     <string name="rules_explanation">Rules are checked from top to bottom. The first matching rule wins; all conditions within a rule must match (AND). If none matches, Shlink uses the default destination below. Changes are local until Save changes.</string>
     <string name="rules_default">Default destination (fallback)</string>
     <string name="rules_reload">Reload from server</string>
@@ -187,8 +202,7 @@
     <string name="create_url">Destination URL</string>
     <string name="create_label_title">Title (optional)</string>
     <string name="create_slug">Custom slug (optional)</string>
-    <string name="create_domain">Domain (optional)</string>
-    <string name="create_domain_hint">Hostname only, e.g. s.example.org. Leave blank for the default domain. Your API key must allow this domain.</string>
+    <string name="create_domain_hint">Hostname only, e.g. s.example.org. Enter the domain explicitly; an empty field does not select a default. Your API key must allow this domain.</string>
     <string name="create_tags">Tags (optional)</string>
     <string name="create_tags_hint">Press Enter to add a tag. Commas also work, including when pasting. Tap a tag to remove it.</string>
     <string name="create_tag_remove">Remove tag %1$s</string>

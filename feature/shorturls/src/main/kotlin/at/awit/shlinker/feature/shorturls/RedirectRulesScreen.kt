@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -13,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -26,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -35,7 +38,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
@@ -171,7 +177,24 @@ internal fun RedirectRulesScreen(
             Text(stringResource(R.string.stats_domain, domain ?: stringResource(R.string.details_default_domain)))
             Text(stringResource(R.string.rules_explanation))
             if (state.loading || state.saving) CircularProgressIndicator()
-            if (state.saved) Text(stringResource(R.string.rules_saved), color = MaterialTheme.colorScheme.primary)
+            if (state.saved) {
+                val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+                Surface(
+                    color = if (dark) Color(0xFF163922) else Color(0xFFD5E8D4),
+                    contentColor = if (dark) Color(0xFF9CE5A9) else Color(0xFF125322),
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Outlined.CheckCircle, contentDescription = null)
+                        Text(stringResource(R.string.rules_saved))
+                    }
+                }
+            }
             state.error?.let { error ->
                 Text(rulesError(error), color = MaterialTheme.colorScheme.error)
                 if (!editing || state.needsReload) {
@@ -188,7 +211,20 @@ internal fun RedirectRulesScreen(
                 if (original.hasUnknownConditions) {
                     Text(stringResource(R.string.rules_unknown), color = MaterialTheme.colorScheme.error)
                 }
-                if (editing) Text(stringResource(R.string.rules_editing), color = MaterialTheme.colorScheme.primary)
+                if (editing) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            stringResource(R.string.rules_editing),
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                    }
+                }
                 val rules = state.draft ?: original.rules
                 if (rules.isEmpty()) Text(stringResource(R.string.rules_empty))
                 rules.forEachIndexed { index, rule ->

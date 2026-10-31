@@ -1,11 +1,18 @@
 package at.awit.shlinker.feature.shorturls
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
@@ -24,6 +31,7 @@ import at.awit.shlinker.core.network.RedirectRulesException
 import at.awit.shlinker.core.network.RedirectRulesFailure
 import at.awit.shlinker.core.ui.theme.ShlinkerTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,10 +52,12 @@ class RedirectRulesScreenTest {
     private var back = 0
     private var refreshed = 0
     private var saved = 0
+    private var neutral = Color.Unspecified
 
-    private fun screen() {
+    private fun screen(dark: Boolean = false) {
         compose.setContent {
-            ShlinkerTheme(dynamicColor = false) {
+            ShlinkerTheme(dynamicColor = false, darkTheme = dark) {
+                neutral = MaterialTheme.colorScheme.onSurfaceVariant
                 RedirectRulesScreen(
                     state, "same", "custom.example", { back++ }, { refreshed++ },
                     { state = state.copy(draft = rules.rules) },
@@ -166,5 +176,35 @@ class RedirectRulesScreenTest {
         compose.onNodeWithText("Cancel editing").performScrollTo().assertIsNotEnabled()
         assertEquals(0, back)
         assertEquals(0, saved)
+    }
+
+    @Test fun lightStatusBannersUseNeutralEditingAndReadableGreenSuccessWithoutClickActions() {
+        verifyStatusColors(dark = false)
+    }
+
+    @Test fun darkStatusBannersUseNeutralEditingAndReadableGreenSuccessWithoutClickActions() {
+        verifyStatusColors(dark = true)
+    }
+
+    private fun verifyStatusColors(dark: Boolean) {
+        state = state.copy(draft = rules.rules)
+        screen(dark)
+        val editing = compose.onNodeWithText("Editing redirect rules · changes are not yet saved")
+            .performScrollTo().assert(hasClickAction().not())
+        val editBitmap = editing.captureToImage().asAndroidBitmap()
+        val editPixels = IntArray(editBitmap.width * editBitmap.height)
+        editBitmap.getPixels(editPixels, 0, editBitmap.width, 0, 0, editBitmap.width, editBitmap.height)
+        assertTrue(editPixels.any { it == neutral.toArgb() })
+        compose.runOnIdle { state = state.copy(draft = null, saved = true) }
+        val success = compose.onNodeWithText("Redirect rules saved").performScrollTo().assert(hasClickAction().not())
+        val foreground = if (dark) Color(0xFF9CE5A9) else Color(0xFF125322)
+        val background = if (dark) Color(0xFF163922) else Color(0xFFD5E8D4)
+        val bitmap = success.captureToImage().asAndroidBitmap()
+        val pixels = IntArray(bitmap.width * bitmap.height)
+        bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+        assertTrue(pixels.any { it == foreground.toArgb() })
+        val contrast = (maxOf(foreground.luminance(), background.luminance()) + 0.05f) /
+            (minOf(foreground.luminance(), background.luminance()) + 0.05f)
+        assertTrue("Success text contrast must be at least 4.5:1", contrast >= 4.5f)
     }
 }
