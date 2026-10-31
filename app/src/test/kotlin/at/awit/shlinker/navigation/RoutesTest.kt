@@ -6,6 +6,13 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class RoutesTest {
+    @Test fun redirectRulesRouteRestoresPinnedIdentityWithoutCredentials() {
+        for (domain in listOf(null, "custom.example")) {
+            val route = RedirectRulesRoute("profile-1", "same-code", domain)
+            assertEquals(route, Json.decodeFromString<RedirectRulesRoute>(Json.encodeToString(route)))
+        }
+    }
+
     @Test fun statisticsRouteRestoresPinnedIdentityWithoutCredentials() {
         for (domain in listOf(null, "custom.example")) {
             val route = VisitStatisticsRoute("profile-1", "same-code", domain)

@@ -63,12 +63,16 @@ fun ShortUrlDetailsRoute(
     onBack: () -> Unit,
     onChanged: () -> Unit,
     onStatistics: () -> Unit,
+    onRules: () -> Unit,
+    rulesRevision: Int = 0,
     viewModel: ShortUrlDetailsViewModel = hiltViewModel(),
     tagsViewModel: TagSuggestionsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val tags by tagsViewModel.state.collectAsStateWithLifecycle()
-    LaunchedEffect(serverId, shortCode, domain) { viewModel.load(serverId, shortCode, domain) }
+    LaunchedEffect(serverId, shortCode, domain, rulesRevision) {
+        viewModel.load(serverId, shortCode, domain, refresh = rulesRevision > 0)
+    }
     LaunchedEffect(state.form != null, serverId) { if (state.form != null) tagsViewModel.load(serverId) }
     LaunchedEffect(state.changeRevision) {
         if (state.changeRevision > 0) onChanged()
@@ -88,6 +92,7 @@ fun ShortUrlDetailsRoute(
         tags,
         { tagsViewModel.load(serverId, retry = true) },
         onStatistics,
+        onRules,
     )
 }
 
@@ -107,6 +112,7 @@ internal fun ShortUrlDetailsScreen(
     tagSuggestions: TagSuggestionsState,
     onRetryTags: () -> Unit,
     onStatistics: () -> Unit,
+    onRules: () -> Unit,
 ) {
     var discard by remember { mutableStateOf(false) }
     var qrUrl by rememberSaveable { mutableStateOf<String?>(null) }
@@ -254,15 +260,11 @@ internal fun ShortUrlDetailsScreen(
                                 Icon(Icons.Outlined.BarChart, contentDescription = null)
                                 Text(stringResource(R.string.details_statistics))
                             }
-                            TextButton(onClick = {}, enabled = false) {
+                            TextButton(onClick = onRules, enabled = !state.saving && !state.needsReload) {
                                 Icon(Icons.AutoMirrored.Outlined.AltRoute, contentDescription = null)
                                 Text(stringResource(R.string.details_rules_action))
                             }
                         }
-                        Text(
-                            stringResource(R.string.details_actions_planned),
-                            style = MaterialTheme.typography.bodySmall,
-                        )
                     }
                     val url = details.url
                     val unavailable = stringResource(R.string.details_unavailable)

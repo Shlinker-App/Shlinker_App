@@ -15,6 +15,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import at.awit.shlinker.feature.servers.AddServerRoute as AddServerScreenRoute
 import at.awit.shlinker.feature.shorturls.CreateShortUrlRoute as CreateShortUrlScreenRoute
+import at.awit.shlinker.feature.shorturls.RedirectRulesRoute as RedirectRulesScreenRoute
 import at.awit.shlinker.feature.shorturls.ShortUrlDetailsRoute as ShortUrlDetailsScreenRoute
 import at.awit.shlinker.feature.shorturls.ShortUrlsRoute as ShortUrlsScreenRoute
 import at.awit.shlinker.feature.shorturls.VisitStatisticsRoute as VisitStatisticsScreenRoute
@@ -23,6 +24,7 @@ import at.awit.shlinker.navigation.AddServerRoute
 import at.awit.shlinker.navigation.CreateShortUrlRoute
 import at.awit.shlinker.navigation.EditServerRoute
 import at.awit.shlinker.navigation.HomeRoute
+import at.awit.shlinker.navigation.RedirectRulesRoute
 import at.awit.shlinker.navigation.SettingsRoute
 import at.awit.shlinker.navigation.ShortUrlDetailsRoute
 import at.awit.shlinker.navigation.ShortUrlsRoute
@@ -43,6 +45,7 @@ private fun AppNavigation(start: NavKey) {
     val initial = remember { start }
     val backStack = rememberNavBackStack(initial)
     var refreshKey by rememberSaveable { mutableIntStateOf(0) }
+    var rulesRevision by rememberSaveable { mutableIntStateOf(0) }
 
     NavDisplay(
         backStack = backStack,
@@ -82,6 +85,22 @@ private fun AppNavigation(start: NavKey) {
                     onChanged = { refreshKey++ },
                     onStatistics = {
                         backStack.add(VisitStatisticsRoute(route.serverId, route.shortCode, route.domain))
+                    },
+                    onRules = {
+                        backStack.add(RedirectRulesRoute(route.serverId, route.shortCode, route.domain))
+                    },
+                    rulesRevision = rulesRevision,
+                )
+            }
+            entry<RedirectRulesRoute> { route ->
+                RedirectRulesScreenRoute(
+                    serverId = route.serverId,
+                    shortCode = route.shortCode,
+                    domain = route.domain,
+                    onBack = { backStack.removeLastOrNull() },
+                    onChanged = {
+                        refreshKey++
+                        rulesRevision++
                     },
                 )
             }

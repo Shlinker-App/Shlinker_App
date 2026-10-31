@@ -51,6 +51,9 @@ object NetworkModule {
 @InstallIn(SingletonComponent::class)
 internal abstract class ConnectionModule {
     @Binds
+    abstract fun bindRedirectRulesService(impl: KtorRedirectRulesService): RedirectRulesService
+
+    @Binds
     abstract fun bindVisitStatisticsService(impl: KtorVisitStatisticsService): VisitStatisticsService
 
     @Binds

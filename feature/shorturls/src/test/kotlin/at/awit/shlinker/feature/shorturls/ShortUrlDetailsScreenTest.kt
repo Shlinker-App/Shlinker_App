@@ -46,6 +46,7 @@ class ShortUrlDetailsScreenTest {
     private var submitted: ShortUrlEditForm? = null
     private var deleted = false
     private var statistics = false
+    private var rules = false
     private val full = ShortUrlDetails(
         url = ShortUrl(
             "abc",
@@ -73,18 +74,19 @@ class ShortUrlDetailsScreenTest {
             ShlinkerTheme(dynamicColor = false) {
                 ShortUrlDetailsScreen(
                     state, { back = true }, { refreshed = true }, {}, {}, {}, {},
-                    {}, {}, {}, TagSuggestionsState(), {}, { statistics = true },
+                    {}, {}, {}, TagSuggestionsState(), {}, { statistics = true }, { rules = true },
                 )
             }
         }
     }
 
-    @Test fun actionsShowWorkingQrAndExplicitlyDisabledFutureFeatures() {
+    @Test fun actionsShowWorkingQrStatisticsAndRedirectRules() {
         screen(ShortUrlDetailsState(serverName = "Home", loading = false, details = full))
         compose.onNodeWithText("Actions").assertIsDisplayed()
         compose.onNodeWithText("Statistics").assertIsEnabled().performClick()
         assertEquals(true, statistics)
-        compose.onNodeWithText("Redirect rules").assertIsNotEnabled()
+        compose.onNodeWithText("Redirect rules").assertIsEnabled().performClick()
+        assertEquals(true, rules)
         compose.onNodeWithText("QR code").assertDoesNotExist()
         compose.onNodeWithText("Show QR code").performClick()
         compose.onNodeWithText("QR code").assertIsDisplayed()
@@ -172,7 +174,7 @@ class ShortUrlDetailsScreenTest {
                     { state = state.copy(form = it) },
                     { submitted = state.form },
                     { state = state.copy(form = null) },
-                    {}, {}, {}, TagSuggestionsState(tags = listOf("server-tag", "other")), {}, {},
+                    {}, {}, {}, TagSuggestionsState(tags = listOf("server-tag", "other")), {}, {}, {},
                 )
             }
         }
@@ -279,7 +281,7 @@ class ShortUrlDetailsScreenTest {
                     { state = state.copy(confirmingDelete = true) },
                     { state = state.copy(confirmingDelete = false) },
                     { deleted = true },
-                    TagSuggestionsState(), {}, {},
+                    TagSuggestionsState(), {}, {}, {},
                 )
             }
         }
