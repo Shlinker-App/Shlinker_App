@@ -32,11 +32,13 @@
     <string name="edit_save">Save changes</string>
     <string name="edit_cancel">Cancel editing</string>
     <string name="edit_saved">Shlink updated</string>
-    <string name="edit_dates_hint">Choose an optional date from the calendar, then a time. Clear a date to remove that limit. The end must be after the start.</string>
+    <string name="edit_dates_hint">Tap the date to open the calendar, or the time to open the clock. For an empty limit, choosing a date starts at 00:00; choosing a time uses today. Clear removes the limit. The end must be after the start.</string>
     <string name="edit_date_zone">Time zone: %1$s (device)</string>
-    <string name="edit_choose_date">Choose %1$s</string>
+    <string name="edit_choose_date">Choose date for %1$s</string>
+    <string name="edit_choose_time">Choose time for %1$s</string>
+    <string name="edit_date_placeholder">YYYY / MM / DD</string>
+    <string name="edit_time_placeholder">HH:mm</string>
     <string name="edit_clear_date">Clear %1$s</string>
-    <string name="edit_date_next">Next: time</string>
     <string name="edit_picker_cancel">Cancel</string>
     <string name="edit_picker_apply">Apply</string>
     <string name="edit_date_gap">This local time does not exist due to a daylight-saving change. Choose another time.</string>

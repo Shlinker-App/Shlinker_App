@@ -15,7 +15,6 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -30,6 +29,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import at.awit.shlinker.core.model.parseShlinkDate
@@ -37,7 +39,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,22 +54,37 @@ internal fun ShlinkDateTimeField(
     val zone = ZoneId.systemDefault()
     val parsed = parseShlinkDate(value)?.atZoneSameInstant(zone)
     var stage by rememberSaveable { mutableStateOf(0) }
-    var dateMillis by rememberSaveable { mutableStateOf<Long?>(null) }
+    val invalidDate = stringResource(R.string.edit_error_dates)
     Column {
-        OutlinedTextField(
-            value = parsed?.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)) ?: value,
-            onValueChange = {},
-            readOnly = true,
-            enabled = enabled,
-            isError = error,
-            label = { Text(name) },
-            placeholder = { Text(stringResource(R.string.details_not_set)) },
-            supportingText = { Text(stringResource(R.string.edit_date_zone, zone.id)) },
-            modifier = Modifier.fillMaxWidth(),
+        Text(
+            name,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.semantics { if (error) error(invalidDate) },
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = { stage = 1 }, enabled = enabled) {
-                Text(stringResource(R.string.edit_choose_date, name))
+            val dateLabel = stringResource(R.string.edit_choose_date, name)
+            TextButton(
+                onClick = { stage = 1 },
+                enabled = enabled,
+                modifier = Modifier.semantics { contentDescription = dateLabel },
+            ) {
+                Text(
+                    parsed?.format(DateTimeFormatter.ofPattern("yyyy / MM / dd", Locale.ENGLISH))
+                        ?: stringResource(R.string.edit_date_placeholder),
+                )
+            }
+            Text("-", modifier = Modifier.align(androidx.compose.ui.Alignment.CenterVertically))
+            val timeLabel = stringResource(R.string.edit_choose_time, name)
+            TextButton(
+                onClick = { stage = 2 },
+                enabled = enabled,
+                modifier = Modifier.semantics { contentDescription = timeLabel },
+            ) {
+                Text(
+                    parsed?.format(DateTimeFormatter.ofPattern("HH:mm z", Locale.ENGLISH))
+                        ?: stringResource(R.string.edit_time_placeholder),
+                )
             }
             if (value.isNotEmpty()) {
                 TextButton(onClick = { onChange("") }, enabled = enabled) {
@@ -75,9 +92,14 @@ internal fun ShlinkDateTimeField(
                 }
             }
         }
+        Text(stringResource(R.string.edit_date_zone, zone.id), style = MaterialTheme.typography.bodySmall)
+        if (value.isNotEmpty() && parsed == null) {
+            Text(value, color = MaterialTheme.colorScheme.error)
+        }
     }
     if (stage == 1) {
         val initial = parsed ?: ZonedDateTime.now(zone)
+        var invalidTime by rememberSaveable { mutableStateOf(false) }
         val picker = rememberDatePickerState(
             initialSelectedDateMillis = initial.toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
         )
@@ -86,11 +108,23 @@ internal fun ShlinkDateTimeField(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        dateMillis = picker.selectedDateMillis
-                        stage = 2
+                        val selected = selectedShlinkDate(
+                            requireNotNull(picker.selectedDateMillis),
+                            parsed?.hour ?: 0,
+                            parsed?.minute ?: 0,
+                            zone,
+                            value,
+                            preserveTimePrecision = true,
+                        )
+                        if (selected == null) {
+                            invalidTime = true
+                        } else {
+                            onChange(selected)
+                            stage = 0
+                        }
                     },
                     enabled = picker.selectedDateMillis != null,
-                ) { Text(stringResource(R.string.edit_date_next)) }
+                ) { Text(stringResource(R.string.edit_picker_apply)) }
             },
             dismissButton = {
                 TextButton(onClick = { stage = 0 }) { Text(stringResource(R.string.edit_picker_cancel)) }
@@ -102,6 +136,9 @@ internal fun ShlinkDateTimeField(
             ) {
                 Text(name)
                 DatePicker(state = picker)
+                if (invalidTime) {
+                    Text(stringResource(R.string.edit_date_gap), color = MaterialTheme.colorScheme.error)
+                }
             }
         }
     }
@@ -132,7 +169,8 @@ internal fun ShlinkDateTimeField(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    val selected = selectedShlinkDate(requireNotNull(dateMillis), time.hour, time.minute, zone, value)
+                    val dateMillis = initial.toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+                    val selected = selectedShlinkDate(dateMillis, time.hour, time.minute, zone, value)
                     if (selected == null) {
                         invalidTime = true
                     } else {

@@ -36,6 +36,18 @@ class ShlinkDateTimeTest {
         assertEquals(original, selectedShlinkDate(date("2026-07-01"), 9, 30, zone, original))
     }
 
+    @Test fun changingCalendarDatePreservesTimePrecisionWhileClockChangeKeepsDate() {
+        val original = "2026-07-01T07:30:45.123Z"
+        assertEquals(
+            "2026-12-01T09:30:45.123+01:00",
+            selectedShlinkDate(date("2026-12-01"), 9, 30, zone, original, preserveTimePrecision = true),
+        )
+        assertEquals(
+            "2026-07-01T14:15+02:00",
+            selectedShlinkDate(date("2026-07-01"), 14, 15, zone, original),
+        )
+    }
+
     @Test fun dstGapIsRejectedAndOverlapKeepsOriginalOffsetWhenAvailable() {
         assertNull(selectedShlinkDate(date("2026-03-29"), 2, 30, zone, ""))
         assertEquals(
