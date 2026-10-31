@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="stats_timeline_title">Visits over time</string>
+    <string name="stats_timeline_beginning">Beginning</string>
+    <string name="stats_timeline_loading">Loading up to 12 time intervals… You can change the period or go back.</string>
+    <string name="stats_timeline_legend">Each stacked bar: non-bot visits (bottom) + potential bot visits (top).</string>
+    <string name="stats_timeline_scale">Visits per interval · scale: 0–%1$d</string>
+    <string name="stats_timeline_bar">Interval %1$d · Non-bot visits: %2$d · Potential bot visits: %3$d</string>
+    <string name="stats_timeline_order">Time → oldest to newest. Tap a numbered bar for its exact dates and counts.</string>
+    <string name="stats_timeline_from">From (inclusive)</string>
+    <string name="stats_timeline_after">After (exclusive)</string>
+    <string name="stats_timeline_range">Interval %1$d\n%2$s: %3$s\nUntil (inclusive): %4$s</string>
+    <string name="stats_timeline_values">Total: %1$d · Non-bots: %2$d · Potential bots: %3$d</string>
+    <string name="stats_timeline_empty">No recorded visits in this period.</string>
+    <string name="stats_timeline_start_error">The server did not provide a valid creation date for the All time chart. The summary is still available. Choose a day period or try again.</string>
+    <string name="stats_timeline_hint">Up to 12 approximately equal elapsed-time intervals, not calendar days. Values are derived from cumulative server counts; no full visitor list is loaded. All time uses the creation date for interval spacing; the first interval includes any earlier imported visits. Parallel server changes may make the timeline inconsistent; retry if loading fails.</string>
     <string name="qr_title">QR code</string>
     <string name="qr_show">Show QR code</string>
     <string name="qr_show_for">Show QR code for %1$s</string>

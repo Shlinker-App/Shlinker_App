@@ -3,11 +3,15 @@ package at.awit.shlinker.feature.shorturls
 import at.awit.shlinker.core.data.ApiKeyResult
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.data.VisitStatisticsRepository
+import at.awit.shlinker.core.data.VisitTimelineRepository
 import at.awit.shlinker.core.model.ServerProfile
 import at.awit.shlinker.core.model.ServerSort
+import at.awit.shlinker.core.model.ShortUrl
+import at.awit.shlinker.core.model.ShortUrlDetails
 import at.awit.shlinker.core.model.VisitPeriod
 import at.awit.shlinker.core.model.VisitStatistics
 import at.awit.shlinker.core.model.VisitWindow
+import at.awit.shlinker.core.network.ShortUrlDetailsService
 import at.awit.shlinker.core.network.VisitStatisticsService
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
@@ -36,6 +40,10 @@ class VisitStatisticsViewModelTest {
     private val windows = mutableListOf<VisitWindow>()
     private var gate: CompletableDeferred<Unit>? = null
     private var failure: IOException? = null
+    private var timelineGate: CompletableDeferred<Unit>? = null
+    private var timelineFailure: IOException? = null
+    private var timelineCalls = 0
+    private var emptySummary = false
     private lateinit var vm: VisitStatisticsViewModel
 
     @Before fun setup() {
@@ -56,8 +64,38 @@ class VisitStatisticsViewModelTest {
                         windows += window
                         gate?.await()
                         failure?.let { throw it }
-                        return VisitStatistics(calls.size.toLong(), 0)
+                        return VisitStatistics(if (emptySummary) 0 else calls.size.toLong(), 0)
                     }
+                },
+            ),
+            VisitTimelineRepository(
+                Profiles(),
+                object : VisitStatisticsService {
+                    override suspend fun get(
+                        serverUrl: String,
+                        apiKey: String,
+                        shortCode: String,
+                        domain: String?,
+                        window: VisitWindow,
+                    ): VisitStatistics {
+                        timelineCalls++
+                        timelineGate?.await()
+                        timelineFailure?.let { throw it }
+                        return VisitStatistics(0, 0)
+                    }
+                },
+                object : ShortUrlDetailsService {
+                    override suspend fun get(serverUrl: String, apiKey: String, shortCode: String, domain: String?) =
+                        ShortUrlDetails(
+                            ShortUrl(
+                                shortCode,
+                                "https://s.example/$shortCode",
+                                "https://dest.example",
+                                null,
+                                emptyList(),
+                            ),
+                            dateCreated = "2026-01-01T00:00:00Z",
+                        )
                 },
             ),
         )
@@ -146,6 +184,59 @@ class VisitStatisticsViewModelTest {
         gate?.complete(Unit)
         advanceUntilIdle()
         assertEquals(listOf("https://first.example", "other", "custom.example"), calls.last())
+    }
+
+    @Test fun summaryRemainsVisibleWhileTimelineLoadsAndTimelineFailureDoesNotEraseIt() = runTest(dispatcher) {
+        timelineGate = CompletableDeferred()
+        vm.load("1", "same", null)
+        runCurrent()
+        assertFalse(vm.state.value.loading)
+        assertTrue(vm.state.value.timelineLoading)
+        assertEquals(VisitStatistics(1, 0), vm.state.value.counts)
+        assertEquals("First", vm.state.value.serverName)
+        vm.refresh()
+        assertEquals(1, calls.size)
+        timelineFailure = IOException("timeline offline")
+        timelineGate?.complete(Unit)
+        advanceUntilIdle()
+        assertFalse(vm.state.value.timelineLoading)
+        assertEquals(timelineFailure, vm.state.value.timelineError)
+        assertNull(vm.state.value.error)
+        assertNull(vm.state.value.timeline)
+        assertEquals(VisitStatistics(1, 0), vm.state.value.counts)
+        timelineFailure = null
+        vm.refresh()
+        advanceUntilIdle()
+        assertNull(vm.state.value.timelineError)
+        assertEquals(12, vm.state.value.timeline?.size)
+    }
+
+    @Test fun changingPeriodCancelsPendingTimelineAndDropsPreviousBars() = runTest(dispatcher) {
+        timelineGate = CompletableDeferred()
+        vm.load("1", "same", null)
+        runCurrent()
+        val oldGate = timelineGate
+        timelineGate = null
+        vm.select(VisitPeriod.TODAY)
+        assertNull(vm.state.value.timeline)
+        assertNull(vm.state.value.counts)
+        advanceUntilIdle()
+        oldGate?.complete(Unit)
+        runCurrent()
+        assertEquals(VisitPeriod.TODAY, vm.state.value.period)
+        assertEquals(12, vm.state.value.timeline?.size)
+        assertEquals(VisitStatistics(2, 0), vm.state.value.counts)
+        assertEquals(12, timelineCalls)
+    }
+
+    @Test fun emptySummarySkipsAllTimelineRequestsAndShowsAnHonestEmptyResult() = runTest(dispatcher) {
+        emptySummary = true
+        vm.load("1", "same", null)
+        advanceUntilIdle()
+        assertEquals(0, timelineCalls)
+        assertFalse(vm.state.value.timelineLoading)
+        assertEquals(emptyList<Any>(), vm.state.value.timeline)
+        assertEquals(VisitStatistics(0, 0), vm.state.value.counts)
     }
 
     private class Profiles : ServerProfileRepository {

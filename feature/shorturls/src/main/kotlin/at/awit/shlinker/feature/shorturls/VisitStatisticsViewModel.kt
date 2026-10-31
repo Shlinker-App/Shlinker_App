@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.awit.shlinker.core.data.ServerNotFoundException
 import at.awit.shlinker.core.data.VisitStatisticsRepository
+import at.awit.shlinker.core.data.VisitTimelineRepository
 import at.awit.shlinker.core.model.VisitPeriod
 import at.awit.shlinker.core.model.VisitStatistics
+import at.awit.shlinker.core.model.VisitTimelineBucket
 import at.awit.shlinker.core.model.VisitWindow
 import at.awit.shlinker.core.model.window
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,10 +28,16 @@ data class VisitStatisticsState(
     val serverName: String? = null,
     val counts: VisitStatistics? = null,
     val error: Exception? = null,
+    val timelineLoading: Boolean = false,
+    val timeline: List<VisitTimelineBucket>? = null,
+    val timelineError: Exception? = null,
 )
 
 @HiltViewModel
-class VisitStatisticsViewModel @Inject constructor(private val repository: VisitStatisticsRepository) : ViewModel() {
+class VisitStatisticsViewModel @Inject constructor(
+    private val repository: VisitStatisticsRepository,
+    private val timelineRepository: VisitTimelineRepository,
+) : ViewModel() {
     private val _state = MutableStateFlow(VisitStatisticsState())
     val state = _state.asStateFlow()
     private var identity: Triple<String, String, String?>? = null
@@ -51,7 +59,7 @@ class VisitStatisticsViewModel @Inject constructor(private val repository: Visit
     }
 
     fun refresh() {
-        if (_state.value.loading) return
+        if (_state.value.loading || _state.value.timelineLoading) return
         request(_state.value.period)
     }
 
@@ -70,7 +78,29 @@ class VisitStatisticsViewModel @Inject constructor(private val repository: Visit
             try {
                 val result = repository.get(requested.first, requested.second, requested.third, window)
                 _state.value =
-                    _state.value.copy(loading = false, serverName = result.serverName, counts = result.counts)
+                    _state.value.copy(
+                        loading = false,
+                        serverName = result.serverName,
+                        counts = result.counts,
+                        timelineLoading = result.counts.total > 0,
+                        timeline = if (result.counts.total == 0L) emptyList() else null,
+                    )
+                if (result.counts.total > 0) {
+                    try {
+                        val timeline = timelineRepository.get(
+                            requested.first,
+                            requested.second,
+                            requested.third,
+                            window,
+                            result.counts,
+                        )
+                        _state.value = _state.value.copy(timelineLoading = false, timeline = timeline)
+                    } catch (e: ServerNotFoundException) {
+                        _state.value = _state.value.copy(timelineLoading = false, timelineError = e)
+                    } catch (e: IOException) {
+                        _state.value = _state.value.copy(timelineLoading = false, timelineError = e)
+                    }
+                }
             } catch (e: ServerNotFoundException) {
                 _state.value = _state.value.copy(loading = false, error = e)
             } catch (e: IOException) {

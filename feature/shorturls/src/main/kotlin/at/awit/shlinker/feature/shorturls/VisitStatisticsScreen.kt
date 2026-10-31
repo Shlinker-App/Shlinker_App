@@ -33,6 +33,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import at.awit.shlinker.core.data.ServerNotFoundException
 import at.awit.shlinker.core.data.ShortUrlApiKeyException
+import at.awit.shlinker.core.data.TimelineStartUnavailableException
 import at.awit.shlinker.core.model.VisitPeriod
 import at.awit.shlinker.core.network.ConnectionError
 import at.awit.shlinker.core.network.InvalidVisitStatisticsException
@@ -73,7 +74,7 @@ internal fun VisitStatisticsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onRefresh, enabled = !state.loading) {
+                    IconButton(onClick = onRefresh, enabled = !state.loading && !state.timelineLoading) {
                         Icon(Icons.Outlined.Refresh, stringResource(R.string.short_urls_refresh))
                     }
                 },
@@ -132,6 +133,33 @@ internal fun VisitStatisticsScreen(
                         CountField(R.string.details_non_bot_visits, counts.nonBots)
                         CountField(R.string.stats_bots, counts.bots)
                     }
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(
+                                stringResource(R.string.stats_timeline_title),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            if (state.timelineLoading) {
+                                Text(stringResource(R.string.stats_timeline_loading))
+                                CircularProgressIndicator()
+                            }
+                            state.timelineError?.let {
+                                Text(statisticsError(it), color = MaterialTheme.colorScheme.error)
+                                TextButton(onClick = onRefresh) { Text(stringResource(R.string.short_urls_retry)) }
+                            }
+                            state.timeline?.let { buckets ->
+                                if (buckets.isEmpty()) {
+                                    Text(stringResource(R.string.stats_timeline_empty))
+                                } else {
+                                    VisitTimelineChart(buckets, state.zone)
+                                }
+                            }
+                            Text(
+                                stringResource(R.string.stats_timeline_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
                 }
             }
             Text(stringResource(R.string.stats_hint), style = MaterialTheme.typography.bodySmall)
@@ -160,6 +188,7 @@ private fun statisticsError(error: Exception): String = when {
     error is ServerNotFoundException -> stringResource(R.string.create_error_server_missing)
     error is ShortUrlApiKeyException -> stringResource(R.string.short_urls_key_missing)
     error is InvalidVisitStatisticsException -> stringResource(R.string.stats_invalid)
+    error is TimelineStartUnavailableException -> stringResource(R.string.stats_timeline_start_error)
     error is ShortUrlRequestException -> {
         val reason = error.error
         if (reason is ConnectionError.HttpError && reason.status == 404) {

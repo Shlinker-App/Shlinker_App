@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import at.awit.shlinker.core.model.VisitPeriod
 import at.awit.shlinker.core.model.VisitStatistics
+import at.awit.shlinker.core.model.VisitTimelineBucket
 import at.awit.shlinker.core.model.window
 import at.awit.shlinker.core.network.ConnectionError
 import at.awit.shlinker.core.network.InvalidVisitStatisticsException
@@ -174,6 +175,55 @@ class VisitStatisticsScreenTest {
         compose.onAllNodesWithText("0").assertCountEquals(3)
         compose.onNodeWithText("Potential bot visits").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Try again").assertDoesNotExist()
+    }
+
+    @Test fun timelineLoadsSeparatelyWithoutHidingSummaryAndPeriodCanStillChange() {
+        screen(state.copy(timelineLoading = true))
+        compose.onNodeWithText("12345678901").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Loading up to 12 time intervals… You can change the period or go back.")
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("Refresh").assertIsNotEnabled()
+        compose.onNodeWithText("Today").performScrollTo().performClick()
+        assertEquals(VisitPeriod.TODAY, selected)
+        compose.onNodeWithContentDescription("Back to shlink details").performClick()
+        assertEquals(true, back)
+    }
+
+    @Test fun timelineFailureRetainsSummaryAndOffersExplicitRetry() {
+        screen(state.copy(timelineError = InvalidVisitStatisticsException()))
+        compose.onNodeWithText("12345678901").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Visits over time").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Try again").performScrollTo().performClick()
+        assertEquals(1, refreshes)
+    }
+
+    @Test
+    @Config(qualifiers = "en-w891dp-h411dp-mdpi")
+    fun phoneLandscapeCanScrollToTimelineAndSelectBar() {
+        screen(
+            state.copy(
+                timeline = listOf(
+                    VisitTimelineBucket(
+                        Instant.parse("2026-10-31T00:00:00Z"),
+                        Instant.parse("2026-10-31T04:30:00Z"),
+                        false,
+                        VisitStatistics(10, 7),
+                    ),
+                ),
+            ),
+        )
+        compose.onNodeWithContentDescription("Interval 1 · Non-bot visits: 7 · Potential bot visits: 3")
+            .performScrollTo().assertIsDisplayed().performClick()
+        compose.onNodeWithText("Total: 10 · Non-bots: 7 · Potential bots: 3")
+            .performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun emptyTimelineHasHonestEmptyMessageAndNoFakeBars() {
+        screen(state.copy(counts = VisitStatistics(0, 0), timeline = emptyList()))
+        compose.onNodeWithText("No recorded visits in this period.").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription(
+            "Interval 1 · Non-bot visits: 0 · Potential bot visits: 0",
+        ).assertDoesNotExist()
     }
 
     @Test fun insufficientApiPermissionsAreVisibleAndRetryable() {
