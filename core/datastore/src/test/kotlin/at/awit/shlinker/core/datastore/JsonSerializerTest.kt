@@ -1,6 +1,7 @@
 package at.awit.shlinker.core.datastore
 
 import androidx.datastore.core.CorruptionException
+import at.awit.shlinker.core.model.ServerSort
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.test.runTest
@@ -16,6 +17,8 @@ class JsonSerializerTest {
         val data = StoredServers(
             servers = listOf(StoredServer("id1", "Home", "https://s.example.org", 42L)),
             activeServerId = "id1",
+            sort = ServerSort.HOSTNAME_DESC,
+            manualOrder = listOf("id1"),
         )
         val out = ByteArrayOutputStream()
         serializer.writeTo(data, out)
@@ -25,6 +28,23 @@ class JsonSerializerTest {
     @Test
     fun emptyFileGivesDefault() = runTest {
         assertEquals(StoredServers(), serializer.readFrom(ByteArrayInputStream(ByteArray(0))))
+    }
+
+    @Test
+    fun profilesFromOlderVersionsKeepTheirDataWithManualSortDefaults() = runTest {
+        val json = """
+            {"version":1,
+             "servers":[{"id":"id1","name":"Home","url":"https://s.example.org","createdAt":42}],
+             "activeServerId":"id1"}
+        """.trimIndent()
+        val stored = serializer.readFrom(ByteArrayInputStream(json.encodeToByteArray()))
+        assertEquals(
+            StoredServers(
+                servers = listOf(StoredServer("id1", "Home", "https://s.example.org", 42)),
+                activeServerId = "id1",
+            ),
+            stored,
+        )
     }
 
     @Test

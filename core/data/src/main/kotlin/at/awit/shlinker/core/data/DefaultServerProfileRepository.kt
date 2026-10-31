@@ -7,8 +7,10 @@ import at.awit.shlinker.core.datastore.StoredSecrets
 import at.awit.shlinker.core.datastore.StoredServer
 import at.awit.shlinker.core.datastore.StoredServers
 import at.awit.shlinker.core.model.ServerProfile
+import at.awit.shlinker.core.model.ServerSort
 import at.awit.shlinker.core.model.ServerUrl
 import java.net.URI
+import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -31,8 +33,46 @@ internal class DefaultServerProfileRepository @Inject constructor(
     private val mutationMutex = Mutex()
 
     override val profiles: Flow<List<ServerProfile>> = servers.data
-        .map { stored -> stored.servers.sortedBy { it.createdAt }.map { it.toModel() } }
+        .map { stored ->
+            val nameOrder = compareBy<StoredServer> { it.name.lowercase(Locale.ROOT) }
+            val hostOrder = compareBy<StoredServer> { hostOf(it.url).lowercase(Locale.ROOT) }
+            val manualPositions = stored.orderedIds().withIndex().associate { it.value to it.index }
+            val order = when (stored.sort) {
+                ServerSort.MANUAL -> compareBy { manualPositions.getValue(it.id) }
+                ServerSort.NAME_ASC -> nameOrder
+                ServerSort.NAME_DESC -> nameOrder.reversed()
+                ServerSort.HOSTNAME_ASC -> hostOrder.then(nameOrder)
+                ServerSort.HOSTNAME_DESC -> hostOrder.then(nameOrder).reversed()
+            }.thenBy { it.createdAt }.thenBy { it.id }
+            stored.servers.sortedWith(order).map { it.toModel() }
+        }
         .distinctUntilChanged()
+
+    override val sort: Flow<ServerSort> = servers.data.map { it.sort }.distinctUntilChanged()
+
+    override suspend fun setSort(sort: ServerSort) {
+        withContext(io) {
+            mutationMutex.withLock {
+                servers.updateData { it.copy(sort = sort) }
+            }
+        }
+    }
+
+    override suspend fun reorder(ids: List<String>) {
+        withContext(io) {
+            mutationMutex.withLock {
+                servers.updateData { stored ->
+                    if (stored.sort != ServerSort.MANUAL ||
+                        ids.size != stored.servers.size ||
+                        ids.toSet() != stored.servers.map { it.id }.toSet()
+                    ) {
+                        throw ServerOrderChangedException()
+                    }
+                    stored.copy(manualOrder = ids.toList())
+                }
+            }
+        }
+    }
 
     override val activeProfile: Flow<ServerProfile?> = servers.data
         .map { stored -> stored.servers.firstOrNull { it.id == stored.activeServerId }?.toModel() }
@@ -57,6 +97,7 @@ internal class DefaultServerProfileRepository @Inject constructor(
                 servers.updateData { stored ->
                     stored.copy(
                         servers = stored.servers + server,
+                        manualOrder = stored.orderedIds() + server.id,
                         activeServerId = if (makeActive ||
                             stored.activeServerId == null
                         ) {
@@ -117,6 +158,7 @@ internal class DefaultServerProfileRepository @Inject constructor(
                     val remaining = stored.servers.filterNot { it.id == id }
                     stored.copy(
                         servers = remaining,
+                        manualOrder = stored.orderedIds().filterNot { it == id },
                         activeServerId = if (stored.activeServerId == id) {
                             remaining.minByOrNull { it.createdAt }?.id
                         } else {
@@ -181,6 +223,12 @@ internal class DefaultServerProfileRepository @Inject constructor(
     }
 
     private fun hostOf(url: String): String = URI(url).host ?: url
+
+    private fun StoredServers.orderedIds(): List<String> {
+        val existing = servers.map { it.id }.toSet()
+        return manualOrder.filter { it in existing }.distinct() +
+            servers.sortedBy { it.createdAt }.map { it.id }.filterNot { it in manualOrder }
+    }
 
     private fun StoredServer.toModel() =
         ServerProfile(id = id, name = name, url = url, createdAtEpochMillis = createdAt)

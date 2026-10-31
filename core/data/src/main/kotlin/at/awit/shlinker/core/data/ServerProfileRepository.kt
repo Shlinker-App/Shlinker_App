@@ -1,14 +1,22 @@
 package at.awit.shlinker.core.data
 
 import at.awit.shlinker.core.model.ServerProfile
+import at.awit.shlinker.core.model.ServerSort
 import at.awit.shlinker.core.model.ServerUrl
 import kotlinx.coroutines.flow.Flow
 
 /** Verwaltung der Shlink-Server inkl. verschlüsselter API-Keys. */
 interface ServerProfileRepository {
 
-    /** Alle Server, sortiert nach Anlagezeitpunkt. */
+    /** Alle Server in der gespeicherten Anzeige-Reihenfolge. */
     val profiles: Flow<List<ServerProfile>>
+
+    val sort: Flow<ServerSort>
+
+    suspend fun setSort(sort: ServerSort)
+
+    /** Speichert eine vollständige manuelle Reihenfolge; aktiviert keine anderen Profile. */
+    suspend fun reorder(ids: List<String>)
 
     /** Aktuell gewählter Server (oder `null`, wenn noch keiner angelegt ist). */
     val activeProfile: Flow<ServerProfile?>
@@ -63,3 +71,5 @@ class DuplicateServerException : IllegalArgumentException("Server profile alread
 class ServerNameConflictException : IllegalArgumentException("Server profile name already exists for this address")
 
 class DuplicateCheckUnavailableException : IllegalStateException("Cannot verify existing server credentials")
+
+class ServerOrderChangedException : IllegalStateException("Server list changed; please try again")

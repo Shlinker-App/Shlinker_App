@@ -3,8 +3,10 @@ package at.awit.shlinker.home
 import at.awit.shlinker.core.data.ApiKeyResult
 import at.awit.shlinker.core.data.ServerNameConflictException
 import at.awit.shlinker.core.data.ServerNotFoundException
+import at.awit.shlinker.core.data.ServerOrderChangedException
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.model.ServerProfile
+import at.awit.shlinker.core.model.ServerSort
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +42,37 @@ class HomeViewModelTest {
     }
 
     @After fun tearDown() = Dispatchers.resetMain()
+
+    @Test fun sortAndManualOrderAreSavedWithoutChangingSelection() = runTest(dispatcher) {
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
+        vm.setSort(ServerSort.HOSTNAME_DESC)
+        advanceUntilIdle()
+        assertEquals(ServerSort.HOSTNAME_DESC, vm.state.value.sort)
+        vm.setSort(ServerSort.MANUAL)
+        advanceUntilIdle()
+        vm.reorder(listOf(second.id, first.id))
+        advanceUntilIdle()
+        assertEquals(listOf(second, first), vm.state.value.servers)
+        assertEquals(first.id, vm.state.value.activeId)
+    }
+
+    @Test fun sortAndReorderFailuresRemainVisible() = runTest(dispatcher) {
+        repository.failure = IOException("disk")
+        vm.setSort(ServerSort.NAME_DESC)
+        advanceUntilIdle()
+        assertEquals(ServerActionError.STORAGE, vm.action.value.error)
+        assertEquals(ServerSort.MANUAL, repository.sort.value)
+        repository.failure = ServerOrderChangedException()
+        vm.reorder(listOf(second.id, first.id))
+        advanceUntilIdle()
+        assertEquals(ServerActionError.ORDER_CHANGED, vm.action.value.error)
+        assertEquals(listOf(first, second), repository.profiles.value)
+        repository.failure = null
+        vm.reorder(listOf(second.id, first.id))
+        advanceUntilIdle()
+        assertNull(vm.action.value.error)
+        assertEquals(listOf(second, first), repository.profiles.value)
+    }
 
     @Test fun renameSavesNameOnlyAndKeepsActiveServer() = runTest(dispatcher) {
         vm.rename(first)
@@ -150,6 +183,15 @@ class HomeViewModelTest {
     }
 
     private class FakeProfiles(initial: List<ServerProfile>) : ServerProfileRepository {
+        override val sort = MutableStateFlow(ServerSort.MANUAL)
+        override suspend fun setSort(sort: ServerSort) {
+            check()
+            this.sort.value = sort
+        }
+        override suspend fun reorder(ids: List<String>) {
+            check()
+            profiles.value = ids.map { id -> profiles.value.first { it.id == id } }
+        }
         override val profiles = MutableStateFlow(initial)
         override val activeProfile = MutableStateFlow(initial.firstOrNull())
         var failure: Exception? = null

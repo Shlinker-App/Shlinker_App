@@ -22,4 +22,14 @@
     <string name="home_storage_error">Could not save your changes. Please try again.</string>
     <string name="home_server_missing">This server profile no longer exists.</string>
     <string name="home_dismiss">Dismiss</string>
+    <string name="home_sort">Sort servers</string>
+    <string name="home_sort_manual">Manual</string>
+    <string name="home_sort_name_asc">Name (A–Z)</string>
+    <string name="home_sort_name_desc">Name (Z–A)</string>
+    <string name="home_sort_host_asc">Hostname (A–Z)</string>
+    <string name="home_sort_host_desc">Hostname (Z–A)</string>
+    <string name="home_drag">Drag to reorder %1$s</string>
+    <string name="home_move_up">Move up</string>
+    <string name="home_move_down">Move down</string>
+    <string name="home_order_changed">The server list changed. Please try sorting again.</string>
 </resources>

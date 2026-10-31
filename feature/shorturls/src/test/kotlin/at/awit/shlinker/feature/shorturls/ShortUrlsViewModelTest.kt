@@ -8,6 +8,7 @@ import at.awit.shlinker.core.data.ApiKeyResult
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.data.ShortUrlRepository
 import at.awit.shlinker.core.model.ServerProfile
+import at.awit.shlinker.core.model.ServerSort
 import at.awit.shlinker.core.model.ShortUrl
 import at.awit.shlinker.core.model.ShortUrlPage
 import at.awit.shlinker.core.network.ShortUrlService
@@ -146,6 +147,9 @@ class ShortUrlsViewModelTest {
     }
 
     private class FakeProfiles(server: ServerProfile) : ServerProfileRepository {
+        override val sort = MutableStateFlow(ServerSort.MANUAL)
+        override suspend fun setSort(sort: ServerSort) = error("unused")
+        override suspend fun reorder(ids: List<String>) = error("unused")
         override val profiles = MutableStateFlow(listOf(server))
         override val activeProfile = MutableStateFlow<ServerProfile?>(server)
 

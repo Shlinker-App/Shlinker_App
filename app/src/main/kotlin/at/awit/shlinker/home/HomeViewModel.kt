@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.awit.shlinker.core.data.ServerNameConflictException
 import at.awit.shlinker.core.data.ServerNotFoundException
+import at.awit.shlinker.core.data.ServerOrderChangedException
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.model.ServerProfile
+import at.awit.shlinker.core.model.ServerSort
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.IOException
 import javax.inject.Inject
@@ -17,9 +19,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-data class HomeUiState(val servers: List<ServerProfile> = emptyList(), val activeId: String? = null)
+data class HomeUiState(
+    val servers: List<ServerProfile> = emptyList(),
+    val activeId: String? = null,
+    val sort: ServerSort = ServerSort.MANUAL,
+)
 
-enum class ServerActionError { NAME_CONFLICT, EMPTY_NAME, STORAGE, NOT_FOUND }
+enum class ServerActionError { NAME_CONFLICT, EMPTY_NAME, STORAGE, NOT_FOUND, ORDER_CHANGED }
 
 data class ServerActionState(
     val server: ServerProfile? = null,
@@ -34,12 +40,24 @@ data class ServerActionState(
 class HomeViewModel @Inject constructor(private val repository: ServerProfileRepository) : ViewModel() {
     private val _action = MutableStateFlow(ServerActionState())
     val action = _action.asStateFlow()
-    val state: StateFlow<HomeUiState> = combine(repository.profiles, repository.activeProfile) { all, active ->
-        HomeUiState(all, active?.id)
+    val state: StateFlow<HomeUiState> = combine(repository.profiles, repository.activeProfile, repository.sort) {
+            all,
+            active,
+            sort,
+        ->
+        HomeUiState(all, active?.id, sort)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     fun setActive(id: String) {
         mutate { repository.setActive(id) }
+    }
+
+    fun setSort(sort: ServerSort) {
+        mutate { repository.setSort(sort) }
+    }
+
+    fun reorder(ids: List<String>) {
+        mutate { repository.reorder(ids) }
     }
 
     fun rename(server: ServerProfile) {
@@ -84,6 +102,8 @@ class HomeViewModel @Inject constructor(private val repository: ServerProfileRep
                 _action.value = _action.value.copy(busy = false, error = ServerActionError.NOT_FOUND)
             } catch (_: IOException) {
                 _action.value = _action.value.copy(busy = false, error = ServerActionError.STORAGE)
+            } catch (_: ServerOrderChangedException) {
+                _action.value = _action.value.copy(busy = false, error = ServerActionError.ORDER_CHANGED)
             }
         }
     }

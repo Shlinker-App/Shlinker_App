@@ -6,6 +6,7 @@ import at.awit.shlinker.core.data.DuplicateServerException
 import at.awit.shlinker.core.data.ServerNameConflictException
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.model.ServerProfile
+import at.awit.shlinker.core.model.ServerSort
 import at.awit.shlinker.core.model.ServerUrl
 import at.awit.shlinker.core.network.ConnectionError
 import at.awit.shlinker.core.network.ConnectionResult
@@ -122,6 +123,9 @@ class AddServerViewModelTest {
     }
 
     private class FakeRepository : ServerProfileRepository {
+        override val sort = MutableStateFlow(ServerSort.MANUAL)
+        override suspend fun setSort(sort: ServerSort) = error("unused")
+        override suspend fun reorder(ids: List<String>) = error("unused")
         var addFailure: Exception? = null
         val added = mutableListOf<ServerProfile>()
         private val state = MutableStateFlow<List<ServerProfile>>(emptyList())

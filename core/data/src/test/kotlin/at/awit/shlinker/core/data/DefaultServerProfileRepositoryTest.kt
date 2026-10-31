@@ -1,7 +1,9 @@
 package at.awit.shlinker.core.data
 
 import at.awit.shlinker.core.datastore.StoredSecrets
+import at.awit.shlinker.core.datastore.StoredServer
 import at.awit.shlinker.core.datastore.StoredServers
+import at.awit.shlinker.core.model.ServerSort
 import at.awit.shlinker.core.model.ServerUrl
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -23,6 +25,100 @@ class DefaultServerProfileRepositoryTest {
     private val secrets = InMemoryDataStore(StoredSecrets())
     private val cipher = FakeCipher()
     private val repo = DefaultServerProfileRepository(servers, secrets, cipher, dispatcher)
+
+    @Test
+    fun existingProfilesWithoutManualOrderKeepCreationOrder() = scope.runTest {
+        servers.updateData {
+            StoredServers(
+                servers = listOf(
+                    StoredServer("new", "New", "https://new.example.org", 200),
+                    StoredServer("old", "Old", "https://old.example.org", 100),
+                ),
+                activeServerId = "new",
+            )
+        }
+        assertEquals(ServerSort.MANUAL, repo.sort.first())
+        assertEquals(listOf("old", "new"), repo.profiles.first().map { it.id })
+        assertEquals("new", repo.activeProfile.first()?.id)
+        val third = repo.add("Third", "third.example.org", "key", makeActive = false)
+        assertEquals(listOf("old", "new", third.id), repo.profiles.first().map { it.id })
+    }
+
+    @Test
+    fun manualOrderSurvivesRepositoryRecreationAndSortSwitching() = scope.runTest {
+        val a = repo.add("Alpha", "a.example.org", "key")
+        val b = repo.add("Beta", "b.example.org", "key")
+        val c = repo.add("Charlie", "c.example.org", "key")
+        repo.reorder(listOf(c.id, a.id, b.id))
+        repo.setSort(ServerSort.NAME_ASC)
+        assertEquals(listOf(a, b, c), repo.profiles.first())
+        val reopened = DefaultServerProfileRepository(servers, secrets, cipher, dispatcher)
+        assertEquals(ServerSort.NAME_ASC, reopened.sort.first())
+        reopened.setSort(ServerSort.MANUAL)
+        assertEquals(listOf(c, a, b), reopened.profiles.first())
+        assertEquals(c, reopened.activeProfile.first())
+        assertEquals(ApiKeyResult.Available("key"), reopened.getApiKey(a.id))
+    }
+
+    @Test
+    fun manualOrderAppendsNewProfilesEvenWhileAutomaticallySortedAndRemovesDeletedIds() = scope.runTest {
+        val a = repo.add("Alpha", "a.example.org", "key")
+        val b = repo.add("Beta", "b.example.org", "key")
+        repo.reorder(listOf(b.id, a.id))
+        repo.setSort(ServerSort.NAME_DESC)
+        val c = repo.add("Charlie", "c.example.org", "key", makeActive = false)
+        repo.delete(a.id)
+        repo.setSort(ServerSort.MANUAL)
+        assertEquals(listOf(b, c), repo.profiles.first())
+        assertEquals(listOf(b.id, c.id), servers.current.manualOrder)
+        assertEquals(b, repo.activeProfile.first())
+    }
+
+    @Test
+    fun nameSortIsCaseInsensitiveAndRenameUpdatesAutomaticOrder() = scope.runTest {
+        val z = repo.add("Zulu", "z.example.org", "key")
+        val a = repo.add("alpha", "a.example.org", "key")
+        repo.setSort(ServerSort.NAME_ASC)
+        assertEquals(listOf(a, z), repo.profiles.first())
+        repo.setSort(ServerSort.NAME_DESC)
+        assertEquals(listOf(z, a), repo.profiles.first())
+        val renamed = repo.update(z.id, name = "Aardvark")
+        assertEquals(listOf(a, renamed), repo.profiles.first())
+        assertEquals(a, repo.activeProfile.first())
+    }
+
+    @Test
+    fun hostnameSortIgnoresPathAndPortAndUsesNameForEqualHosts() = scope.runTest {
+        val z = repo.add("Alpha", "z.example.org", "key")
+        val b = repo.add("Beta", "a.example.org:8443/aaa", "key")
+        val a = repo.add("alpha", "a.example.org/zzz", "key")
+        repo.setSort(ServerSort.HOSTNAME_ASC)
+        assertEquals(listOf(a, b, z), repo.profiles.first())
+        repo.setSort(ServerSort.HOSTNAME_DESC)
+        assertEquals(listOf(z, b, a), repo.profiles.first())
+        assertEquals(a, repo.activeProfile.first())
+    }
+
+    @Test
+    fun invalidOrOutdatedReorderIsRejectedWithoutChangingStoredOrder() = scope.runTest {
+        val a = repo.add("Alpha", "a.example.org", "key")
+        val b = repo.add("Beta", "b.example.org", "key")
+        for (ids in listOf(listOf(a.id), listOf(a.id, a.id), listOf(a.id, "missing"))) {
+            try {
+                repo.reorder(ids)
+                throw AssertionError("Invalid order accepted")
+            } catch (_: ServerOrderChangedException) {
+                assertEquals(listOf(a, b), repo.profiles.first())
+            }
+        }
+        repo.setSort(ServerSort.NAME_ASC)
+        try {
+            repo.reorder(listOf(b.id, a.id))
+            throw AssertionError("Reorder accepted outside manual mode")
+        } catch (_: ServerOrderChangedException) {
+            assertEquals(listOf(a.id, b.id), servers.current.manualOrder)
+        }
+    }
 
     @Test
     fun `add normalisiert URL, setzt Hostname als Name und aktiviert`() = scope.runTest {
