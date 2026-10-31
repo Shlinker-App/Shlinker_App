@@ -12,9 +12,24 @@
     <string name="details_actions">Actions</string>
     <string name="details_statistics">Statistics</string>
     <string name="details_rules_action">Redirect rules</string>
-    <string name="details_actions_planned">Statistics and redirect rule management are planned for upcoming test versions.</string>
+    <string name="details_actions_planned">Redirect rule management is planned for an upcoming test version.</string>
+    <string name="stats_back">Back to shlink details</string>
+    <string name="stats_code">Short code: %1$s</string>
+    <string name="stats_domain">Domain: %1$s</string>
+    <string name="stats_period">Period</string>
+    <string name="stats_today">Today</string>
+    <string name="stats_7">Last 7 days</string>
+    <string name="stats_30">Last 30 days</string>
+    <string name="stats_90">Last 90 days</string>
+    <string name="stats_all">All time</string>
+    <string name="stats_window">From: %1$s\nUntil: %2$s\nTime zone: %3$s</string>
+    <string name="stats_beginning">Beginning of recorded visits</string>
+    <string name="stats_bots">Potential bot visits</string>
+    <string name="stats_hint">Day periods include today, starting at midnight in your device time zone. Refresh updates the end time. Counts come from two server queries for the same period; concurrent changes may affect them. Potential bot visits = total minus non-bot visits, based on Shlink’s classification. Only this shlink’s recorded visits are included, not orphan visits. No individual visitors are displayed or stored by the app. Loading statistics does not visit the short URL.</string>
+    <string name="stats_invalid">The server returned missing, invalid or inconsistent visit counts. Refresh to try again; no zero values were assumed.</string>
+    <string name="stats_load_error">Could not load visit statistics. Check your connection and try again.</string>
     <string name="delete_action">Delete shlink</string>
-    <string name="delete_title">Delete this shlink?</string>
+    <string name="delete_title">DANGER ZONE</string>
     <string name="delete_warning">Permanently delete this shlink and its visit history from the server? The short URL will stop working. This cannot be undone.</string>
     <string name="delete_confirm">Delete permanently</string>
     <string name="delete_threshold">Shlink refused deletion because this link exceeds the server’s visit threshold. The app will not bypass that protection.</string>

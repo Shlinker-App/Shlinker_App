@@ -23,3 +23,6 @@ data class CreateShortUrlRoute(val serverId: String) : NavKey
 
 @Serializable
 data class ShortUrlDetailsRoute(val serverId: String, val shortCode: String, val domain: String?) : NavKey
+
+@Serializable
+data class VisitStatisticsRoute(val serverId: String, val shortCode: String, val domain: String?) : NavKey

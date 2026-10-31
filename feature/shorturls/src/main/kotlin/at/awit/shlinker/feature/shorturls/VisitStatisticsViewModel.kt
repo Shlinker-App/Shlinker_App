@@ -1,0 +1,73 @@
+package at.awit.shlinker.feature.shorturls
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import at.awit.shlinker.core.data.ServerNotFoundException
+import at.awit.shlinker.core.data.VisitStatisticsRepository
+import at.awit.shlinker.core.model.VisitPeriod
+import at.awit.shlinker.core.model.VisitStatistics
+import at.awit.shlinker.core.model.VisitWindow
+import at.awit.shlinker.core.model.window
+import dagger.hilt.android.lifecycle.HiltViewModel
+import java.io.IOException
+import java.time.Instant
+import java.time.ZoneId
+import javax.inject.Inject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+data class VisitStatisticsState(
+    val period: VisitPeriod = VisitPeriod.LAST_30_DAYS,
+    val window: VisitWindow? = null,
+    val zone: ZoneId = ZoneId.systemDefault(),
+    val loading: Boolean = true,
+    val serverName: String? = null,
+    val counts: VisitStatistics? = null,
+    val error: Exception? = null,
+)
+
+@HiltViewModel
+class VisitStatisticsViewModel @Inject constructor(private val repository: VisitStatisticsRepository) : ViewModel() {
+    private val _state = MutableStateFlow(VisitStatisticsState())
+    val state = _state.asStateFlow()
+    private var identity: Triple<String, String, String?>? = null
+    private var job: Job? = null
+
+    fun load(serverId: String, shortCode: String, domain: String?) {
+        val requested = Triple(serverId, shortCode, domain)
+        if (identity == requested) return
+        identity = requested
+        request(_state.value.period)
+    }
+
+    fun select(period: VisitPeriod) {
+        if (_state.value.period == period) return
+        request(period)
+    }
+
+    fun refresh() {
+        if (_state.value.loading) return
+        request(_state.value.period)
+    }
+
+    private fun request(period: VisitPeriod) {
+        val requested = identity ?: return
+        job?.cancel()
+        val zone = ZoneId.systemDefault()
+        val window = period.window(Instant.now(), zone)
+        _state.value = VisitStatisticsState(period = period, zone = zone, window = window)
+        job = viewModelScope.launch {
+            try {
+                val result = repository.get(requested.first, requested.second, requested.third, window)
+                _state.value =
+                    _state.value.copy(loading = false, serverName = result.serverName, counts = result.counts)
+            } catch (e: ServerNotFoundException) {
+                _state.value = _state.value.copy(loading = false, error = e)
+            } catch (e: IOException) {
+                _state.value = _state.value.copy(loading = false, error = e)
+            }
+        }
+    }
+}

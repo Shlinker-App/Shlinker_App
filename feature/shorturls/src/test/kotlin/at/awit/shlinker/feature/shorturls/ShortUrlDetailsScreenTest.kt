@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
@@ -44,6 +45,7 @@ class ShortUrlDetailsScreenTest {
     private var back = false
     private var submitted: ShortUrlEditForm? = null
     private var deleted = false
+    private var statistics = false
     private val full = ShortUrlDetails(
         url = ShortUrl(
             "abc",
@@ -71,7 +73,7 @@ class ShortUrlDetailsScreenTest {
             ShlinkerTheme(dynamicColor = false) {
                 ShortUrlDetailsScreen(
                     state, { back = true }, { refreshed = true }, {}, {}, {}, {},
-                    {}, {}, {}, TagSuggestionsState(), {},
+                    {}, {}, {}, TagSuggestionsState(), {}, { statistics = true },
                 )
             }
         }
@@ -80,7 +82,8 @@ class ShortUrlDetailsScreenTest {
     @Test fun actionsShowWorkingQrAndExplicitlyDisabledFutureFeatures() {
         screen(ShortUrlDetailsState(serverName = "Home", loading = false, details = full))
         compose.onNodeWithText("Actions").assertIsDisplayed()
-        compose.onNodeWithText("Statistics").assertIsNotEnabled()
+        compose.onNodeWithText("Statistics").assertIsEnabled().performClick()
+        assertEquals(true, statistics)
         compose.onNodeWithText("Redirect rules").assertIsNotEnabled()
         compose.onNodeWithText("QR code").assertDoesNotExist()
         compose.onNodeWithText("Show QR code").performClick()
@@ -169,7 +172,7 @@ class ShortUrlDetailsScreenTest {
                     { state = state.copy(form = it) },
                     { submitted = state.form },
                     { state = state.copy(form = null) },
-                    {}, {}, {}, TagSuggestionsState(tags = listOf("server-tag", "other")), {},
+                    {}, {}, {}, TagSuggestionsState(tags = listOf("server-tag", "other")), {}, {},
                 )
             }
         }
@@ -276,7 +279,7 @@ class ShortUrlDetailsScreenTest {
                     { state = state.copy(confirmingDelete = true) },
                     { state = state.copy(confirmingDelete = false) },
                     { deleted = true },
-                    TagSuggestionsState(), {},
+                    TagSuggestionsState(), {}, {},
                 )
             }
         }
@@ -285,7 +288,7 @@ class ShortUrlDetailsScreenTest {
     @Test fun deleteRequiresConfirmationShowsIdentityAndCanBeCancelledWithoutCallingDelete() {
         deletableScreen()
         compose.onNodeWithText("Delete shlink").performScrollTo().performClick()
-        compose.onNodeWithText("Delete this shlink?").assertIsDisplayed()
+        compose.onNodeWithText("DANGER ZONE").assertIsDisplayed()
         compose.onNodeWithText(
             "Permanently delete this shlink and its visit history from the server? " +
                 "The short URL will stop working. This cannot be undone.",
@@ -296,7 +299,7 @@ class ShortUrlDetailsScreenTest {
         assertEquals(false, deleted)
         compose.onNodeWithText("Cancel").performClick()
         assertEquals(false, deleted)
-        compose.onNodeWithText("Delete this shlink?").assertDoesNotExist()
+        compose.onNodeWithText("DANGER ZONE").assertDoesNotExist()
         compose.onNodeWithText("Delete shlink").performClick()
         compose.onNodeWithText("Delete permanently").performClick()
         assertEquals(true, deleted)
@@ -308,6 +311,7 @@ class ShortUrlDetailsScreenTest {
         compose.onNodeWithContentDescription("Refresh").assertIsNotEnabled()
         compose.onNodeWithText("Edit").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText("Show QR code").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Statistics").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText("Delete shlink").performScrollTo().assertIsNotEnabled()
     }
 

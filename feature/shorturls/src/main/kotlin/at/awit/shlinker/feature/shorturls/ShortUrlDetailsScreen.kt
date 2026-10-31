@@ -62,6 +62,7 @@ fun ShortUrlDetailsRoute(
     domain: String?,
     onBack: () -> Unit,
     onChanged: () -> Unit,
+    onStatistics: () -> Unit,
     viewModel: ShortUrlDetailsViewModel = hiltViewModel(),
     tagsViewModel: TagSuggestionsViewModel = hiltViewModel(),
 ) {
@@ -86,6 +87,7 @@ fun ShortUrlDetailsRoute(
         viewModel::delete,
         tags,
         { tagsViewModel.load(serverId, retry = true) },
+        onStatistics,
     )
 }
 
@@ -104,6 +106,7 @@ internal fun ShortUrlDetailsScreen(
     onDelete: () -> Unit,
     tagSuggestions: TagSuggestionsState,
     onRetryTags: () -> Unit,
+    onStatistics: () -> Unit,
 ) {
     var discard by remember { mutableStateOf(false) }
     var qrUrl by rememberSaveable { mutableStateOf<String?>(null) }
@@ -247,7 +250,7 @@ internal fun ShortUrlDetailsScreen(
                                 Icon(Icons.Outlined.QrCode, contentDescription = null)
                                 Text(stringResource(R.string.qr_show))
                             }
-                            TextButton(onClick = {}, enabled = false) {
+                            TextButton(onClick = onStatistics, enabled = !state.saving && !state.needsReload) {
                                 Icon(Icons.Outlined.BarChart, contentDescription = null)
                                 Text(stringResource(R.string.details_statistics))
                             }

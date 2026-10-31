@@ -17,6 +17,7 @@ import at.awit.shlinker.feature.servers.AddServerRoute as AddServerScreenRoute
 import at.awit.shlinker.feature.shorturls.CreateShortUrlRoute as CreateShortUrlScreenRoute
 import at.awit.shlinker.feature.shorturls.ShortUrlDetailsRoute as ShortUrlDetailsScreenRoute
 import at.awit.shlinker.feature.shorturls.ShortUrlsRoute as ShortUrlsScreenRoute
+import at.awit.shlinker.feature.shorturls.VisitStatisticsRoute as VisitStatisticsScreenRoute
 import at.awit.shlinker.home.HomeScreen
 import at.awit.shlinker.navigation.AddServerRoute
 import at.awit.shlinker.navigation.CreateShortUrlRoute
@@ -25,6 +26,7 @@ import at.awit.shlinker.navigation.HomeRoute
 import at.awit.shlinker.navigation.SettingsRoute
 import at.awit.shlinker.navigation.ShortUrlDetailsRoute
 import at.awit.shlinker.navigation.ShortUrlsRoute
+import at.awit.shlinker.navigation.VisitStatisticsRoute
 import at.awit.shlinker.settings.SettingsRoute as SettingsScreenRoute
 
 @Composable
@@ -78,6 +80,17 @@ private fun AppNavigation(start: NavKey) {
                     domain = route.domain,
                     onBack = { backStack.removeLastOrNull() },
                     onChanged = { refreshKey++ },
+                    onStatistics = {
+                        backStack.add(VisitStatisticsRoute(route.serverId, route.shortCode, route.domain))
+                    },
+                )
+            }
+            entry<VisitStatisticsRoute> { route ->
+                VisitStatisticsScreenRoute(
+                    serverId = route.serverId,
+                    shortCode = route.shortCode,
+                    domain = route.domain,
+                    onBack = { backStack.removeLastOrNull() },
                 )
             }
             entry<CreateShortUrlRoute> { route ->
