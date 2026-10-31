@@ -2,6 +2,7 @@ package at.awit.shlinker.core.network
 
 import at.awit.shlinker.core.model.ShortUrl
 import at.awit.shlinker.core.model.ShortUrlPage
+import at.awit.shlinker.core.model.ShortUrlSort
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -14,7 +15,14 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
 interface ShortUrlService {
-    suspend fun list(serverUrl: String, apiKey: String, page: Int, itemsPerPage: Int, searchTerm: String): ShortUrlPage
+    suspend fun list(
+        serverUrl: String,
+        apiKey: String,
+        page: Int,
+        itemsPerPage: Int,
+        searchTerm: String,
+        sort: ShortUrlSort = ShortUrlSort.NEWEST,
+    ): ShortUrlPage
 }
 
 class ShortUrlRequestException(val error: ConnectionError) : IOException("Short URL request failed")
@@ -30,6 +38,7 @@ internal class KtorShortUrlService @Inject constructor(private val client: HttpC
         page: Int,
         itemsPerPage: Int,
         searchTerm: String,
+        sort: ShortUrlSort,
     ): ShortUrlPage {
         require(page > 0 && itemsPerPage > 0)
         val response = try {
@@ -37,7 +46,7 @@ internal class KtorShortUrlService @Inject constructor(private val client: HttpC
                 header(ShlinkApi.API_KEY_HEADER, apiKey)
                 parameter("page", page)
                 parameter("itemsPerPage", itemsPerPage)
-                parameter("orderBy", "dateCreated-DESC")
+                parameter("orderBy", sort.orderBy)
                 if (searchTerm.isNotBlank()) parameter("searchTerm", searchTerm)
             }
         } catch (e: IOException) {

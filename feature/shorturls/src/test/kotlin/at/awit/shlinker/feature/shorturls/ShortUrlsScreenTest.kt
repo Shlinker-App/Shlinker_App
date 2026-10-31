@@ -1,5 +1,9 @@
 package at.awit.shlinker.feature.shorturls
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasScrollAction
@@ -21,6 +25,7 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.paging.compose.collectAsLazyPagingItems
 import at.awit.shlinker.core.model.ShortUrl
+import at.awit.shlinker.core.model.ShortUrlSort
 import at.awit.shlinker.core.network.ConnectionError
 import at.awit.shlinker.core.network.ShortUrlRequestException
 import at.awit.shlinker.core.ui.theme.ShlinkerTheme
@@ -48,6 +53,7 @@ class ShortUrlsScreenTest {
     private var copied: String? = null
     private var query: String? = null
     private var wentBack = false
+    private var selectedSort: ShortUrlSort? = null
     private val loadedEmpty = PagingData.empty<ShortUrl>(
         sourceLoadStates = LoadStates(
             refresh = LoadState.NotLoading(true),
@@ -56,8 +62,10 @@ class ShortUrlsScreenTest {
         ),
     )
 
-    private fun screen(flow: Flow<PagingData<ShortUrl>>, search: String = "") {
+    private fun screen(flow: Flow<PagingData<ShortUrl>>, search: String = "", sortError: Boolean = false) {
         compose.setContent {
+            var sort by remember { mutableStateOf(ShortUrlSort.NEWEST) }
+            var error by remember { mutableStateOf(sortError) }
             ShlinkerTheme(dynamicColor = false) {
                 ShortUrlsScreen(
                     urls = flow.collectAsLazyPagingItems(),
@@ -66,6 +74,13 @@ class ShortUrlsScreenTest {
                     onSearchChange = { query = it },
                     onBack = { wentBack = true },
                     onCopy = { copied = it },
+                    sort = sort,
+                    onSortChange = {
+                        selectedSort = it
+                        sort = it
+                    },
+                    sortError = error,
+                    onDismissSortError = { error = false },
                 )
             }
         }
@@ -104,6 +119,31 @@ class ShortUrlsScreenTest {
         assertEquals("https://s.example/abc", copied)
         compose.onNodeWithContentDescription("Back to server overview").performClick()
         assertTrue(wentBack)
+    }
+
+    @Test fun sortMenuSupportsAllFourOrdersAndShowsCurrentChoice() {
+        screen(flowOf(loadedEmpty))
+        assertText("Newest first")
+        for ((label, sort) in listOf(
+            "Oldest first" to ShortUrlSort.OLDEST,
+            "Most visited first" to ShortUrlSort.MOST_VISITED,
+            "Least visited first" to ShortUrlSort.LEAST_VISITED,
+            "Newest first" to ShortUrlSort.NEWEST,
+        )) {
+            compose.onNodeWithContentDescription("Sort shlinks").performClick()
+            compose.onNodeWithText(label).performClick()
+            assertText(label)
+            assertEquals(sort, selectedSort)
+        }
+    }
+
+    @Test fun sortSaveErrorIsVisibleAndDismissible() {
+        screen(flowOf(loadedEmpty), sortError = true)
+        val message = "Could not save the sort order. Your previous order is still selected. Please try again."
+        assertText(message)
+        compose.onNodeWithText("Dismiss").performClick()
+        compose.onNodeWithText(message).assertDoesNotExist()
+        assertText("Newest first")
     }
 
     @Test fun emptyListAndSearchAreVisible() {

@@ -11,9 +11,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -22,6 +26,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -31,8 +36,10 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
@@ -46,6 +53,7 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import at.awit.shlinker.core.data.ShortUrlApiKeyException
 import at.awit.shlinker.core.model.ShortUrl
+import at.awit.shlinker.core.model.ShortUrlSort
 import at.awit.shlinker.core.network.ConnectionError
 import at.awit.shlinker.core.network.InvalidShortUrlResponseException
 import at.awit.shlinker.core.network.ShortUrlRequestException
@@ -55,6 +63,9 @@ import kotlinx.coroutines.launch
 fun ShortUrlsRoute(onBack: () -> Unit, viewModel: ShortUrlsViewModel = hiltViewModel()) {
     val search by viewModel.search.collectAsStateWithLifecycle()
     val server by viewModel.server.collectAsStateWithLifecycle()
+    val sort by viewModel.sort.collectAsStateWithLifecycle()
+    val sortSaving by viewModel.sortSaving.collectAsStateWithLifecycle()
+    val sortError by viewModel.sortError.collectAsStateWithLifecycle()
     val urls = viewModel.urls.collectAsLazyPagingItems()
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
@@ -73,6 +84,11 @@ fun ShortUrlsRoute(onBack: () -> Unit, viewModel: ShortUrlsViewModel = hiltViewM
             }
         },
         snackbar = snackbar,
+        sort = sort,
+        onSortChange = viewModel::onSortChange,
+        sortSaving = sortSaving,
+        sortError = sortError,
+        onDismissSortError = viewModel::dismissSortError,
     )
 }
 
@@ -86,9 +102,15 @@ internal fun ShortUrlsScreen(
     onBack: () -> Unit,
     onCopy: (String) -> Unit,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
+    sort: ShortUrlSort = ShortUrlSort.NEWEST,
+    onSortChange: (ShortUrlSort) -> Unit = {},
+    sortSaving: Boolean = false,
+    sortError: Boolean = false,
+    onDismissSortError: () -> Unit = {},
 ) {
+    var sortMenu by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
-    LaunchedEffect(search, serverName) { listState.scrollToItem(0) }
+    LaunchedEffect(search, serverName, sort) { listState.scrollToItem(0) }
     val refresh = urls.loadState.refresh
     Scaffold(
         topBar = {
@@ -107,15 +129,48 @@ internal fun ShortUrlsScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { sortMenu = true }, enabled = !sortSaving) {
+                        Icon(Icons.AutoMirrored.Filled.Sort, stringResource(R.string.short_urls_sort))
+                    }
+                    DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
+                        ShortUrlSort.entries.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(shortUrlSortLabel(option)) },
+                                leadingIcon = {
+                                    if (sort == option) Icon(Icons.Outlined.CheckCircle, contentDescription = null)
+                                },
+                                onClick = {
+                                    sortMenu = false
+                                    onSortChange(option)
+                                },
+                            )
+                        }
+                    }
                     IconButton(onClick = urls::refresh, enabled = refresh !is LoadState.Loading) {
                         Icon(Icons.Outlined.Refresh, stringResource(R.string.short_urls_refresh))
                     }
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = {
+            if (sortError) {
+                Snackbar(
+                    modifier = Modifier.padding(16.dp),
+                    action = {
+                        TextButton(onClick = onDismissSortError) { Text(stringResource(R.string.short_urls_dismiss)) }
+                    },
+                ) { Text(stringResource(R.string.short_urls_sort_error)) }
+            } else {
+                SnackbarHost(snackbar)
+            }
+        },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
+            Text(
+                shortUrlSortLabel(sort),
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
             OutlinedTextField(
                 value = search,
                 onValueChange = onSearchChange,
@@ -168,6 +223,16 @@ internal fun ShortUrlsScreen(
         }
     }
 }
+
+@Composable
+private fun shortUrlSortLabel(sort: ShortUrlSort): String = stringResource(
+    when (sort) {
+        ShortUrlSort.NEWEST -> R.string.short_urls_sort_newest
+        ShortUrlSort.OLDEST -> R.string.short_urls_sort_oldest
+        ShortUrlSort.MOST_VISITED -> R.string.short_urls_sort_most
+        ShortUrlSort.LEAST_VISITED -> R.string.short_urls_sort_least
+    },
+)
 
 @Composable
 private fun ShortUrlRow(url: ShortUrl, onCopy: (String) -> Unit) {

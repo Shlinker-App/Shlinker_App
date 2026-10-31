@@ -1,25 +1,41 @@
 package at.awit.shlinker.core.data
 
+import androidx.datastore.core.DataStore
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import at.awit.shlinker.core.datastore.StoredServers
 import at.awit.shlinker.core.model.ServerProfile
 import at.awit.shlinker.core.model.ShortUrl
+import at.awit.shlinker.core.model.ShortUrlSort
 import at.awit.shlinker.core.network.ShortUrlService
 import java.io.IOException
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 class ShortUrlRepository @Inject constructor(
     private val profiles: ServerProfileRepository,
     private val service: ShortUrlService,
+    private val settings: DataStore<StoredServers>,
 ) {
-    fun list(server: ServerProfile, searchTerm: String): Flow<PagingData<ShortUrl>> = Pager(
+    val sort: Flow<ShortUrlSort> = settings.data.map { it.shortUrlSort }.distinctUntilChanged()
+
+    suspend fun setSort(sort: ShortUrlSort) {
+        settings.updateData { it.copy(shortUrlSort = sort) }
+    }
+
+    fun list(
+        server: ServerProfile,
+        searchTerm: String,
+        sort: ShortUrlSort = ShortUrlSort.NEWEST,
+    ): Flow<PagingData<ShortUrl>> = Pager(
         config = PagingConfig(pageSize = PAGE_SIZE, initialLoadSize = PAGE_SIZE, enablePlaceholders = false),
-        pagingSourceFactory = { ShortUrlPagingSource(server, searchTerm, profiles, service) },
+        pagingSourceFactory = { ShortUrlPagingSource(server, searchTerm, profiles, service, sort) },
     ).flow
 
     internal companion object {
@@ -34,8 +50,9 @@ internal class ShortUrlPagingSource(
     private val searchTerm: String,
     private val profiles: ServerProfileRepository,
     private val service: ShortUrlService,
+    private val sort: ShortUrlSort = ShortUrlSort.NEWEST,
 ) : PagingSource<Int, ShortUrl>() {
-    // Eine Aktualisierung beginnt bewusst wieder bei den neuesten Kurz-URLs.
+    // Refresh starts at page one of the selected server-side order.
     override fun getRefreshKey(state: PagingState<Int, ShortUrl>): Int? = null
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ShortUrl> = try {
@@ -44,7 +61,7 @@ internal class ShortUrlPagingSource(
             is ApiKeyResult.Available -> result.apiKey
             ApiKeyResult.Missing, ApiKeyResult.Unavailable -> throw ShortUrlApiKeyException()
         }
-        val result = service.list(server.url, key, page, ShortUrlRepository.PAGE_SIZE, searchTerm)
+        val result = service.list(server.url, key, page, ShortUrlRepository.PAGE_SIZE, searchTerm, sort)
         LoadResult.Page(
             data = result.items,
             prevKey = if (page > 1) page - 1 else null,

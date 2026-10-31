@@ -1,6 +1,7 @@
 package at.awit.shlinker.core.datastore
 
 import at.awit.shlinker.core.model.ServerSort
+import at.awit.shlinker.core.model.ShortUrlSort
 import kotlinx.serialization.Serializable
 
 /** Persistiertes Format der Server-Profile (ohne Secrets). Versioniert für spätere Migrationen. */
@@ -11,6 +12,7 @@ data class StoredServers(
     val activeServerId: String? = null,
     val sort: ServerSort = ServerSort.MANUAL,
     val manualOrder: List<String> = emptyList(),
+    val shortUrlSort: ShortUrlSort = ShortUrlSort.NEWEST,
 ) {
     companion object {
         const val CURRENT_VERSION = 1

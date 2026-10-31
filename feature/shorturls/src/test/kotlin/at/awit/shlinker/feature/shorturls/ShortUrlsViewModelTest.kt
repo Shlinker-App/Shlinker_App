@@ -1,5 +1,6 @@
 package at.awit.shlinker.feature.shorturls
 
+import androidx.datastore.core.DataStore
 import androidx.lifecycle.SavedStateHandle
 import androidx.paging.AsyncPagingDataDiffer
 import androidx.recyclerview.widget.DiffUtil
@@ -7,11 +8,14 @@ import androidx.recyclerview.widget.ListUpdateCallback
 import at.awit.shlinker.core.data.ApiKeyResult
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.data.ShortUrlRepository
+import at.awit.shlinker.core.datastore.StoredServers
 import at.awit.shlinker.core.model.ServerProfile
 import at.awit.shlinker.core.model.ServerSort
 import at.awit.shlinker.core.model.ShortUrl
 import at.awit.shlinker.core.model.ShortUrlPage
+import at.awit.shlinker.core.model.ShortUrlSort
 import at.awit.shlinker.core.network.ShortUrlService
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
@@ -41,6 +45,16 @@ class ShortUrlsViewModelTest {
     private val calls = mutableListOf<Pair<String, String>>()
     private var blockFirstServer = false
     private var firstCancelled = false
+    private val sortCalls = mutableListOf<ShortUrlSort>()
+    private var settingsFailure = false
+    private val stored = MutableStateFlow(StoredServers())
+    private val settings = object : DataStore<StoredServers> {
+        override val data = stored
+        override suspend fun updateData(transform: suspend (StoredServers) -> StoredServers): StoredServers {
+            if (settingsFailure) throw IOException("disk")
+            return transform(stored.value).also { stored.value = it }
+        }
+    }
     private val service = object : ShortUrlService {
         override suspend fun list(
             serverUrl: String,
@@ -48,8 +62,10 @@ class ShortUrlsViewModelTest {
             page: Int,
             itemsPerPage: Int,
             searchTerm: String,
+            sort: ShortUrlSort,
         ): ShortUrlPage {
             calls += serverUrl to searchTerm
+            sortCalls += sort
             assertEquals("$serverUrl/key", apiKey)
             if (blockFirstServer && serverUrl == first.url) {
                 try {
@@ -88,7 +104,7 @@ class ShortUrlsViewModelTest {
 
     @Test fun searchIsDebouncedTrimmedAndPersisted() = runTest(dispatcher) {
         val saved = SavedStateHandle()
-        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service), saved)
+        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service, settings), saved)
         val differ = differ()
         val job = launch { vm.urls.collectLatest { differ.submitData(it) } }
         try {
@@ -116,7 +132,7 @@ class ShortUrlsViewModelTest {
 
     @Test fun serverSwitchCancelsOldRequestAndUsesNewCredentials() = runTest(dispatcher) {
         blockFirstServer = true
-        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service), SavedStateHandle())
+        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service, settings), SavedStateHandle())
         val differ = differ()
         val job = launch { vm.urls.collectLatest { differ.submitData(it) } }
         try {
@@ -133,7 +149,7 @@ class ShortUrlsViewModelTest {
 
     @Test fun noActiveServerProducesLoadedEmptyListWithoutRequests() = runTest(dispatcher) {
         profiles.activeProfile.value = null
-        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service), SavedStateHandle())
+        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service, settings), SavedStateHandle())
         val differ = differ()
         val job = launch { vm.urls.collectLatest { differ.submitData(it) } }
         try {
@@ -144,6 +160,66 @@ class ShortUrlsViewModelTest {
         } finally {
             job.cancel()
         }
+    }
+
+    @Test fun changingSortCancelsOldLoadAndKeepsSearchAndServer() = runTest(dispatcher) {
+        blockFirstServer = true
+        val saved = SavedStateHandle(mapOf("search" to "article"))
+        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service, settings), saved)
+        val differ = differ()
+        val job = launch { vm.urls.collectLatest { differ.submitData(it) } }
+        try {
+            advanceUntilIdle()
+            vm.onSortChange(ShortUrlSort.MOST_VISITED)
+            advanceUntilIdle()
+            assertTrue(firstCancelled)
+            assertEquals(listOf(ShortUrlSort.NEWEST, ShortUrlSort.MOST_VISITED), sortCalls)
+            assertEquals(listOf(first.url to "article", first.url to "article"), calls)
+            assertEquals("article", vm.search.value)
+            assertEquals(first, profiles.activeProfile.value)
+            assertEquals(ShortUrlSort.MOST_VISITED, stored.value.shortUrlSort)
+        } finally {
+            job.cancel()
+        }
+    }
+
+    @Test fun persistedSortAppliesOnRecreationAndServerSwitch() = runTest(dispatcher) {
+        val repository = ShortUrlRepository(profiles, service, settings)
+        repository.setSort(ShortUrlSort.OLDEST)
+        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service, settings), SavedStateHandle())
+        val differ = differ()
+        val job = launch { vm.urls.collectLatest { differ.submitData(it) } }
+        try {
+            advanceUntilIdle()
+            profiles.activeProfile.value = second
+            advanceUntilIdle()
+            vm.onSortChange(ShortUrlSort.LEAST_VISITED)
+            advanceUntilIdle()
+            assertEquals(
+                listOf(ShortUrlSort.OLDEST, ShortUrlSort.OLDEST, ShortUrlSort.LEAST_VISITED),
+                sortCalls,
+            )
+            assertEquals(second.url to "", calls.last())
+        } finally {
+            job.cancel()
+        }
+    }
+
+    @Test fun failedSortSaveKeepsPreviousSelectionAndIsRetryable() = runTest(dispatcher) {
+        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service, settings), SavedStateHandle())
+        settingsFailure = true
+        vm.onSortChange(ShortUrlSort.MOST_VISITED)
+        advanceUntilIdle()
+        assertTrue(vm.sortError.value)
+        assertEquals(false, vm.sortSaving.value)
+        assertEquals(ShortUrlSort.NEWEST, stored.value.shortUrlSort)
+        vm.dismissSortError()
+        assertEquals(false, vm.sortError.value)
+        settingsFailure = false
+        vm.onSortChange(ShortUrlSort.MOST_VISITED)
+        advanceUntilIdle()
+        assertEquals(false, vm.sortError.value)
+        assertEquals(ShortUrlSort.MOST_VISITED, stored.value.shortUrlSort)
     }
 
     private class FakeProfiles(server: ServerProfile) : ServerProfileRepository {

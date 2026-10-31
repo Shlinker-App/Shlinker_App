@@ -3,6 +3,13 @@
     <string name="short_urls_title">Shlinks</string>
     <string name="short_urls_back">Back to server overview</string>
     <string name="short_urls_refresh">Refresh</string>
+    <string name="short_urls_sort">Sort shlinks</string>
+    <string name="short_urls_sort_newest">Newest first</string>
+    <string name="short_urls_sort_oldest">Oldest first</string>
+    <string name="short_urls_sort_most">Most visited first</string>
+    <string name="short_urls_sort_least">Least visited first</string>
+    <string name="short_urls_sort_error">Could not save the sort order. Your previous order is still selected. Please try again.</string>
+    <string name="short_urls_dismiss">Dismiss</string>
     <string name="short_urls_search">Search shlinks</string>
     <string name="short_urls_empty">No shlinks on this server yet.</string>
     <string name="short_urls_no_results">No matching shlinks found.</string>

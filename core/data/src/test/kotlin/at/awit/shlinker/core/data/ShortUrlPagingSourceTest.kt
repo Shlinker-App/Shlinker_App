@@ -5,9 +5,11 @@ import at.awit.shlinker.core.datastore.StoredSecrets
 import at.awit.shlinker.core.datastore.StoredServers
 import at.awit.shlinker.core.model.ShortUrl
 import at.awit.shlinker.core.model.ShortUrlPage
+import at.awit.shlinker.core.model.ShortUrlSort
 import at.awit.shlinker.core.network.ShortUrlService
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -18,8 +20,9 @@ import org.junit.Test
 class ShortUrlPagingSourceTest {
     private val secrets = InMemoryDataStore(StoredSecrets())
     private val cipher = FakeCipher()
+    private val storedServers = InMemoryDataStore(StoredServers())
     private val profiles = DefaultServerProfileRepository(
-        InMemoryDataStore(StoredServers()),
+        storedServers,
         secrets,
         cipher,
         UnconfinedTestDispatcher(),
@@ -35,14 +38,43 @@ class ShortUrlPagingSourceTest {
             page: Int,
             itemsPerPage: Int,
             searchTerm: String,
+            sort: ShortUrlSort,
         ): ShortUrlPage {
             calls += listOf(serverUrl, apiKey, page, itemsPerPage, searchTerm)
+            sorts += sort
             failure?.let { throw it }
             return ShortUrlPage(if (pagesCount == 0) emptyList() else listOf(url), page, pagesCount)
         }
     }
 
     private val refresh = PagingSource.LoadParams.Refresh<Int>(null, 90, false)
+    private val sorts = mutableListOf<ShortUrlSort>()
+
+    @Test fun globalSortSurvivesRecreationAndProfileChangesWithoutChangingSelection() = runTest {
+        val first = profiles.add("First", "first.example", "key")
+        val second = profiles.add("Second", "second.example", "key", makeActive = false)
+        profiles.reorder(listOf(second.id, first.id))
+        val repository = ShortUrlRepository(profiles, service, storedServers)
+        repository.setSort(ShortUrlSort.LEAST_VISITED)
+        assertEquals(first, profiles.activeProfile.first())
+        assertEquals(listOf(second, first), profiles.profiles.first())
+        profiles.update(second.id, name = "Renamed")
+        profiles.delete(first.id)
+        val recreated = ShortUrlRepository(profiles, service, storedServers)
+        assertEquals(ShortUrlSort.LEAST_VISITED, recreated.sort.first())
+        assertEquals(second.id, profiles.activeProfile.first()?.id)
+        assertEquals(ApiKeyResult.Available("key"), profiles.getApiKey(second.id))
+    }
+
+    @Test fun everyPageUsesSelectedServerSideSort() = runTest {
+        val server = profiles.add("Test", "https://s.example", "key")
+        for (sort in ShortUrlSort.entries) {
+            val source = ShortUrlPagingSource(server, "query", profiles, service, sort)
+            source.load(refresh)
+            source.load(PagingSource.LoadParams.Append(2, 30, false))
+        }
+        assertEquals(ShortUrlSort.entries.flatMap { listOf(it, it) }, sorts)
+    }
 
     @Test fun firstAndSubsequentPagesUseFixedPageSize() = runTest {
         val server = profiles.add("Test", "https://s.example", "key")

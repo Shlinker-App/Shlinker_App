@@ -1,5 +1,6 @@
 package at.awit.shlinker.core.network
 
+import at.awit.shlinker.core.model.ShortUrlSort
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -67,6 +68,17 @@ class ShortUrlServiceTest {
             .list("https://s.example", "secret", 1, 30, "")
         assertTrue(page.items.isEmpty())
         assertEquals(null, requests.single().url.parameters["searchTerm"])
+    }
+
+    @Test fun allSortModesSendExactShlinkOrderByWithoutLocallyReorderingResults() = runTest {
+        val expected = listOf("dateCreated-DESC", "dateCreated-ASC", "visits-DESC", "visits-ASC")
+        for ((index, sort) in ShortUrlSort.entries.withIndex()) {
+            val page = service(response).list("https://s.example", "secret", 2, 30, "query", sort)
+            assertEquals(expected[index], requests.last().url.parameters["orderBy"])
+            assertEquals("query", requests.last().url.parameters["searchTerm"])
+            assertEquals("2", requests.last().url.parameters["page"])
+            assertEquals("abc", page.items.single().shortCode)
+        }
     }
 
     @Test fun nullableTitleIsSupported() = runTest {

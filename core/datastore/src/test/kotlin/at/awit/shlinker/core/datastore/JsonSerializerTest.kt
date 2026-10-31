@@ -2,6 +2,7 @@ package at.awit.shlinker.core.datastore
 
 import androidx.datastore.core.CorruptionException
 import at.awit.shlinker.core.model.ServerSort
+import at.awit.shlinker.core.model.ShortUrlSort
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.test.runTest
@@ -19,6 +20,7 @@ class JsonSerializerTest {
             activeServerId = "id1",
             sort = ServerSort.HOSTNAME_DESC,
             manualOrder = listOf("id1"),
+            shortUrlSort = ShortUrlSort.MOST_VISITED,
         )
         val out = ByteArrayOutputStream()
         serializer.writeTo(data, out)
