@@ -41,6 +41,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -49,6 +50,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -64,6 +66,7 @@ import at.awit.shlinker.core.network.CertificateProblem
 import at.awit.shlinker.core.network.ConnectionError
 import at.awit.shlinker.core.ui.R as UiR
 import at.awit.shlinker.core.ui.theme.ShlinkerTheme
+import kotlinx.coroutines.launch
 
 @Composable
 fun AddServerRoute(
@@ -224,15 +227,22 @@ private fun UrlField(state: AddServerUiState, onUrlChange: (String) -> Unit, onU
 }
 
 @Composable
-private fun ApiKeyField(state: AddServerUiState, onApiKeyChange: (String) -> Unit, onSubmit: () -> Unit) {
+internal fun ApiKeyField(state: AddServerUiState, onApiKeyChange: (String) -> Unit, onSubmit: () -> Unit) {
     var visible by rememberSaveable { mutableStateOf(false) }
+    var pasteError by remember { mutableStateOf<Int?>(null) }
+    var pasting by remember { mutableStateOf(false) }
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
     OutlinedTextField(
         value = state.apiKey,
-        onValueChange = onApiKeyChange,
+        onValueChange = {
+            pasteError = null
+            onApiKeyChange(it)
+        },
         label = { Text(stringResource(R.string.add_server_api_key)) },
-        isError = state.apiKeyMissing,
-        supportingText = if (state.apiKeyMissing) {
-            { Text(stringResource(UiR.string.server_error_api_key_empty)) }
+        isError = state.apiKeyMissing || pasteError != null,
+        supportingText = if (pasteError != null || state.apiKeyMissing) {
+            { Text(stringResource(pasteError ?: UiR.string.server_error_api_key_empty)) }
         } else {
             null
         },
@@ -240,11 +250,37 @@ private fun ApiKeyField(state: AddServerUiState, onApiKeyChange: (String) -> Uni
         enabled = !state.isConnecting,
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {
-            IconButton(onClick = { visible = !visible }) {
-                Icon(
-                    if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                    stringResource(if (visible) R.string.add_server_hide_key else R.string.add_server_show_key),
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(
+                    enabled = !state.isConnecting && !pasting,
+                    onClick = {
+                        pasting = true
+                        pasteError = null
+                        scope.launch {
+                            try {
+                                val clip = clipboard.getClipEntry()?.clipData
+                                val text = clip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString()
+                                if (text.isNullOrBlank()) {
+                                    pasteError = R.string.add_server_paste_empty
+                                } else {
+                                    onApiKeyChange(text)
+                                }
+                            } catch (_: SecurityException) {
+                                pasteError = R.string.add_server_paste_denied
+                            } finally {
+                                pasting = false
+                            }
+                        }
+                    },
+                ) {
+                    Text(stringResource(R.string.add_server_paste))
+                }
+                IconButton(onClick = { visible = !visible }, enabled = !state.isConnecting) {
+                    Icon(
+                        if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                        stringResource(if (visible) R.string.add_server_hide_key else R.string.add_server_show_key),
+                    )
+                }
             }
         },
         keyboardOptions = KeyboardOptions(

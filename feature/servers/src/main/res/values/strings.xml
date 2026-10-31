@@ -9,6 +9,9 @@
     <string name="add_server_api_key">API key</string>
     <string name="add_server_show_key">Show API key</string>
     <string name="add_server_hide_key">Hide API key</string>
+    <string name="add_server_paste">Paste</string>
+    <string name="add_server_paste_empty">No text in the clipboard. Copy your API key first.</string>
+    <string name="add_server_paste_denied">Could not read the clipboard. Please try again or paste using the text menu.</string>
     <string name="add_server_submit">Connect &amp; save</string>
     <string name="add_server_connecting">Checking connection…</string>
     <string name="add_server_cancel">Cancel</string>
