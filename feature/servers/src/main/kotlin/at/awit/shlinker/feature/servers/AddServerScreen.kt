@@ -73,8 +73,10 @@ fun AddServerRoute(
     onSaved: (serverId: String) -> Unit,
     onBack: (() -> Unit)?,
     viewModel: AddServerViewModel = hiltViewModel(),
+    serverId: String? = null,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(serverId) { serverId?.let(viewModel::load) }
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
@@ -91,6 +93,7 @@ fun AddServerRoute(
         onSubmit = viewModel::onSubmit,
         onCancel = viewModel::onCancelConnect,
         onBack = onBack,
+        onRetryLoad = { serverId?.let(viewModel::load) },
     )
 }
 
@@ -105,13 +108,16 @@ fun AddServerScreen(
     onSubmit: () -> Unit,
     onCancel: () -> Unit,
     onBack: (() -> Unit)?,
+    onRetryLoad: () -> Unit = {},
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.add_server_title)) },
+                title = {
+                    Text(stringResource(if (state.editing) R.string.edit_server_title else R.string.add_server_title))
+                },
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack) {
@@ -133,7 +139,7 @@ fun AddServerScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                stringResource(R.string.add_server_intro),
+                stringResource(if (state.editing) R.string.edit_server_intro else R.string.add_server_intro),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -144,7 +150,7 @@ fun AddServerScreen(
                 label = { Text(stringResource(R.string.add_server_name)) },
                 supportingText = { Text(stringResource(R.string.add_server_name_hint)) },
                 singleLine = true,
-                enabled = !state.isConnecting,
+                enabled = !state.isConnecting && !state.loading && !state.loadFailed,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -164,10 +170,16 @@ fun AddServerScreen(
                             ServerSaveError.NAME_CONFLICT -> R.string.server_save_name_conflict
                             ServerSaveError.CANNOT_CHECK_DUPLICATE -> R.string.server_save_cannot_check
                             ServerSaveError.STORAGE -> R.string.server_save_storage
+                            ServerSaveError.NOT_FOUND -> R.string.server_save_not_found
+                            ServerSaveError.KEY_UNAVAILABLE -> UiR.string.server_error_api_key_unavailable
                         },
                     ),
                     color = MaterialTheme.colorScheme.error,
                 )
+            }
+            if (state.loading) CircularProgressIndicator()
+            if (state.loadFailed) {
+                TextButton(onClick = onRetryLoad) { Text(stringResource(R.string.edit_server_retry)) }
             }
 
             SubmitRow(state, onSubmit, onCancel)
@@ -211,7 +223,7 @@ private fun UrlField(state: AddServerUiState, onUrlChange: (String) -> Unit, onU
             )
         },
         singleLine = true,
-        enabled = !state.isConnecting,
+        enabled = !state.isConnecting && !state.loading && !state.loadFailed,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Uri,
             imeAction = ImeAction.Next,
@@ -243,16 +255,18 @@ internal fun ApiKeyField(state: AddServerUiState, onApiKeyChange: (String) -> Un
         isError = state.apiKeyMissing || pasteError != null,
         supportingText = if (pasteError != null || state.apiKeyMissing) {
             { Text(stringResource(pasteError ?: UiR.string.server_error_api_key_empty)) }
+        } else if (state.editing) {
+            { Text(stringResource(R.string.edit_server_key_hint)) }
         } else {
             null
         },
         singleLine = true,
-        enabled = !state.isConnecting,
+        enabled = !state.isConnecting && !state.loading && !state.loadFailed,
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 TextButton(
-                    enabled = !state.isConnecting && !pasting,
+                    enabled = !state.isConnecting && !state.loading && !state.loadFailed && !pasting,
                     onClick = {
                         pasting = true
                         pasteError = null
@@ -275,7 +289,10 @@ internal fun ApiKeyField(state: AddServerUiState, onApiKeyChange: (String) -> Un
                 ) {
                     Text(stringResource(R.string.add_server_paste))
                 }
-                IconButton(onClick = { visible = !visible }, enabled = !state.isConnecting) {
+                IconButton(
+                    onClick = { visible = !visible },
+                    enabled = !state.isConnecting && !state.loading && !state.loadFailed,
+                ) {
                     Icon(
                         if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                         stringResource(if (visible) R.string.add_server_hide_key else R.string.add_server_show_key),

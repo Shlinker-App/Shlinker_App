@@ -53,6 +53,7 @@ class ShortUrlsScreenTest {
     private var copied: String? = null
     private var query: String? = null
     private var wentBack = false
+    private var creating = false
     private var selectedSort: ShortUrlSort? = null
     private val loadedEmpty = PagingData.empty<ShortUrl>(
         sourceLoadStates = LoadStates(
@@ -73,6 +74,7 @@ class ShortUrlsScreenTest {
                     serverName = "Testserver",
                     onSearchChange = { query = it },
                     onBack = { wentBack = true },
+                    onCreate = { creating = true },
                     onCopy = { copied = it },
                     sort = sort,
                     onSortChange = {
@@ -92,6 +94,14 @@ class ShortUrlsScreenTest {
         }
 
         compose.onNodeWithText(text).assertIsDisplayed()
+    }
+
+    @Test fun createActionWorksWithAnEmptyOrFilteredList() {
+        screen(flowOf(loadedEmpty), search = "missing")
+        compose.onNodeWithText("Create shlink", useUnmergedTree = true).performClick()
+        assertTrue(creating)
+        assertText("No matching shlinks found.")
+        assertText("Newest first")
     }
 
     @Test fun listShowsUrlsAndTagsAndCopiesShortUrl() {

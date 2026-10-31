@@ -12,6 +12,7 @@ import at.awit.shlinker.core.network.ConnectionError
 import at.awit.shlinker.core.network.ConnectionResult
 import at.awit.shlinker.core.network.ConnectionTester
 import java.io.IOException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withTimeoutOrNull
@@ -47,6 +49,86 @@ class AddServerViewModelTest {
     }
 
     @After fun tearDown() = Dispatchers.resetMain()
+
+    @Test fun editLoadsWithoutExposingKeyAndBlankKeyPreservesCredentials() = runTest(dispatcher) {
+        val original = repo.add("Home", "https://s.example.org", "saved-key", true)
+        vm.load(original.id)
+        advanceUntilIdle()
+        assertEquals("", vm.state.value.apiKey)
+        assertEquals("Home", vm.state.value.name)
+        assertTrue(vm.state.value.canSubmit)
+        vm.onUrlChange("new.example.org")
+        vm.onSubmit()
+        advanceUntilIdle()
+        assertEquals("https://new.example.org" to "saved-key", tester.calls.single())
+        assertNull(repo.updatedKey)
+        assertEquals("saved-key", repo.key)
+        assertEquals(original.id, repo.profiles.first().single().id)
+        assertEquals("https://new.example.org", repo.profiles.first().single().url)
+        assertEquals(AddServerEvent.Saved(original.id), vm.events.first())
+    }
+
+    @Test fun editReplacesKeyOnlyAfterSuccessfulConnectionAndRejectsDuplicate() = runTest(dispatcher) {
+        val original = repo.add("Home", "https://s.example.org", "saved-key", true)
+        vm.load(original.id)
+        advanceUntilIdle()
+        vm.onApiKeyChange("new-key")
+        tester.result = ConnectionResult.Failure(ConnectionError.InvalidApiKey)
+        vm.onSubmit()
+        advanceUntilIdle()
+        assertEquals("saved-key", repo.key)
+        assertEquals(0, repo.updates)
+        tester.result = ConnectionResult.Success("5")
+        repo.addFailure = DuplicateServerException()
+        vm.onSubmit()
+        advanceUntilIdle()
+        assertEquals(ServerSaveError.DUPLICATE, vm.state.value.saveError)
+        assertEquals("saved-key", repo.key)
+        repo.addFailure = null
+        vm.onSubmit()
+        advanceUntilIdle()
+        assertEquals("new-key", repo.key)
+        assertEquals(1, repo.updates)
+    }
+
+    @Test fun editMissingKeyRequiresReplacementAndMissingProfileCannotBeSaved() = runTest(dispatcher) {
+        vm.load("missing")
+        advanceUntilIdle()
+        assertEquals(ServerSaveError.NOT_FOUND, vm.state.value.saveError)
+        assertFalse(vm.state.value.canSubmit)
+        val original = repo.add("Home", "https://s.example.org", "key", true)
+        vm.load(original.id)
+        advanceUntilIdle()
+        repo.key = null
+        vm.onSubmit()
+        advanceUntilIdle()
+        assertEquals(ServerSaveError.KEY_UNAVAILABLE, vm.state.value.saveError)
+        assertTrue(tester.calls.isEmpty())
+        vm.onApiKeyChange("replacement")
+        vm.onSubmit()
+        advanceUntilIdle()
+        assertEquals("replacement", repo.key)
+    }
+
+    @Test fun cancellingEditConnectionKeepsOriginalProfileAndKey() = runTest(dispatcher) {
+        val original = repo.add("Home", "https://s.example.org", "saved-key", true)
+        vm.load(original.id)
+        advanceUntilIdle()
+        vm.onUrlChange("new.example.org")
+        vm.onApiKeyChange("replacement")
+        tester.gate = CompletableDeferred()
+        vm.onSubmit()
+        runCurrent()
+        vm.onSubmit()
+        assertEquals(1, tester.calls.size)
+        vm.onCancelConnect()
+        tester.gate!!.complete(Unit)
+        advanceUntilIdle()
+        assertFalse(vm.state.value.isConnecting)
+        assertEquals(0, repo.updates)
+        assertEquals(original, repo.profiles.first().single())
+        assertEquals("saved-key", repo.key)
+    }
 
     @Test
     fun `erfolgreiche Verbindung speichert und meldet Saved`() = runTest(dispatcher) {
@@ -115,9 +197,11 @@ class AddServerViewModelTest {
 
     private class FakeTester : ConnectionTester {
         var result: ConnectionResult = ConnectionResult.Success("5.1.7")
+        var gate: CompletableDeferred<Unit>? = null
         val calls = mutableListOf<Pair<String, String>>()
         override suspend fun test(serverUrl: String, apiKey: String): ConnectionResult {
             calls += serverUrl to apiKey
+            gate?.await()
             return result
         }
     }
@@ -128,6 +212,9 @@ class AddServerViewModelTest {
         override suspend fun reorder(ids: List<String>) = error("unused")
         var addFailure: Exception? = null
         val added = mutableListOf<ServerProfile>()
+        var key: String? = null
+        var updatedKey: String? = null
+        var updates = 0
         private val state = MutableStateFlow<List<ServerProfile>>(emptyList())
         override val profiles: Flow<List<ServerProfile>> = state
         override val activeProfile: Flow<ServerProfile?> = state.map { it.lastOrNull() }
@@ -136,14 +223,25 @@ class AddServerViewModelTest {
             addFailure?.let { throw it }
             val p = ServerProfile("id-${added.size + 1}", name.ifBlank { url }, url, 0L)
             added += p
+            key = apiKey
             state.value = added.toList()
             return p
         }
 
-        override suspend fun update(id: String, name: String?, url: String?, apiKey: String?) = error("unused")
+        override suspend fun update(id: String, name: String?, url: String?, apiKey: String?): ServerProfile {
+            addFailure?.let { throw it }
+            val original = state.value.first { it.id == id }
+            val updated = original.copy(name = name ?: original.name, url = url ?: original.url)
+            state.value = state.value.map { if (it.id == id) updated else it }
+            updatedKey = apiKey
+            if (apiKey != null) key = apiKey
+            updates++
+            return updated
+        }
         override suspend fun delete(id: String) = error("unused")
         override suspend fun setActive(id: String) = error("unused")
-        override suspend fun getApiKey(id: String): ApiKeyResult = ApiKeyResult.Missing
+        override suspend fun getApiKey(id: String): ApiKeyResult =
+            key?.let(ApiKeyResult::Available) ?: ApiKeyResult.Missing
     }
 
     @Test

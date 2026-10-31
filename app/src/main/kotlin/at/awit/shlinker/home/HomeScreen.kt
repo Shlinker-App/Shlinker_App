@@ -58,7 +58,12 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
-fun HomeScreen(onAddServer: () -> Unit, onShortUrls: () -> Unit, viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(
+    onAddServer: () -> Unit,
+    onShortUrls: () -> Unit,
+    onEditServer: (String) -> Unit,
+    viewModel: HomeViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val action by viewModel.action.collectAsStateWithLifecycle()
     HomeContent(
@@ -66,6 +71,7 @@ fun HomeScreen(onAddServer: () -> Unit, onShortUrls: () -> Unit, viewModel: Home
         viewModel::setActive, viewModel::rename, viewModel::delete,
         viewModel::changeName, viewModel::confirm, viewModel::dismiss,
         viewModel::setSort, viewModel::reorder,
+        onEditServer,
     )
 }
 
@@ -84,6 +90,7 @@ internal fun HomeContent(
     onDismiss: () -> Unit,
     onSort: (ServerSort) -> Unit,
     onReorder: (List<String>) -> Unit,
+    onEditServer: (String) -> Unit = {},
 ) {
     var displayed by remember { mutableStateOf(state.servers) }
     var dragging by remember { mutableStateOf(false) }
@@ -217,6 +224,13 @@ internal fun HomeContent(
                                     )
                                 }
                                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.home_edit)) },
+                                        onClick = {
+                                            menu = false
+                                            onEditServer(server.id)
+                                        },
+                                    )
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.home_rename)) },
                                         onClick = {

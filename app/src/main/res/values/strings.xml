@@ -9,6 +9,7 @@
     <string name="home_server_active">active</string>
     <string name="home_server_actions">Actions for %1$s</string>
     <string name="home_rename">Rename</string>
+    <string name="home_edit">Edit server</string>
     <string name="home_delete">Delete</string>
     <string name="home_cancel">Cancel</string>
     <string name="home_save">Save</string>

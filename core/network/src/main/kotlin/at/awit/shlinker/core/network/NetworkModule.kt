@@ -32,6 +32,12 @@ object NetworkModule {
     @Singleton
     fun provideHttpClient(json: Json): HttpClient = HttpClient(OkHttp) {
         expectSuccess = false
+        engine {
+            config {
+                // Retrying a POST after a lost response could create a second shlink.
+                retryOnConnectionFailure(false)
+            }
+        }
         install(ContentNegotiation) { json(json) }
         install(HttpTimeout) {
             connectTimeoutMillis = 10_000
@@ -44,6 +50,9 @@ object NetworkModule {
 @Module
 @InstallIn(SingletonComponent::class)
 internal abstract class ConnectionModule {
+    @Binds
+    abstract fun bindCreateShortUrlService(impl: KtorCreateShortUrlService): CreateShortUrlService
+
     @Binds
     abstract fun bindShortUrlService(impl: KtorShortUrlService): ShortUrlService
 

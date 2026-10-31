@@ -1,5 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="create_title">Create shlink</string>
+    <string name="create_intro">Create a shlink on this server. Leave optional fields blank to use Shlink defaults.</string>
+    <string name="create_url">Destination URL</string>
+    <string name="create_label_title">Title (optional)</string>
+    <string name="create_slug">Custom slug (optional)</string>
+    <string name="create_domain">Domain (optional)</string>
+    <string name="create_domain_hint">Hostname only, e.g. s.example.org. Leave blank for the default domain. Your API key must allow this domain.</string>
+    <string name="create_tags">Tags (optional)</string>
+    <string name="create_tags_hint">Separate tags with commas.</string>
+    <string name="create_submit">Create</string>
+    <string name="create_cancel">Back to shlinks</string>
+    <string name="create_done">Done</string>
+    <string name="create_success">Shlink created</string>
+    <string name="create_copy">Copy shlink</string>
+    <string name="create_error_url">Enter a full HTTP or HTTPS destination URL without embedded credentials.</string>
+    <string name="create_error_domain">Enter a hostname without protocol, port or path.</string>
+    <string name="create_error_load">Could not read the server profile or API key. Please try again.</string>
+    <string name="create_error_server_missing">This server profile no longer exists. Go back and select another server.</string>
+    <string name="create_error_invalid">Shlink rejected the input. Check the destination URL, custom slug, domain and API key permissions.</string>
+    <string name="create_error_conflict">This custom slug is already in use for this domain. Choose another slug.</string>
+    <string name="create_error_server">Shlink could not complete the request. Check the list before trying again.</string>
+    <string name="create_error_uncertain">The result could not be confirmed. The shlink may already have been created. Go back and check the refreshed list before trying again.</string>
     <string name="short_urls_title">Shlinks</string>
     <string name="short_urls_back">Back to server overview</string>
     <string name="short_urls_refresh">Refresh</string>
@@ -17,7 +39,7 @@
     <string name="short_urls_copy">Copy %1$s</string>
     <string name="short_urls_copied">Shlink copied</string>
     <string name="short_urls_retry">Try again</string>
-    <string name="short_urls_key_missing">The API key is missing or cannot be decrypted. Please set up the server again with its API key.</string>
+    <string name="short_urls_key_missing">The API key is missing or cannot be decrypted. Edit the server profile and enter its API key again.</string>
     <string name="short_urls_key_invalid">The API key is invalid or does not have the required permissions.</string>
     <string name="short_urls_invalid_response">The server did not return a valid shlink list.</string>
     <string name="short_urls_host_not_found">The server hostname could not be resolved. Check your network, DNS and server address.</string>

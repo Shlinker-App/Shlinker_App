@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Refresh
@@ -19,6 +20,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -60,13 +62,19 @@ import at.awit.shlinker.core.network.ShortUrlRequestException
 import kotlinx.coroutines.launch
 
 @Composable
-fun ShortUrlsRoute(onBack: () -> Unit, viewModel: ShortUrlsViewModel = hiltViewModel()) {
+fun ShortUrlsRoute(
+    onBack: () -> Unit,
+    onCreate: (String) -> Unit,
+    refreshKey: Int = 0,
+    viewModel: ShortUrlsViewModel = hiltViewModel(),
+) {
     val search by viewModel.search.collectAsStateWithLifecycle()
     val server by viewModel.server.collectAsStateWithLifecycle()
     val sort by viewModel.sort.collectAsStateWithLifecycle()
     val sortSaving by viewModel.sortSaving.collectAsStateWithLifecycle()
     val sortError by viewModel.sortError.collectAsStateWithLifecycle()
     val urls = viewModel.urls.collectAsLazyPagingItems()
+    LaunchedEffect(refreshKey) { if (refreshKey > 0) urls.refresh() }
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
@@ -89,6 +97,7 @@ fun ShortUrlsRoute(onBack: () -> Unit, viewModel: ShortUrlsViewModel = hiltViewM
         sortSaving = sortSaving,
         sortError = sortError,
         onDismissSortError = viewModel::dismissSortError,
+        onCreate = { server?.id?.let(onCreate) },
     )
 }
 
@@ -107,12 +116,22 @@ internal fun ShortUrlsScreen(
     sortSaving: Boolean = false,
     sortError: Boolean = false,
     onDismissSortError: () -> Unit = {},
+    onCreate: () -> Unit = {},
 ) {
     var sortMenu by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     LaunchedEffect(search, serverName, sort) { listState.scrollToItem(0) }
     val refresh = urls.loadState.refresh
     Scaffold(
+        floatingActionButton = {
+            if (serverName != null) {
+                ExtendedFloatingActionButton(
+                    onClick = onCreate,
+                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                    text = { Text(stringResource(R.string.create_title)) },
+                )
+            }
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -186,7 +205,7 @@ internal fun ShortUrlsScreen(
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 24.dp),
+                    contentPadding = PaddingValues(bottom = 96.dp),
                 ) {
                     if (refresh is LoadState.Error) {
                         item { LoadError(refresh.error, urls::retry) }

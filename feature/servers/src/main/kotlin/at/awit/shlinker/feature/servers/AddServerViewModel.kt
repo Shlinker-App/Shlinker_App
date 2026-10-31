@@ -2,9 +2,11 @@ package at.awit.shlinker.feature.servers
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import at.awit.shlinker.core.data.ApiKeyResult
 import at.awit.shlinker.core.data.DuplicateCheckUnavailableException
 import at.awit.shlinker.core.data.DuplicateServerException
 import at.awit.shlinker.core.data.ServerNameConflictException
+import at.awit.shlinker.core.data.ServerNotFoundException
 import at.awit.shlinker.core.data.ServerProfileRepository
 import at.awit.shlinker.core.model.ServerUrl
 import at.awit.shlinker.core.network.ConnectionError
@@ -18,6 +20,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -33,11 +36,18 @@ data class AddServerUiState(
     val saveError: ServerSaveError? = null,
     /** Normalisierte URL als Vorschau, sobald gültig – zeigt, was tatsächlich gespeichert wird. */
     val normalizedUrlPreview: String? = null,
+    val editing: Boolean = false,
+    val loading: Boolean = false,
+    val loadFailed: Boolean = false,
 ) {
-    val canSubmit: Boolean get() = !isConnecting && url.isNotBlank() && apiKey.isNotBlank()
+    val canSubmit: Boolean get() = !loading &&
+        !loadFailed &&
+        !isConnecting &&
+        url.isNotBlank() &&
+        (editing || apiKey.isNotBlank())
 }
 
-enum class ServerSaveError { DUPLICATE, NAME_CONFLICT, CANNOT_CHECK_DUPLICATE, STORAGE }
+enum class ServerSaveError { DUPLICATE, NAME_CONFLICT, CANNOT_CHECK_DUPLICATE, STORAGE, NOT_FOUND, KEY_UNAVAILABLE }
 
 sealed interface AddServerEvent {
     data class Saved(val serverId: String) : AddServerEvent
@@ -56,6 +66,25 @@ class AddServerViewModel @Inject constructor(
     val events = _events.receiveAsFlow()
 
     private var connectJob: Job? = null
+    private var editingId: String? = null
+
+    fun load(id: String) {
+        if (editingId == id && !_state.value.loadFailed) return
+        editingId = id
+        _state.value = AddServerUiState(editing = true, loading = true)
+        viewModelScope.launch {
+            try {
+                val profile = repository.profiles.first().firstOrNull { it.id == id }
+                _state.value = if (profile == null) {
+                    AddServerUiState(editing = true, loadFailed = true, saveError = ServerSaveError.NOT_FOUND)
+                } else {
+                    AddServerUiState(editing = true, name = profile.name, url = profile.url)
+                }
+            } catch (_: IOException) {
+                _state.value = AddServerUiState(editing = true, loadFailed = true, saveError = ServerSaveError.STORAGE)
+            }
+        }
+    }
 
     fun onNameChange(value: String) = _state.update {
         it.copy(name = value, saveError = it.saveError.takeUnless { error -> error == ServerSaveError.NAME_CONFLICT })
@@ -82,23 +111,47 @@ class AddServerViewModel @Inject constructor(
 
     fun onSubmit() {
         val s = _state.value
-        if (s.isConnecting) return
+        if (s.isConnecting || s.loading || s.loadFailed) return
 
         val normalized = ServerUrl.normalize(s.url)
-        val apiKey = s.apiKey.trim()
+        val enteredKey = s.apiKey.trim()
         val urlError = (normalized as? ServerUrl.Result.Invalid)?.reason
-        if (urlError != null || apiKey.isEmpty()) {
-            _state.update { it.copy(urlError = urlError, apiKeyMissing = apiKey.isEmpty()) }
+        if (urlError != null || (!s.editing && enteredKey.isEmpty())) {
+            _state.update { it.copy(urlError = urlError, apiKeyMissing = !s.editing && enteredKey.isEmpty()) }
             return
         }
         val url = (normalized as ServerUrl.Result.Valid).url
 
         _state.update { it.copy(isConnecting = true, connectionError = null, saveError = null) }
         connectJob = viewModelScope.launch {
+            val id = editingId
+            val apiKey = try {
+                if (enteredKey.isNotEmpty()) {
+                    enteredKey
+                } else {
+                    when (val key = repository.getApiKey(requireNotNull(id))) {
+                        is ApiKeyResult.Available -> key.apiKey
+                        else -> {
+                            _state.update { it.copy(isConnecting = false, saveError = ServerSaveError.KEY_UNAVAILABLE) }
+                            return@launch
+                        }
+                    }
+                }
+            } catch (_: IOException) {
+                _state.update { it.copy(isConnecting = false, saveError = ServerSaveError.STORAGE) }
+                return@launch
+            }
             when (val result = connectionTester.test(url, apiKey)) {
                 is ConnectionResult.Success -> {
                     val profile = try {
-                        repository.add(name = s.name, url = url, apiKey = apiKey)
+                        if (id == null) {
+                            repository.add(name = s.name, url = url, apiKey = apiKey)
+                        } else {
+                            repository.update(id, name = s.name, url = url, apiKey = enteredKey.ifEmpty { null })
+                        }
+                    } catch (_: ServerNotFoundException) {
+                        _state.update { it.copy(isConnecting = false, saveError = ServerSaveError.NOT_FOUND) }
+                        return@launch
                     } catch (_: DuplicateServerException) {
                         _state.update { it.copy(isConnecting = false, saveError = ServerSaveError.DUPLICATE) }
                         return@launch

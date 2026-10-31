@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="add_server_title">Add server</string>
+    <string name="edit_server_title">Edit server</string>
+    <string name="edit_server_intro">Update this server profile. The connection is checked before saving. Changing the address does not move shlinks between servers.</string>
+    <string name="edit_server_key_hint">Leave blank to keep the saved API key.</string>
+    <string name="edit_server_retry">Retry loading profile</string>
+    <string name="server_save_not_found">This server profile no longer exists.</string>
     <string name="add_server_intro">Connect Shlinker to your Shlink instance. The connection is checked before saving.</string>
     <string name="add_server_name">Name (optional)</string>
     <string name="add_server_name_hint">Uses the hostname if left blank.</string>

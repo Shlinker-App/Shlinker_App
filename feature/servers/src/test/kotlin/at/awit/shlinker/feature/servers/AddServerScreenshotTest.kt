@@ -123,6 +123,19 @@ class AddServerScreenshotTest {
         ).assertIsDisplayed()
     }
 
+    @Test fun editShowsBlankKeyHintAndKeepsPasteAndMasking() {
+        compose.setContent {
+            Themed(false) {
+                Screen(AddServerUiState(editing = true, name = "Home", url = "https://s.example.org"))
+            }
+        }
+        compose.onNodeWithText("Edit server").assertIsDisplayed()
+        compose.onNodeWithText("Leave blank to keep the saved API key.").assertIsDisplayed()
+        compose.onNodeWithText("Paste").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Show API key").assertIsDisplayed()
+        compose.onNodeWithText("Connect & save").assertIsDisplayed()
+    }
+
     @Test fun pasteReadsOnlyOnClickAndKeepsKeyMasked() {
         val clipboard = TestClipboard(ClipData.newPlainText("test", "test-api-key"))
         var pasted = ""

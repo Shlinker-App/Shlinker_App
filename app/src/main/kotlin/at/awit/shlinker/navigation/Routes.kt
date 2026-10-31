@@ -11,3 +11,9 @@ data object AddServerRoute : NavKey
 
 @Serializable
 data object ShortUrlsRoute : NavKey
+
+@Serializable
+data class EditServerRoute(val id: String) : NavKey
+
+@Serializable
+data class CreateShortUrlRoute(val serverId: String) : NavKey
