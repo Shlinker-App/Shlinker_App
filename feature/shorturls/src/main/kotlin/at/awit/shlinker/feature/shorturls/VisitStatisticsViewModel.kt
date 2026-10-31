@@ -38,6 +38,9 @@ class VisitStatisticsViewModel @Inject constructor(private val repository: Visit
     fun load(serverId: String, shortCode: String, domain: String?) {
         val requested = Triple(serverId, shortCode, domain)
         if (identity == requested) return
+        if (identity?.first != serverId) {
+            _state.value = _state.value.copy(serverName = null)
+        }
         identity = requested
         request(_state.value.period)
     }
@@ -57,7 +60,12 @@ class VisitStatisticsViewModel @Inject constructor(private val repository: Visit
         job?.cancel()
         val zone = ZoneId.systemDefault()
         val window = period.window(Instant.now(), zone)
-        _state.value = VisitStatisticsState(period = period, zone = zone, window = window)
+        _state.value = VisitStatisticsState(
+            period = period,
+            zone = zone,
+            window = window,
+            serverName = _state.value.serverName,
+        )
         job = viewModelScope.launch {
             try {
                 val result = repository.get(requested.first, requested.second, requested.third, window)

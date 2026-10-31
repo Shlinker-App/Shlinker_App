@@ -1,5 +1,6 @@
 package at.awit.shlinker.feature.shorturls
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -140,6 +141,32 @@ class VisitStatisticsScreenTest {
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Try again").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("0").assertDoesNotExist()
+    }
+
+    @Test fun headerAndPeriodPositionsStayFixedFromFirstLoadThroughReloadAndFailure() {
+        val current = mutableStateOf(state.copy(serverName = null, loading = true, counts = null))
+        compose.setContent {
+            ShlinkerTheme(dynamicColor = false) {
+                VisitStatisticsScreen(current.value, "same", "custom.example", {}, {}, {})
+            }
+        }
+        compose.onNodeWithText("Server: Loading…").assertIsDisplayed()
+        val codeTop = compose.onNodeWithText("Short code: same").fetchSemanticsNode().boundsInRoot.top
+        val periodsTop = compose.onNodeWithText("Period").fetchSemanticsNode().boundsInRoot.top
+        for (next in listOf(
+            state,
+            state.copy(loading = true, counts = null, period = VisitPeriod.TODAY),
+            state.copy(counts = null, error = InvalidVisitStatisticsException()),
+            state.copy(serverName = null, counts = null, error = InvalidVisitStatisticsException()),
+        )) {
+            compose.runOnIdle { current.value = next }
+            assertEquals(
+                codeTop,
+                compose.onNodeWithText("Short code: same").fetchSemanticsNode().boundsInRoot.top,
+            )
+            assertEquals(periodsTop, compose.onNodeWithText("Period").fetchSemanticsNode().boundsInRoot.top)
+        }
+        compose.onNodeWithText("Server: Unavailable").assertIsDisplayed()
     }
 
     @Test fun realEmptyPeriodShowsAllThreeZeroCounts() {

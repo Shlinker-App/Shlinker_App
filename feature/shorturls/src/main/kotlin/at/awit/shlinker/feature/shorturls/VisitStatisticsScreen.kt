@@ -27,6 +27,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -83,9 +84,17 @@ internal fun VisitStatisticsScreen(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            state.serverName?.let {
-                Text(stringResource(R.string.short_urls_server, it), style = MaterialTheme.typography.titleMedium)
-            }
+            Text(
+                stringResource(
+                    R.string.short_urls_server,
+                    state.serverName ?: stringResource(
+                        if (state.loading) R.string.stats_server_loading else R.string.stats_server_unavailable,
+                    ),
+                ),
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Text(stringResource(R.string.stats_code, shortCode))
             Text(stringResource(R.string.stats_domain, domain ?: stringResource(R.string.details_default_domain)))
             Text(stringResource(R.string.stats_period), style = MaterialTheme.typography.titleMedium)

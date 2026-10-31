@@ -14,6 +14,8 @@
     <string name="details_rules_action">Redirect rules</string>
     <string name="details_actions_planned">Redirect rule management is planned for an upcoming test version.</string>
     <string name="stats_back">Back to shlink details</string>
+    <string name="stats_server_loading">Loading…</string>
+    <string name="stats_server_unavailable">Unavailable</string>
     <string name="stats_code">Short code: %1$s</string>
     <string name="stats_domain">Domain: %1$s</string>
     <string name="stats_period">Period</string>

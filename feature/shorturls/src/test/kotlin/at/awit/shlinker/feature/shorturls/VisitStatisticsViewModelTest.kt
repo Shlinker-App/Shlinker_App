@@ -81,6 +81,7 @@ class VisitStatisticsViewModelTest {
         assertEquals(VisitStatistics(1, 0), vm.state.value.counts)
         vm.refresh()
         assertNull(vm.state.value.counts)
+        assertEquals("First", vm.state.value.serverName)
         advanceUntilIdle()
         assertEquals(2, calls.size)
         assertTrue(windows.last().until >= windows.first().until)
@@ -105,6 +106,7 @@ class VisitStatisticsViewModelTest {
         assertEquals(2, calls.size)
         vm.load("2", "same", "other.example")
         assertNull(vm.state.value.counts)
+        assertNull(vm.state.value.serverName)
         advanceUntilIdle()
         assertEquals("Second", vm.state.value.serverName)
         assertEquals(listOf("https://second.example", "same", "other.example"), calls.last())
@@ -116,10 +118,12 @@ class VisitStatisticsViewModelTest {
         advanceUntilIdle()
         failure = IOException("offline")
         vm.select(VisitPeriod.TODAY)
+        assertEquals("First", vm.state.value.serverName)
         advanceUntilIdle()
         assertFalse(vm.state.value.loading)
         assertNull(vm.state.value.counts)
         assertEquals(failure, vm.state.value.error)
+        assertEquals("First", vm.state.value.serverName)
         vm.load("1", "a", null)
         assertEquals(2, calls.size)
         failure = null
@@ -128,6 +132,20 @@ class VisitStatisticsViewModelTest {
         assertNull(vm.state.value.error)
         assertEquals(VisitPeriod.TODAY, vm.state.value.period)
         assertEquals(VisitStatistics(3, 0), vm.state.value.counts)
+    }
+
+    @Test fun changingLinkOrDomainOnTheSameServerKeepsItsNameButNotCounts() = runTest(dispatcher) {
+        vm.load("1", "same", null)
+        advanceUntilIdle()
+        gate = CompletableDeferred()
+        vm.load("1", "other", "custom.example")
+        runCurrent()
+        assertEquals("First", vm.state.value.serverName)
+        assertNull(vm.state.value.counts)
+        assertTrue(vm.state.value.loading)
+        gate?.complete(Unit)
+        advanceUntilIdle()
+        assertEquals(listOf("https://first.example", "other", "custom.example"), calls.last())
     }
 
     private class Profiles : ServerProfileRepository {
