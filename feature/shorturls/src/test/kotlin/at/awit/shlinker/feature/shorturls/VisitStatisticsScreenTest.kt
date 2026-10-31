@@ -43,7 +43,7 @@ class VisitStatisticsScreenTest {
         serverName = "First",
         counts = VisitStatistics(12345678901, 12345678899),
         zone = zone,
-        window = VisitPeriod.LAST_30_DAYS.window(Instant.parse("2026-10-31T04:30:00Z"), zone),
+        window = VisitPeriod.LAST_4_WEEKS.window(Instant.parse("2026-10-31T04:30:00Z"), zone),
     )
 
     private fun screen(value: VisitStatisticsState = state, domain: String? = "custom.example") {
@@ -59,9 +59,9 @@ class VisitStatisticsScreenTest {
         compose.onNodeWithText("Server: First").assertIsDisplayed()
         compose.onNodeWithText("Short code: same").assertIsDisplayed()
         compose.onNodeWithText("Domain: custom.example").assertIsDisplayed()
-        compose.onNodeWithText("Last 30 days").assertIsSelected()
+        compose.onNodeWithText("Last 4 weeks").assertIsSelected()
         compose.onNodeWithText(
-            "From: 2026 / 10 / 02 00:00:00 CEST\nUntil: 2026 / 10 / 31 05:30:00 CET\nTime zone: Europe/Vienna",
+            "From: 2026 / 10 / 04 00:00:00 CEST\nUntil: 2026 / 10 / 31 05:30:00 CET\nTime zone: Europe/Vienna",
         ).performScrollTo().assertIsDisplayed()
         for (text in listOf(
             "Total visits",
@@ -85,7 +85,7 @@ class VisitStatisticsScreenTest {
     @Config(qualifiers = "en-w320dp-h640dp-mdpi")
     fun narrowPhoneCanReachAllPeriodOptionsAndCounts() {
         screen()
-        for (period in listOf("Today", "Last 7 days", "Last 30 days", "Last 90 days", "All time")) {
+        for (period in listOf("Today", "Last 7 days", "Last 4 weeks", "Last 90 days", "All time")) {
             compose.onNodeWithText(period).performScrollTo().assertIsDisplayed().performClick()
         }
         compose.onNodeWithText("Potential bot visits").performScrollTo().assertIsDisplayed()
@@ -180,7 +180,7 @@ class VisitStatisticsScreenTest {
     @Test fun timelineLoadsSeparatelyWithoutHidingSummaryAndPeriodCanStillChange() {
         screen(state.copy(timelineLoading = true))
         compose.onNodeWithText("12345678901").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Loading up to 12 time intervals… You can change the period or go back.")
+        compose.onNodeWithText("Loading up to 7 time intervals… You can change the period or go back.")
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithContentDescription("Refresh").assertIsNotEnabled()
         compose.onNodeWithText("Today").performScrollTo().performClick()

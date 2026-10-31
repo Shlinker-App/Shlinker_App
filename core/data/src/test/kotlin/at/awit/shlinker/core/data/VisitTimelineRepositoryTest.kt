@@ -29,8 +29,8 @@ class VisitTimelineRepositoryTest {
     private var created: String? = start.toString()
     private var failure: Exception? = null
     private var cumulative: (VisitWindow) -> VisitStatistics = { window ->
-        val n = (window.until.epochSecond - start.epochSecond + 1) / 10
-        VisitStatistics(n * 10, n * 7)
+        val n = window.until.epochSecond - start.epochSecond + 1
+        VisitStatistics(n, n * 7 / 10)
     }
 
     private fun repository(profiles: ServerProfileRepository) = VisitTimelineRepository(
@@ -66,7 +66,7 @@ class VisitTimelineRepositoryTest {
         },
     )
 
-    @Test fun cumulativeDifferencesUse11BoundedQueriesAndSumExactlyWithoutBoundaryDoubleCounting() = runTest {
+    @Test fun cumulativeDifferencesUse6BoundedQueriesAndSumExactlyWithoutBoundaryDoubleCounting() = runTest {
         val profiles = DefaultServerProfileRepository(
             InMemoryDataStore(StoredServers()),
             InMemoryDataStore(StoredSecrets()),
@@ -83,13 +83,14 @@ class VisitTimelineRepositoryTest {
             VisitWindow(start, end),
             VisitStatistics(120, 84),
         )
-        assertEquals(12, buckets.size)
-        assertEquals(11, windows.size)
+        assertEquals(7, buckets.size)
+        assertEquals(6, windows.size)
         assertEquals(0, detailCalls)
         assertTrue(windows.all { it.since == start })
         assertEquals(120, buckets.sumOf { it.counts.total })
         assertEquals(84, buckets.sumOf { it.counts.nonBots })
-        assertTrue(buckets.all { it.counts == VisitStatistics(10, 7) })
+        assertEquals(listOf(17L, 17L, 17L, 17L, 17L, 17L, 18L), buckets.map { it.counts.total })
+        assertEquals(listOf(11L, 12L, 12L, 12L, 12L, 12L, 13L), buckets.map { it.counts.nonBots })
         assertFalse(buckets.first().sinceExclusive)
         assertTrue(buckets.drop(1).all { it.sinceExclusive })
         assertTrue(buckets.zipWithNext().all { (first, second) -> first.until == second.since })
@@ -127,7 +128,7 @@ class VisitTimelineRepositoryTest {
                 )
                 throw AssertionError("Expected start failure")
             } catch (_: TimelineStartUnavailableException) {
-                assertEquals(11, windows.size)
+                assertEquals(6, windows.size)
             }
         }
     }
@@ -144,7 +145,7 @@ class VisitTimelineRepositoryTest {
             { _: VisitWindow -> VisitStatistics(130, 90) },
             { w: VisitWindow ->
                 if (w.until <
-                    start.plusSeconds(15)
+                    start.plusSeconds(20)
                 ) {
                     VisitStatistics(10, 0)
                 } else {

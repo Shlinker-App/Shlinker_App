@@ -103,7 +103,7 @@ class VisitStatisticsViewModelTest {
 
     @After fun cleanup() = Dispatchers.resetMain()
 
-    @Test fun loadDefaultsTo30DaysPinsIdentityAndRefreshDoesNotDuplicatePendingLoads() = runTest(dispatcher) {
+    @Test fun loadDefaultsTo4WeeksPinsIdentityAndRefreshDoesNotDuplicatePendingLoads() = runTest(dispatcher) {
         gate = CompletableDeferred()
         vm.load("1", "same", "custom.example")
         runCurrent()
@@ -114,7 +114,7 @@ class VisitStatisticsViewModelTest {
         assertEquals(1, calls.size)
         gate?.complete(Unit)
         advanceUntilIdle()
-        assertEquals(VisitPeriod.LAST_30_DAYS, vm.state.value.period)
+        assertEquals(VisitPeriod.LAST_4_WEEKS, vm.state.value.period)
         assertEquals("First", vm.state.value.serverName)
         assertEquals(VisitStatistics(1, 0), vm.state.value.counts)
         vm.refresh()
@@ -208,7 +208,7 @@ class VisitStatisticsViewModelTest {
         vm.refresh()
         advanceUntilIdle()
         assertNull(vm.state.value.timelineError)
-        assertEquals(12, vm.state.value.timeline?.size)
+        assertEquals(7, vm.state.value.timeline?.size)
     }
 
     @Test fun changingPeriodCancelsPendingTimelineAndDropsPreviousBars() = runTest(dispatcher) {
@@ -224,9 +224,9 @@ class VisitStatisticsViewModelTest {
         oldGate?.complete(Unit)
         runCurrent()
         assertEquals(VisitPeriod.TODAY, vm.state.value.period)
-        assertEquals(12, vm.state.value.timeline?.size)
+        assertEquals(7, vm.state.value.timeline?.size)
         assertEquals(VisitStatistics(2, 0), vm.state.value.counts)
-        assertEquals(12, timelineCalls)
+        assertEquals(7, timelineCalls)
     }
 
     @Test fun emptySummarySkipsAllTimelineRequestsAndShowsAnHonestEmptyResult() = runTest(dispatcher) {

@@ -4,7 +4,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
-enum class VisitPeriod(val days: Long?) { TODAY(1), LAST_7_DAYS(7), LAST_30_DAYS(30), LAST_90_DAYS(90), ALL_TIME(null) }
+enum class VisitPeriod(val days: Long?) { TODAY(1), LAST_7_DAYS(7), LAST_4_WEEKS(28), LAST_90_DAYS(90), ALL_TIME(null) }
 
 data class VisitWindow(val since: Instant?, val until: Instant) {
     init {

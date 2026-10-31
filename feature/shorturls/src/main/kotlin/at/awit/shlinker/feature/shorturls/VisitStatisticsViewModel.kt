@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 data class VisitStatisticsState(
-    val period: VisitPeriod = VisitPeriod.LAST_30_DAYS,
+    val period: VisitPeriod = VisitPeriod.LAST_4_WEEKS,
     val window: VisitWindow? = null,
     val zone: ZoneId = ZoneId.systemDefault(),
     val loading: Boolean = true,

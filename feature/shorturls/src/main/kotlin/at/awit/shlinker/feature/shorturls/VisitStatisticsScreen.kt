@@ -178,7 +178,7 @@ private fun CountField(label: Int, value: Long) {
 private fun VisitPeriod.label(): Int = when (this) {
     VisitPeriod.TODAY -> R.string.stats_today
     VisitPeriod.LAST_7_DAYS -> R.string.stats_7
-    VisitPeriod.LAST_30_DAYS -> R.string.stats_30
+    VisitPeriod.LAST_4_WEEKS -> R.string.stats_4_weeks
     VisitPeriod.LAST_90_DAYS -> R.string.stats_90
     VisitPeriod.ALL_TIME -> R.string.stats_all
 }

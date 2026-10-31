@@ -15,7 +15,7 @@ fun timelineCutoffs(window: VisitWindow, created: Instant? = null): List<Instant
     val end = window.until.truncatedTo(ChronoUnit.SECONDS)
     require(start <= end)
     val seconds = ChronoUnit.SECONDS.between(start, end) + 1
-    val count = minOf(12L, seconds).toInt()
+    val count = minOf(7L, seconds).toInt()
     return (1..count).map { index ->
         start.plusSeconds(seconds / count * index + seconds % count * index / count - 1)
     }

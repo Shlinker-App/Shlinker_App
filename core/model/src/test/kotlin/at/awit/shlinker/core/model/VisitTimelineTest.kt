@@ -7,15 +7,26 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class VisitTimelineTest {
-    @Test fun allPresetsHaveAtMost12StrictlyIncreasingCutsAndIncludeExactFinalSecond() {
+    @Test fun allPresetsHaveAtMost7StrictlyIncreasingCutsAndIncludeExactFinalSecond() {
         val now = Instant.parse("2026-10-31T12:34:56.789Z")
         for (period in VisitPeriod.entries) {
             val window = period.window(now, ZoneId.of("Europe/Vienna"))
             val cuts = timelineCutoffs(window, Instant.parse("2020-01-01T00:00:00Z"))
-            assertEquals(12, cuts.size)
+            assertEquals(7, cuts.size)
             assertEquals(Instant.parse("2026-10-31T12:34:56Z"), cuts.last())
             assertTrue(cuts.zipWithNext().all { (first, second) -> first < second })
             assertTrue(cuts.all { it.nano == 0 })
+        }
+    }
+
+    @Test fun sevenDaysAndFourWeeksDivideIntoSevenOneDayAndFourDayIntervalsAtDayEnd() {
+        val now = Instant.parse("2026-10-31T23:59:59Z")
+        for ((period, daysPerInterval) in listOf(VisitPeriod.LAST_7_DAYS to 1L, VisitPeriod.LAST_4_WEEKS to 4L)) {
+            val window = period.window(now, ZoneId.of("UTC"))
+            val cuts = timelineCutoffs(window)
+            val lengths = listOf(cuts.first().epochSecond - requireNotNull(window.since).epochSecond + 1) +
+                cuts.zipWithNext().map { (first, second) -> second.epochSecond - first.epochSecond }
+            assertEquals(List(7) { daysPerInterval * 86400 }, lengths)
         }
     }
 

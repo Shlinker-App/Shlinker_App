@@ -79,8 +79,8 @@ class VisitTimelineChartTest {
 
     @Test
     @Config(qualifiers = "en-w320dp-h640dp-mdpi")
-    fun all12BarsRemainSelectableOnNarrowPhoneWithLongCountsInDarkMode() {
-        val values = (0..11).map { index ->
+    fun all7BarsRemainSelectableOnNarrowPhoneWithLongCountsInDarkMode() {
+        val values = (0..6).map { index ->
             VisitTimelineBucket(
                 start.plusSeconds(index * 60L),
                 start.plusSeconds(index * 60L + 59),
@@ -89,7 +89,7 @@ class VisitTimelineChartTest {
             )
         }
         screen(values, dark = true)
-        for (index in 1..12) {
+        for (index in 1..7) {
             compose.onNodeWithContentDescription(
                 "Interval $index · Non-bot visits: ${Long.MAX_VALUE - 3} · Potential bot visits: 3",
             ).performClick().assertIsSelected()

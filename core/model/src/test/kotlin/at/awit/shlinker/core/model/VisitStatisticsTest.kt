@@ -14,7 +14,7 @@ class VisitStatisticsTest {
         val expected = mapOf(
             VisitPeriod.TODAY to "2026-10-30T23:00:00Z",
             VisitPeriod.LAST_7_DAYS to "2026-10-24T22:00:00Z",
-            VisitPeriod.LAST_30_DAYS to "2026-10-01T22:00:00Z",
+            VisitPeriod.LAST_4_WEEKS to "2026-10-03T22:00:00Z",
             VisitPeriod.LAST_90_DAYS to "2026-08-02T22:00:00Z",
         )
         for ((period, start) in expected) {
