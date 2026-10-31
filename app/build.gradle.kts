@@ -19,8 +19,8 @@ android {
 
     defaultConfig {
         applicationId = "at.awit.shlinker"
-        versionCode = 20
-        versionName = "0.2.12"
+        versionCode = 21
+        versionName = "0.2.13"
     }
 
     signingConfigs {
