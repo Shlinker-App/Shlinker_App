@@ -20,11 +20,8 @@ import at.awit.shlinker.navigation.ShortUrlsRoute
 @Composable
 fun ShlinkerApp(mainViewModel: MainViewModel) {
     val startState by mainViewModel.startState.collectAsStateWithLifecycle()
-    when (startState) {
-        // Splash/Fensterhintergrund bleibt sichtbar, bis klar ist, ob Server existieren (wenige ms).
-        StartState.Loading -> Unit
-        StartState.NoServer -> AppNavigation(start = AddServerRoute)
-        StartState.Ready -> AppNavigation(start = HomeRoute)
+    if (startState != StartState.Loading) {
+        AppNavigation(start = if (startState == StartState.NoServer) AddServerRoute else HomeRoute)
     }
 }
 

@@ -1,10 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Shlinker</string>
-    <string name="placeholder_subtitle">Client für Shlink</string>
-    <string name="home_active_server">Aktiver Server</string>
-    <string name="home_servers">Serverübersicht</string>
-    <string name="home_add_server">Server hinzufügen</string>
-    <string name="home_short_urls">Shlinks anzeigen</string>
-    <string name="home_server_active">aktiv</string>
+    <string name="placeholder_subtitle">Client for Shlink</string>
+    <string name="home_active_server">Active server</string>
+    <string name="home_servers">Server Overview</string>
+    <string name="home_add_server">Add server</string>
+    <string name="home_short_urls">Show shlinks</string>
+    <string name="home_server_active">active</string>
+    <string name="home_server_actions">Actions for %1$s</string>
+    <string name="home_rename">Rename</string>
+    <string name="home_delete">Delete</string>
+    <string name="home_cancel">Cancel</string>
+    <string name="home_save">Save</string>
+    <string name="home_name">Name</string>
+    <string name="home_rename_title">Rename server</string>
+    <string name="home_delete_title">Delete server?</string>
+    <string name="home_delete_message">Remove “%1$s” and its saved API key from this device? Shlinks on the server will not be deleted.</string>
+    <string name="home_empty">No servers configured. Add a server to get started.</string>
+    <string name="home_name_conflict">A profile with this name already exists for this server address. Please choose a different name.</string>
+    <string name="home_name_empty">Enter a name.</string>
+    <string name="home_storage_error">Could not save your changes. Please try again.</string>
+    <string name="home_server_missing">This server profile no longer exists.</string>
+    <string name="home_dismiss">Dismiss</string>
 </resources>

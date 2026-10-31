@@ -1,21 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!--
-        Hilfetexte für "Server hinzufügen". Bewusst SICHTBAR im Formular anzeigen
-        (nicht hinter einem Info-Icon verstecken).
-    -->
-    <string name="server_hint_tls_title">Zertifikate</string>
-    <string name="server_hint_tls_body">Shlinker verbindet sich nur über HTTPS und akzeptiert derzeit nur Zertifikate öffentlich vertrauenswürdiger Stellen (z. B. Let\'s Encrypt).\n\nSelbst signierte Zertifikate oder eine eigene CA (z. B. im Homelab) werden noch nicht unterstützt – das kommt in einer späteren Version.\n\nHinweis: Eine in den Android-Einstellungen installierte Benutzer-CA reicht nicht aus. Apps vertrauen solchen Zertifikaten seit Android 7 standardmäßig nicht.</string>
-
-    <string name="server_hint_url">Adresse deiner Shlink-Instanz, z. B. s.example.org oder example.org/shlink. „https://“ wird automatisch ergänzt.</string>
-    <string name="server_hint_api_key_title">API-Key</string>
-    <string name="server_hint_api_key">Einen API-Key erzeugst du auf dem Server mit:\nshlink api-key:generate\n(Docker: docker exec -it &lt;container&gt; shlink api-key:generate)\n\nDer Key wird verschlüsselt im Android Keystore gespeichert, nie in Backups übertragen und nicht angezeigt.</string>
-
-    <string name="server_error_url_empty">Bitte eine Server-Adresse eingeben.</string>
-    <string name="server_error_url_malformed">Das ist keine gültige Adresse.</string>
-    <string name="server_error_url_http">Unverschlüsseltes HTTP wird nicht unterstützt – der API-Key würde im Klartext übertragen. Bitte HTTPS verwenden.</string>
-    <string name="server_error_url_scheme">Nur https:// Adressen werden unterstützt.</string>
-    <string name="server_error_url_query">Die Adresse darf keine Parameter (?…) oder Anker (#…) enthalten.</string>
-    <string name="server_error_api_key_empty">Bitte den API-Key eingeben.</string>
-    <string name="server_error_api_key_unavailable">Der gespeicherte API-Key kann nicht mehr entschlüsselt werden (z. B. nach einer Wiederherstellung oder Änderung der Bildschirmsperre). Bitte den Key neu eingeben.</string>
+    <string name="server_hint_tls_title">Certificates</string>
+    <string name="server_hint_tls_body">Shlinker requires HTTPS and currently accepts only publicly trusted certificates, such as those from Let\'s Encrypt.\n\nSelf-signed certificates and private certificate authorities are not supported yet.\n\nInstalling a private CA in Android settings is not sufficient.</string>
+    <string name="server_hint_url">Your Shlink address, e.g. s.example.org or example.org/shlink. HTTPS is added automatically.</string>
+    <string name="server_hint_api_key_title">API key</string>
+    <string name="server_hint_api_key">Create an API key on your Shlink server:\nshlink api-key:generate\n\nWith Docker:\ndocker exec -it &lt;container&gt; shlink api-key:generate\n\nYour API key is stored encrypted on this device, protected by Android Keystore, and excluded from backups.</string>
+    <string name="server_error_url_empty">Enter a server address.</string>
+    <string name="server_error_url_malformed">Enter a valid server address.</string>
+    <string name="server_error_url_http">HTTP is not supported. Use HTTPS to protect your API key.</string>
+    <string name="server_error_url_scheme">Only HTTPS addresses are supported.</string>
+    <string name="server_error_url_query">The server address must not contain query parameters or a fragment.</string>
+    <string name="server_error_api_key_empty">Enter an API key.</string>
+    <string name="server_error_api_key_unavailable">The saved API key cannot be decrypted. Please enter it again.</string>
 </resources>

@@ -50,6 +50,7 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 androidComponents {
@@ -81,4 +82,9 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.serialization.json)
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

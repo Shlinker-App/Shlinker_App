@@ -100,22 +100,22 @@ class ShortUrlsScreenTest {
         assertText("Testserver")
         assertText("https://example.org/article")
         assertText("work")
-        compose.onNodeWithContentDescription("https://s.example/abc kopieren").performClick()
+        compose.onNodeWithContentDescription("Copy https://s.example/abc").performClick()
         assertEquals("https://s.example/abc", copied)
-        compose.onNodeWithContentDescription("Zurück zur Serverübersicht").performClick()
+        compose.onNodeWithContentDescription("Back to server overview").performClick()
         assertTrue(wentBack)
     }
 
     @Test fun emptyListAndSearchAreVisible() {
         screen(flowOf(loadedEmpty))
-        assertText("Noch keine Kurz-URLs auf diesem Server.")
-        compose.onNodeWithText("Kurz-URLs suchen").performTextInput("example")
+        assertText("No shlinks on this server yet.")
+        compose.onNodeWithText("Search shlinks").performTextInput("example")
         assertEquals("example", query)
     }
 
     @Test fun noSearchResultsHasDifferentMessage() {
         screen(flowOf(loadedEmpty), search = "missing")
-        assertText("Keine passenden Kurz-URLs gefunden.")
+        assertText("No matching shlinks found.")
     }
 
     @Test
@@ -124,7 +124,7 @@ class ShortUrlsScreenTest {
         screen(flowOf(loadedEmpty))
         assertText("Shlinks")
         assertText("Testserver")
-        assertText("No short URLs on this server yet.")
+        assertText("No shlinks on this server yet.")
         compose.onNodeWithContentDescription("Back to server overview").assertIsDisplayed()
     }
 
@@ -144,7 +144,7 @@ class ShortUrlsScreenTest {
         }.flow
         screen(flow)
         assertText("Version 1")
-        compose.onNodeWithContentDescription("Aktualisieren").performClick()
+        compose.onNodeWithContentDescription("Refresh").performClick()
         assertText("Version 2")
         compose.onNode(hasScrollAction() and hasAnyDescendant(hasText("Version 2")))
             .performTouchInput { swipeDown() }
@@ -169,9 +169,9 @@ class ShortUrlsScreenTest {
             }
         }.flow
         screen(flow)
-        assertText("Der API-Key ist ungültig oder hat nicht die nötigen Berechtigungen.")
-        compose.onNodeWithText("Erneut versuchen").performClick()
-        assertText("Noch keine Kurz-URLs auf diesem Server.")
+        assertText("The API key is invalid or does not have the required permissions.")
+        compose.onNodeWithText("Try again").performClick()
+        assertText("No shlinks on this server yet.")
         assertEquals(2, attempts)
     }
 }

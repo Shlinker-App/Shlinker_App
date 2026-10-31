@@ -3,6 +3,7 @@ package at.awit.shlinker.feature.servers
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import at.awit.shlinker.core.model.ServerUrl
@@ -70,6 +71,17 @@ class AddServerScreenshotTest {
         state = AddServerUiState(url = "s.example.org", apiKey = "abc", isConnecting = true),
     )
 
+    @Test
+    @Config(qualifiers = "de-w411dp-h891dp-xxhdpi")
+    fun englishFormIsUsedOnGermanDevice() {
+        compose.setContent { Themed(false) { Screen(AddServerUiState()) } }
+        compose.onNodeWithText("Add server").assertIsDisplayed()
+        compose.onNodeWithText("Name (optional)").assertIsDisplayed()
+        compose.onNodeWithText("Server address").assertIsDisplayed()
+        compose.onAllNodesWithText("API key")[0].assertIsDisplayed()
+        compose.onNodeWithText("Connect & save").assertIsDisplayed()
+    }
+
     @Test fun duplicateMessageIsVisible() {
         compose.setContent {
             Themed(false) {
@@ -77,7 +89,7 @@ class AddServerScreenshotTest {
             }
         }
         compose.onNodeWithText(
-            "Dieser Server ist mit demselben API-Key bereits eingerichtet.",
+            "This server is already configured with this API key.",
         ).assertIsDisplayed()
     }
 
@@ -88,7 +100,7 @@ class AddServerScreenshotTest {
             }
         }
         compose.onNodeWithText(
-            "Für diese Serveradresse gibt es bereits ein Profil mit diesem Namen. Bitte wähle einen anderen Namen.",
+            "A profile with this name already exists for this server address. Please choose a different name.",
         ).assertIsDisplayed()
     }
 
