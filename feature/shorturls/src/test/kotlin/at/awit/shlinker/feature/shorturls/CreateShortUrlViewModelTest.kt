@@ -41,6 +41,8 @@ class CreateShortUrlViewModelTest {
     private val profiles = Profiles()
     private var input: CreateShortUrl? = null
     private var calls = 0
+    private var expectedServerUrl = "https://s.example"
+    private var expectedKey = "key"
     private var failure: CreateShortUrlException? = null
     private var gate: CompletableDeferred<Unit>? = null
     private val stored = MutableStateFlow(StoredServers())
@@ -51,8 +53,8 @@ class CreateShortUrlViewModelTest {
     })
     private val service = object : CreateShortUrlService {
         override suspend fun create(serverUrl: String, apiKey: String, input: CreateShortUrl): ShortUrl {
-            assertEquals("https://s.example", serverUrl)
-            assertEquals("key", apiKey)
+            assertEquals(expectedServerUrl, serverUrl)
+            assertEquals(expectedKey, apiKey)
             calls++
             gate?.await()
             failure?.let { throw it }
@@ -309,6 +311,52 @@ class CreateShortUrlViewModelTest {
         advanceUntilIdle()
         assertNull(input?.domain)
         assertEquals(1, calls)
+    }
+
+    @Test fun sharingSeedsOnceAndServerSwitchKeepsOnlyUrlTitleAndSlugWithFreshDomain() = runTest(dispatcher) {
+        vm.load(
+            "1",
+            preserveDraft = true,
+            initialUrl = "https://shared.example/?q=%2F#part",
+            initialTitle = "Shared title",
+        )
+        advanceUntilIdle()
+        assertEquals("https://shared.example/?q=%2F#part", vm.state.value.longUrl)
+        assertEquals("Shared title", vm.state.value.title)
+        vm.change(
+            vm.state.value.copy(
+                title = "Edited",
+                slug = "custom",
+                manualDomain = true,
+                domain = "old.example",
+                tags = listOf("private"),
+            ),
+        )
+        vm.load("1", preserveDraft = true, initialUrl = "https://wrong.example")
+        assertEquals("Edited", vm.state.value.title)
+        domains = listOf(ServerDomain("new.example", false))
+        profiles.profiles.value += ServerProfile("2", "Second", "https://second.example", 1)
+        vm.load("2", preserveDraft = true, initialUrl = "https://wrong.example")
+        advanceUntilIdle()
+        assertEquals("2", vm.state.value.profileId)
+        assertEquals("https://shared.example/?q=%2F#part", vm.state.value.longUrl)
+        assertEquals("Edited", vm.state.value.title)
+        assertEquals("custom", vm.state.value.slug)
+        assertEquals("new.example", vm.state.value.domain)
+        assertFalse(vm.state.value.manualDomain)
+        assertEquals(emptyList<String>(), vm.state.value.tags)
+        assertEquals(0, calls)
+        expectedServerUrl = "https://second.example"
+        expectedKey = "changed-key"
+        profiles.key = ApiKeyResult.Available(expectedKey)
+        vm.submit()
+        advanceUntilIdle()
+        assertEquals(1, calls)
+        assertEquals("new.example", input?.domain)
+        assertEquals("Edited", input?.title)
+        assertEquals(listOf("shlinker"), input?.tags)
+        assertEquals(false, input?.forwardQuery)
+        assertEquals("1", profiles.activeProfile.value?.id)
     }
 
     private class Profiles : ServerProfileRepository {

@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="shared_title">Create shared shlink</string>
+    <string name="shared_profiles_error">Could not load server profiles. Try again.</string>
+    <string name="shared_choose_server">Choose a server</string>
+    <string name="shared_no_servers">Add a server in Shlinker first, then return here. Your shared URL stays in this form.</string>
+    <string name="shared_setup">Set up a server</string>
+    <string name="shared_open_app">Open Shlinker to check</string>
+    <string name="shared_invalid">The shared text did not contain exactly one valid HTTP(S) URL without embedded credentials. Enter or correct the destination below; nothing is sent until you tap Create.</string>
+    <string name="shared_interrupted">A previous creation attempt may already have reached the server. Check your shlinks in the app before sharing the URL again. This form will not repeat the request.</string>
+    <string name="shared_domain">Short URL domain: %1$s</string>
+    <string name="shared_defaults_hint">Uses your app tag and new-shlink defaults. Further settings are available afterwards in Details.</string>
+    <string name="shared_copy">Copy</string>
+    <string name="shared_share">Share</string>
+    <string name="shared_cancel">Cancel</string>
+    <string name="shared_action_error">Could not open Android sharing. No compatible app is available or Android denied the action. You can still copy the short URL.</string>
     <string name="create_details_hint">Keep creation quick: validity dates, visit limits and further settings can be adjusted afterwards in the shlink details.</string>
     <string name="create_domain_label">Short URL domain</string>
     <string name="create_domain_default">%1$s (server default)</string>

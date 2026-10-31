@@ -200,20 +200,7 @@ internal fun CreateShortUrlScreen(
                 }
                 state.error?.let { error ->
                     Text(
-                        stringResource(
-                            when (error) {
-                                CreateError.URL -> R.string.create_error_url
-                                CreateError.DOMAIN -> R.string.create_error_domain
-                                CreateError.LOAD -> R.string.create_error_load
-                                CreateError.MISSING_SERVER -> R.string.create_error_server_missing
-                                CreateError.MISSING_KEY -> R.string.short_urls_key_missing
-                                CreateError.INVALID -> R.string.create_error_invalid
-                                CreateError.CONFLICT -> R.string.create_error_conflict
-                                CreateError.AUTH -> R.string.short_urls_key_invalid
-                                CreateError.SERVER -> R.string.create_error_server
-                                CreateError.UNCERTAIN -> R.string.create_error_uncertain
-                            },
-                        ),
+                        stringResource(createErrorMessage(error)),
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
@@ -233,6 +220,19 @@ internal fun CreateShortUrlScreen(
             }
         }
     }
+}
+
+internal fun createErrorMessage(error: CreateError): Int = when (error) {
+    CreateError.URL -> R.string.create_error_url
+    CreateError.DOMAIN -> R.string.create_error_domain
+    CreateError.LOAD -> R.string.create_error_load
+    CreateError.MISSING_SERVER -> R.string.create_error_server_missing
+    CreateError.MISSING_KEY -> R.string.short_urls_key_missing
+    CreateError.INVALID -> R.string.create_error_invalid
+    CreateError.CONFLICT -> R.string.create_error_conflict
+    CreateError.AUTH -> R.string.short_urls_key_invalid
+    CreateError.SERVER -> R.string.create_error_server
+    CreateError.UNCERTAIN -> R.string.create_error_uncertain
 }
 
 @Composable

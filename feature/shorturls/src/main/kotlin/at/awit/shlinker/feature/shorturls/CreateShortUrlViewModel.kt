@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 data class CreateShortUrlState(
+    val profileId: String? = null,
     val serverName: String? = null,
     val longUrl: String = "",
     val title: String = "",
@@ -67,17 +68,30 @@ class CreateShortUrlViewModel @Inject constructor(
     private var loadJob: Job? = null
     private var domainsJob: Job? = null
 
-    fun load(id: String) {
+    fun load(
+        id: String,
+        preserveDraft: Boolean = false,
+        initialUrl: String = "",
+        initialTitle: String = "",
+        initialSlug: String = "",
+    ) {
         if (_state.value.busy) return
         if (serverId == id && !_state.value.loading && _state.value.serverName != null) return
         loadJob?.cancel()
         domainsJob?.cancel()
         val sameServer = serverId == id
+        val previous = _state.value
+        val hadServer = serverId != null
         serverId = id
         _state.value = if (sameServer) {
-            _state.value.copy(loading = true, error = null, domainsLoading = false)
+            _state.value.copy(loading = true, error = null, domainsLoading = false, profileId = id)
         } else {
-            CreateShortUrlState()
+            CreateShortUrlState(
+                profileId = id,
+                longUrl = if (preserveDraft && hadServer) previous.longUrl else initialUrl,
+                title = if (preserveDraft && hadServer) previous.title else initialTitle,
+                slug = if (preserveDraft && hadServer) previous.slug else initialSlug,
+            )
         }
         loadDomains()
         loadJob = viewModelScope.launch {

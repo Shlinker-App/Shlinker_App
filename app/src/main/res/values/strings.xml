@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="share_activity_label">Shlinker · Create shlink</string>
     <string name="settings_defaults_title">New shlink defaults</string>
     <string name="settings_defaults_hint">Shared across all servers. Applies only when creating new shlinks, not when viewing or editing existing ones. Per-server overrides will follow later.</string>
     <string name="settings_forward_query">Forward query parameters</string>
