@@ -40,6 +40,12 @@
     <string name="short_urls_no_results">No matching shlinks found.</string>
     <string name="short_urls_no_server">No active server. Please select a server.</string>
     <string name="short_urls_copy">Copy %1$s</string>
+    <string name="short_urls_share">Share %1$s</string>
+    <string name="short_urls_open">Open %1$s in browser</string>
+    <string name="short_urls_open_invalid">This shlink is not a valid HTTP or HTTPS URL and cannot be opened.</string>
+    <string name="short_urls_open_unavailable">No browser is available to open this shlink.</string>
+    <string name="short_urls_share_unavailable">No app is available to share this shlink.</string>
+    <string name="short_urls_action_denied">Android did not allow this action. Please check your device restrictions.</string>
     <string name="short_urls_copied">Shlink copied</string>
     <string name="short_urls_retry">Try again</string>
     <string name="short_urls_key_missing">The API key is missing or cannot be decrypted. Edit the server profile and enter its API key again.</string>

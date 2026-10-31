@@ -1,9 +1,11 @@
 package at.awit.shlinker.feature.shorturls
 
 import android.content.ClipData
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,6 +18,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -45,7 +48,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -79,6 +84,23 @@ fun ShortUrlsRoute(
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     val copied = stringResource(R.string.short_urls_copied)
+    val context = LocalContext.current
+    val invalidUrl = stringResource(R.string.short_urls_open_invalid)
+    val openUnavailable = stringResource(R.string.short_urls_open_unavailable)
+    val shareUnavailable = stringResource(R.string.short_urls_share_unavailable)
+    val actionDenied = stringResource(R.string.short_urls_action_denied)
+    fun reportError(error: ShortUrlActionError?, unavailable: String) {
+        if (error == null) return
+        scope.launch {
+            snackbar.showSnackbar(
+                when (error) {
+                    ShortUrlActionError.INVALID_URL -> invalidUrl
+                    ShortUrlActionError.NO_HANDLER -> unavailable
+                    ShortUrlActionError.DENIED -> actionDenied
+                },
+            )
+        }
+    }
     ShortUrlsScreen(
         urls = urls,
         search = search,
@@ -91,6 +113,8 @@ fun ShortUrlsRoute(
                 snackbar.showSnackbar(copied)
             }
         },
+        onOpen = { reportError(openShortUrl(context, it), openUnavailable) },
+        onShare = { reportError(shareShortUrl(context, it), shareUnavailable) },
         snackbar = snackbar,
         sort = sort,
         onSortChange = viewModel::onSortChange,
@@ -110,6 +134,8 @@ internal fun ShortUrlsScreen(
     onSearchChange: (String) -> Unit,
     onBack: () -> Unit,
     onCopy: (String) -> Unit,
+    onOpen: (String) -> Unit,
+    onShare: (String) -> Unit,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
     sort: ShortUrlSort = ShortUrlSort.NEWEST,
     onSortChange: (ShortUrlSort) -> Unit = {},
@@ -231,7 +257,7 @@ internal fun ShortUrlsScreen(
                     }
                     items(count = urls.itemCount) { index ->
                         urls[index]?.let { url ->
-                            ShortUrlRow(url, onCopy)
+                            ShortUrlRow(url, onCopy, onOpen, onShare)
                             HorizontalDivider()
                         }
                     }
@@ -259,7 +285,13 @@ private fun shortUrlSortLabel(sort: ShortUrlSort): String = stringResource(
 )
 
 @Composable
-private fun ShortUrlRow(url: ShortUrl, onCopy: (String) -> Unit) {
+private fun ShortUrlRow(url: ShortUrl, onCopy: (String) -> Unit, onOpen: (String) -> Unit, onShare: (String) -> Unit) {
+    val openLabel = stringResource(R.string.short_urls_open, url.shortUrl)
+    val linkModifier = Modifier.clickable(
+        role = Role.Button,
+        onClickLabel = openLabel,
+        onClick = { onOpen(url.shortUrl) },
+    )
     ListItem(
         headlineContent = {
             Text(
@@ -271,12 +303,19 @@ private fun ShortUrlRow(url: ShortUrl, onCopy: (String) -> Unit) {
                 },
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
+                modifier = if (url.title.isNullOrBlank()) linkModifier else Modifier,
             )
         },
         supportingContent = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (!url.title.isNullOrBlank()) {
-                    Text(url.shortUrl, color = MaterialTheme.colorScheme.primary)
+                    Text(
+                        url.shortUrl,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = linkModifier,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
                 Text(url.longUrl, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (url.tags.isNotEmpty()) {
@@ -285,8 +324,13 @@ private fun ShortUrlRow(url: ShortUrl, onCopy: (String) -> Unit) {
             }
         },
         trailingContent = {
-            IconButton(onClick = { onCopy(url.shortUrl) }) {
-                Icon(Icons.Outlined.ContentCopy, stringResource(R.string.short_urls_copy, url.shortUrl))
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                IconButton(onClick = { onShare(url.shortUrl) }) {
+                    Icon(Icons.Outlined.Share, stringResource(R.string.short_urls_share, url.shortUrl))
+                }
+                IconButton(onClick = { onCopy(url.shortUrl) }) {
+                    Icon(Icons.Outlined.ContentCopy, stringResource(R.string.short_urls_copy, url.shortUrl))
+                }
             }
         },
     )

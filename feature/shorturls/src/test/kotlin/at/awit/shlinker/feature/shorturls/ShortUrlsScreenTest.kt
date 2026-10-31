@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasScrollAction
@@ -40,6 +41,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -57,6 +59,8 @@ class ShortUrlsScreenTest {
     @get:Rule val compose = createComposeRule()
 
     private var copied: String? = null
+    private var opened: String? = null
+    private var shared: String? = null
     private var query: String? = null
     private var wentBack = false
     private var creating = false
@@ -84,6 +88,8 @@ class ShortUrlsScreenTest {
                     onBack = { wentBack = true },
                     onCreate = { creating = true },
                     onCopy = { copied = it },
+                    onOpen = { opened = it },
+                    onShare = { shared = it },
                     sort = sort,
                     onSortChange = {
                         selectedSort = it
@@ -155,6 +161,65 @@ class ShortUrlsScreenTest {
         assertEquals("https://s.example/abc", copied)
         compose.onNodeWithContentDescription("Back to server overview").performClick()
         assertTrue(wentBack)
+    }
+
+    @Test fun openShareAndCopyAreIndependentForTitledAndTitlelessShlinks() {
+        val urls = listOf(
+            ShortUrl("one", "https://s.example/one", "https://example.org/one", null, emptyList()),
+            ShortUrl("two", "https://s.example/two", "https://example.org/two", "Title", emptyList()),
+            ShortUrl("three", "https://s.example/three", "https://example.org/three", "  ", emptyList()),
+        )
+        screen(flowOf(PagingData.from(urls)))
+        assertNull(opened)
+        assertNull(shared)
+        assertNull(copied)
+        for (url in urls) {
+            opened = null
+            shared = null
+            copied = null
+            compose.onNodeWithText(url.longUrl, useUnmergedTree = true)
+                .performScrollTo().assertHasNoClickAction()
+            compose.onNodeWithContentDescription("Share ${url.shortUrl}").performClick()
+            assertEquals(url.shortUrl, shared)
+            assertNull(copied)
+            assertNull(opened)
+            shared = null
+            compose.onNodeWithContentDescription("Copy ${url.shortUrl}").performClick()
+            assertEquals(url.shortUrl, copied)
+            assertNull(shared)
+            assertNull(opened)
+            copied = null
+            compose.onNodeWithText(url.shortUrl, useUnmergedTree = true).performClick()
+            assertEquals(url.shortUrl, opened)
+            assertNull(shared)
+            assertNull(copied)
+            val shareBounds = compose.onNodeWithContentDescription("Share ${url.shortUrl}")
+                .fetchSemanticsNode().boundsInRoot
+            val copyBounds = compose.onNodeWithContentDescription("Copy ${url.shortUrl}")
+                .fetchSemanticsNode().boundsInRoot
+            assertEquals(shareBounds.top, copyBounds.top)
+            assertTrue(shareBounds.right < copyBounds.left)
+        }
+        compose.onNodeWithText("Title", useUnmergedTree = true).performScrollTo().assertHasNoClickAction()
+    }
+
+    @Test
+    @Config(qualifiers = "en-w320dp-h640dp-xhdpi")
+    fun narrowWindowKeepsBothActionsAndLongShortUrlAccessible() {
+        val url = ShortUrl(
+            "long",
+            "https://very-long-hostname.example/long-custom-slug-for-sharing",
+            "https://example.org/article",
+            null,
+            listOf("one", "two"),
+        )
+        screen(flowOf(PagingData.from(listOf(url))))
+        compose.onNodeWithContentDescription("Share ${url.shortUrl}").assertIsDisplayed().performClick()
+        assertEquals(url.shortUrl, shared)
+        compose.onNodeWithContentDescription("Copy ${url.shortUrl}").assertIsDisplayed().performClick()
+        assertEquals(url.shortUrl, copied)
+        compose.onNodeWithText(url.shortUrl, useUnmergedTree = true).assertIsDisplayed().performClick()
+        assertEquals(url.shortUrl, opened)
     }
 
     @Test fun sortMenuSupportsAllFourOrdersAndShowsCurrentChoice() {
