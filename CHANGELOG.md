@@ -2,12 +2,13 @@
 
 Alle Versionen vor 1.0.0 sind Entwicklungsstände.
 
-## 0.3.1 – in Arbeit
+## 0.3.1 – 2026-11-17
 
 - Neue App-IDs: `app.shlinker.devs`, `app.shlinker.nightly`, `app.shlinker`.
   Bisherige Installationen (`at.awit.shlinker.debug`) werden nicht aktualisiert.
   Die neue App muss frisch installiert und die Server neu angelegt werden.
 - Eigene Icons je Kanal, neues offizielles Logo
+- Neuer Signaturschlüssel für Dev-Builds
 - Repository aufgeräumt, Dokumentation neu geschrieben
 
 ## 0.3.0 – 2026-10-31

@@ -7,12 +7,16 @@ Entwurf, wird gerade überarbeitet.
 Serververwaltung, Shlinks anlegen/bearbeiten/löschen, Tags, QR-Codes, Statistik,
 Redirect-Rules und das Teilen-Menü. Details im [Changelog](CHANGELOG.md).
 
-## 0.3.1 – nächste Dev-Version
+## 0.3.1 – Dev-Version
 
 - [x] Repository aufräumen, Dokumentation neu schreiben
 - [x] Getrennte App-IDs für Dev, Nightly und Stable, Namespace `app.shlinker`
 - [x] Eigene Icons je Kanal
-- [ ] Neuer Signaturschlüssel für Dev-Builds
+- [x] Neuer Signaturschlüssel für Dev-Builds
+- [x] Signiertes Dev-APK per Tag in die Forgejo Package Registry
+
+## 0.3.2
+
 - [ ] Teilen: Hostname unter dem Servernamen, auch im Server-Dropdown
 - [ ] Teilen: Copy/Share als Symbole mit Accessibility-Beschriftung
 - [ ] Teilen: QR-Code auf der Erfolgsseite

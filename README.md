@@ -27,6 +27,15 @@ Die Oberfläche ist auf Englisch. Weitere Sprachen sind geplant.
   (eigene CAs für Homelabs sind geplant)
 - QR-Codes entstehen lokal am Gerät, ohne Netzwerkabfrage
 
+## Download
+
+Dev-Builds liegen in der [Package Registry](https://code.awit.at/Shlinker/-/packages/generic/shlinker-devs),
+jeweils mit SHA-256-Prüfsumme. Fingerprint des Dev-Signaturschlüssels (SHA-256):
+
+```text
+45:3B:B5:52:A5:C6:ED:1E:37:24:E4:1A:90:0F:90:C2:91:F8:52:DB:66:AC:EA:5B:61:6B:D1:4B:26:F3:B9:99
+```
+
 ## Voraussetzungen
 
 - Android 10 (API 29) oder neuer
