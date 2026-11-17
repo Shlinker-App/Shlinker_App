@@ -64,8 +64,8 @@ each with a SHA-256 checksum. SHA-256 fingerprint of the dev signing key:
 
 | Channel | App ID | Icon | Published as |
 |---|---|---|---|
-| Dev | `app.shlinker.devs` | red, "DEVS" | Git tag |
-| Nightly | `app.shlinker.nightly` | blue, "Nightly" | Pre-release (planned) |
+| Dev | `app.shlinker.devs` | red, "DEVS", Non-themed icon  | Git tag |
+| Nightly | `app.shlinker.nightly` | blue, "Nightly", Non-themed icon | Pre-release (planned) |
 | Stable | `app.shlinker` | green, themed icon | Release from 1.0.0 on |
 
 All three can be installed side by side. Debug and release builds of a channel share the same
