@@ -40,15 +40,15 @@ Die Oberfläche ist auf Englisch. Weitere Sprachen sind geplant.
 | Nightly | `app.shlinker.nightly` | blau, „Nightly“ | Pre-Release (geplant) |
 | Stable | `app.shlinker` | grün, Themed Icon | Release ab 1.0.0 |
 
-Alle drei lassen sich parallel installieren. Lokale Debug-Builds bekommen zusätzlich `.debug`
-an die App-ID gehängt und kommen so signierten Builds nicht in die Quere.
+Alle drei lassen sich parallel installieren. Debug- und Release-Builds eines Kanals teilen sich
+die App-ID; wegen unterschiedlicher Schlüssel ist vor dem Wechsel eine Neuinstallation nötig.
 
 ## Bauen
 
 Benötigt werden JDK 21 und das Android SDK (Platform 37).
 
 ```bash
-./gradlew assembleDevsDebug                   # Dev-Debug-APK
+./gradlew assembleDevsDebug                   # Dev-APK mit Debug-Schlüssel
 ./gradlew assembleDevsRelease                 # Dev-Release-APK
 ./gradlew ktlintCheck lintDebug lintDevsDebug # Code-Style und Lint
 ./gradlew testDebugUnitTest testDevsDebugUnitTest
