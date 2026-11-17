@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "at.awit.shlinker.core.model"
+    namespace = "app.shlinker.core.model"
 }
 
 dependencies {

@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "at.awit.shlinker.core.network"
+    namespace = "app.shlinker.core.network"
 }
 
 dependencies {

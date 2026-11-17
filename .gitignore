@@ -9,6 +9,7 @@ captures/
 # Lokale Konfiguration – NIEMALS committen
 local.properties
 key.properties
+/signing/
 *.jks
 *.keystore
 

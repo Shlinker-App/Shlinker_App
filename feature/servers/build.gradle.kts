@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "at.awit.shlinker.feature.servers"
+    namespace = "app.shlinker.feature.servers"
     testOptions.unitTests.isIncludeAndroidResources = true
 }
 

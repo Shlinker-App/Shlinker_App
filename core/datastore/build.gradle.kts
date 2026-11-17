@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "at.awit.shlinker.core.datastore"
+    namespace = "app.shlinker.core.datastore"
 }
 
 dependencies {

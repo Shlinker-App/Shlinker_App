@@ -32,29 +32,45 @@ Die Oberfläche ist auf Englisch. Weitere Sprachen sind geplant.
 - Android 10 (API 29) oder neuer
 - Eine Shlink-Instanz ab Version 3.0 und ein API-Key
 
+## Kanäle
+
+| Kanal | App-ID | Icon | Veröffentlichung |
+|---|---|---|---|
+| Dev | `app.shlinker.devs` | rot, „DEVS“ | Git-Tag |
+| Nightly | `app.shlinker.nightly` | blau, „Nightly“ | Pre-Release (geplant) |
+| Stable | `app.shlinker` | grün, Themed Icon | Release ab 1.0.0 |
+
+Alle drei lassen sich parallel installieren. Lokale Debug-Builds bekommen zusätzlich `.debug`
+an die App-ID gehängt und kommen so signierten Builds nicht in die Quere.
+
 ## Bauen
 
 Benötigt werden JDK 21 und das Android SDK (Platform 37).
 
 ```bash
-./gradlew assembleDebug              # Debug-APK
-./gradlew ktlintCheck lintDebug      # Code-Style und Lint
-./gradlew testDebugUnitTest          # Unit-Tests
-./gradlew recordRoborazziDebug       # UI-Screenshots ohne Emulator
+./gradlew assembleDevsDebug                   # Dev-Debug-APK
+./gradlew assembleDevsRelease                 # Dev-Release-APK
+./gradlew ktlintCheck lintDebug lintDevsDebug # Code-Style und Lint
+./gradlew testDebugUnitTest testDevsDebugUnitTest
+./gradlew recordRoborazziDebug                # UI-Screenshots ohne Emulator
 ```
 
-Die APK landet unter `app/build/outputs/apk/debug/`.
+Die APKs landen unter `app/build/outputs/apk/<kanal>/<buildtyp>/`.
 
-### Release signieren
+### Signieren
 
-Für signierte Builds eine `key.properties` im Projektordner anlegen. Sie wird nie committet.
+Jeder Kanal hat einen eigenen Schlüssel. Lokal liegt er in `signing/<kanal>.properties`
+(der Ordner wird nie committet):
 
 ```properties
-storeFile=/pfad/zu/shlinker.jks
+storeFile=/pfad/zu/shlinker-devs.jks
 storePassword=...
-keyAlias=shlinker
+keyAlias=shlinker-devs
 keyPassword=...
 ```
+
+In der CI kommen die Werte aus `SHLINKER_<KANAL>_STORE_FILE`, `_STORE_PASSWORD`, `_KEY_ALIAS`
+und `_KEY_PASSWORD`. Ohne Schlüssel entsteht ein unsigniertes Release-APK.
 
 ## Projektstruktur
 
@@ -72,6 +88,8 @@ build-logic/       Gradle Convention Plugins
 
 Tech-Stack: Kotlin, Jetpack Compose mit Material 3, Navigation 3, Hilt, Ktor, kotlinx.serialization,
 DataStore, Paging 3, ZXing Core.
+
+Das Logo liegt unter [`assets/logo/`](assets/logo/).
 
 ## Weitere Dokumente
 

@@ -22,10 +22,10 @@ jobs:
       - name: JDK und Android SDK einrichten
         run: ci/setup-android.sh 2>&1 | tee -a ci.log
       - name: ktlint, Lint, Unit-Tests, Debug-Build
-        run: ./gradlew --no-daemon ktlintCheck lintDebug testDebugUnitTest assembleDebug 2>&1 | tee -a ci.log
+        run: ./gradlew --no-daemon ktlintCheck lintDebug lintDevsDebug testDebugUnitTest testDevsDebugUnitTest assembleDevsDebug 2>&1 | tee -a ci.log
       - name: F-Droid-Check – keine proprietären Abhängigkeiten
         run: |
-          ./gradlew --no-daemon :app:dependencies --configuration releaseRuntimeClasspath -q > deps.txt 2>> ci.log
+          ./gradlew --no-daemon :app:dependencies --configuration stableReleaseRuntimeClasspath -q > deps.txt 2>> ci.log
           if grep -iE 'com\.google\.(android\.gms|firebase)|com\.google\.android\.play|crashlytics|com\.android\.billingclient' deps.txt; then
             echo "::error::Proprietäre Abhängigkeit gefunden – blockiert F-Droid" | tee -a ci.log; exit 1
           fi
@@ -34,8 +34,8 @@ jobs:
         run: ./gradlew --no-daemon recordRoborazziDebug 2>&1 | tee -a ci.log
       - uses: https://data.forgejo.org/forgejo/upload-artifact@v4
         with:
-          name: shlinker-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: shlinker-devs-debug-apk
+          path: app/build/outputs/apk/devs/debug/*.apk
           retention-days: 7
       - uses: https://data.forgejo.org/forgejo/upload-artifact@v4
         with:

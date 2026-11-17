@@ -10,8 +10,8 @@ Redirect-Rules und das Teilen-Menü. Details im [Changelog](CHANGELOG.md).
 ## 0.3.1 – nächste Dev-Version
 
 - [x] Repository aufräumen, Dokumentation neu schreiben
-- [ ] Getrennte App-IDs für Dev, Nightly und Stable
-- [ ] Eigene Icons je Kanal
+- [x] Getrennte App-IDs für Dev, Nightly und Stable, Namespace `app.shlinker`
+- [x] Eigene Icons je Kanal
 - [ ] Neuer Signaturschlüssel für Dev-Builds
 - [ ] Teilen: Hostname unter dem Servernamen, auch im Server-Dropdown
 - [ ] Teilen: Copy/Share als Symbole mit Accessibility-Beschriftung

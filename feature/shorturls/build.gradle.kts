@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "at.awit.shlinker.feature.shorturls"
+    namespace = "app.shlinker.feature.shorturls"
     testOptions.unitTests.isIncludeAndroidResources = true
 }
 

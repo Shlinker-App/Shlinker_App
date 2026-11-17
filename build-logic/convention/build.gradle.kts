@@ -2,7 +2,7 @@ plugins {
     `kotlin-dsl`
 }
 
-group = "at.awit.shlinker.buildlogic"
+group = "app.shlinker.buildlogic"
 
 kotlin {
     jvmToolchain(21)

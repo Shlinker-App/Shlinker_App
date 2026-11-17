@@ -7,30 +7,62 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-// Release-Signierung nur, wenn key.properties lokal vorhanden ist (nie im Repo).
-val keystoreProperties = Properties().apply {
-    val file = rootProject.file("key.properties")
-    if (file.exists()) file.inputStream().use(::load)
+// Signaturschlüssel je Kanal. Quelle: signing/<kanal>.properties (lokal, nie im Repo)
+// oder Umgebungsvariablen SHLINKER_<KANAL>_STORE_FILE, _STORE_PASSWORD, _KEY_ALIAS,
+// _KEY_PASSWORD (CI). Ohne Schlüssel entsteht ein unsigniertes Release-APK.
+val channels = listOf("devs", "nightly", "stable")
+
+fun signingProperties(channel: String): Properties? {
+    val file = rootProject.file("signing/$channel.properties")
+    if (file.exists()) return Properties().apply { file.inputStream().use(::load) }
+    val prefix = "SHLINKER_${channel.uppercase()}_"
+    val storeFile = System.getenv("${prefix}STORE_FILE") ?: return null
+    return Properties().apply {
+        setProperty("storeFile", storeFile)
+        setProperty("storePassword", System.getenv("${prefix}STORE_PASSWORD").orEmpty())
+        setProperty("keyAlias", System.getenv("${prefix}KEY_ALIAS").orEmpty())
+        setProperty("keyPassword", System.getenv("${prefix}KEY_PASSWORD").orEmpty())
+    }
 }
-val hasReleaseKeystore = keystoreProperties.getProperty("storeFile") != null
 
 android {
-    namespace = "at.awit.shlinker"
+    namespace = "app.shlinker"
 
     defaultConfig {
-        applicationId = "at.awit.shlinker"
-        versionCode = 24
-        versionName = "0.3.0"
+        applicationId = "app.shlinker"
+        versionCode = 25
+        versionName = "0.3.1"
     }
 
     signingConfigs {
-        if (hasReleaseKeystore) {
-            create("release") {
-                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
-                storePassword = keystoreProperties.getProperty("storePassword")
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
+        channels.forEach { channel ->
+            val props = signingProperties(channel) ?: return@forEach
+            create(channel) {
+                storeFile = rootProject.file(props.getProperty("storeFile"))
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
             }
+        }
+    }
+
+    flavorDimensions += "channel"
+    productFlavors {
+        create("devs") {
+            dimension = "channel"
+            signingConfigs.findByName("devs")?.let { signingConfig = it }
+            applicationIdSuffix = ".devs"
+            versionNameSuffix = "-devs"
+        }
+        create("nightly") {
+            dimension = "channel"
+            signingConfigs.findByName("nightly")?.let { signingConfig = it }
+            applicationIdSuffix = ".nightly"
+            versionNameSuffix = "-nightly"
+        }
+        create("stable") {
+            dimension = "channel"
+            signingConfigs.findByName("stable")?.let { signingConfig = it }
         }
     }
 
@@ -43,7 +75,6 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            if (hasReleaseKeystore) signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -54,7 +85,7 @@ android {
 }
 
 androidComponents {
-    onVariants(selector().withBuildType("debug")) { variant ->
+    onVariants { variant ->
         variant.outputs.forEach { output ->
             output.outputFileName.set(
                 output.versionName.zip(output.versionCode) { name, code ->
