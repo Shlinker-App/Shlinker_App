@@ -2,6 +2,11 @@
 
 Draft, currently being reworked.
 
+## Pace
+
+Until mid to end of January 2027 there will only be small steps, since a lot is going on
+privately. After that, development picks up again, part-time to full-time.
+
 ## Done (up to 0.3.0)
 
 Server management, creating/editing/deleting short URLs, tags, QR codes, statistics,
