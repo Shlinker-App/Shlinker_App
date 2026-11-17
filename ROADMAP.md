@@ -1,65 +1,65 @@
 # Roadmap
 
-Entwurf, wird gerade überarbeitet.
+Draft, currently being reworked.
 
-## Erledigt (bis 0.3.0)
+## Done (up to 0.3.0)
 
-Serververwaltung, Shlinks anlegen/bearbeiten/löschen, Tags, QR-Codes, Statistik,
-Redirect-Rules und das Teilen-Menü. Details im [Changelog](CHANGELOG.md).
+Server management, creating/editing/deleting short URLs, tags, QR codes, statistics,
+redirect rules and the share sheet. See the [changelog](CHANGELOG.md) for details.
 
-## 0.3.1 – Dev-Version
+## 0.3.1 – dev release
 
-- [x] Repository aufräumen, Dokumentation neu schreiben
-- [x] Getrennte App-IDs für Dev, Nightly und Stable, Namespace `app.shlinker`
-- [x] Eigene Icons je Kanal
-- [x] Neuer Signaturschlüssel für Dev-Builds
-- [x] Signiertes Dev-APK per Tag in die Forgejo Package Registry
+- [x] Clean up the repository, rewrite the docs
+- [x] Separate app IDs for dev, nightly and stable, namespace `app.shlinker`
+- [x] Own icon per channel
+- [x] New signing key for dev builds
+- [x] Signed dev APK published to the Forgejo package registry on every tag
 
 ## 0.3.2
 
-- [ ] Teilen: Hostname unter dem Servernamen, auch im Server-Dropdown
-- [ ] Teilen: Copy/Share als Symbole mit Accessibility-Beschriftung
-- [ ] Teilen: QR-Code auf der Erfolgsseite
-- [ ] Easter Egg im Dialog zum Löschen eines Servers
-- [ ] Offene Tests aus dem [Testprotokoll](TESTPROTOKOLL.md)
+- [ ] Share: show the hostname below the server name, in the server dropdown too
+- [ ] Share: copy/share as icons with accessibility labels
+- [ ] Share: QR code on the success screen
+- [ ] Easter egg in the delete-server dialog
+- [ ] Open items from the [test log](TESTING.md)
 
-## Release-Kanäle
+## Release channels
 
-| Kanal | App-ID | Veröffentlichung |
+| Channel | App ID | Published as |
 |---|---|---|
-| Dev | `app.shlinker.devs` | Git-Tag |
-| Nightly | `app.shlinker.nightly` | Pre-Release (später) |
-| Stable | `app.shlinker` | Release ab 1.0.0 |
+| Dev | `app.shlinker.devs` | Git tag |
+| Nightly | `app.shlinker.nightly` | Pre-release (later) |
+| Stable | `app.shlinker` | Release from 1.0.0 on |
 
-## Bis 1.0.0
+## Towards 1.0.0
 
-- [ ] App-Einstellungen: Sprache, Hell/Dunkel/System, Farbschema
-- [ ] Server-spezifische Vorgaben für neue Shlinks
-- [ ] Sortierung wahlweise gemeinsam oder pro Server
-- [ ] Adaptives Layout für Tablets und Foldables
-- [ ] Detailseite optisch überarbeiten
-- [ ] Übersetzungen, zuerst Deutsch
-- [ ] Eigene Zertifikate / Homelab-CA
-- [ ] Reproduzierbare Release-Builds
-- [ ] CI: Emulator-Tests, schnellere Builds, Signaturschlüssel als Secret
-- [ ] Projektseite unter shlinker.app
-- [ ] Repository öffentlich
+- [ ] App settings: language, light/dark/system, color scheme
+- [ ] Per-server defaults for new short URLs
+- [ ] Sorting either shared or per server
+- [ ] Adaptive layout for tablets and foldables
+- [ ] Visual overhaul of the details screen
+- [ ] Translations, German first
+- [ ] Custom certificates / homelab CA
+- [ ] Reproducible release builds
+- [ ] CI: emulator tests, faster builds
+- [ ] Project website at shlinker.app
+- [ ] Make the repository public
 
-## Verteilung
+## Distribution
 
-F-Droid ist Pflicht. Deshalb bleiben proprietäre Abhängigkeiten, Tracking und Werbung draußen;
-die CI prüft das bei jedem Build.
+F-Droid is a must. That's why proprietary dependencies, tracking and ads stay out;
+CI checks this on every build.
 
-- [ ] Eigenes F-Droid-Repo für Testbuilds
-- [ ] Aufnahme ins offizielle F-Droid-Repo
+- [ ] Own F-Droid repo for test builds
+- [ ] Inclusion in the official F-Droid repo
 - [ ] Google Play Store
 
-## Ferne Ideen
+## Ideas for later
 
-Nach einem stabilen Android-Release könnte Shlinker mit Compose Multiplatform auf weitere
-Plattformen kommen:
+Once there is a stable Android release, Shlinker could move to other platforms
+with Compose Multiplatform:
 
-- Linux als AppImage und im AUR
-- später Windows
+- Linux as AppImage and on the AUR
+- Windows at some point
 
-Dazu gibt es noch keinen Code und keinen Zeitplan.
+There is no code and no schedule for this yet.

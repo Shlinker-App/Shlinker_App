@@ -1,110 +1,110 @@
 # Changelog
 
-Alle Versionen vor 1.0.0 sind Entwicklungsstände.
+Every version before 1.0.0 is a development snapshot.
 
 ## 0.3.1 – 2026-11-17
 
-- Neue App-IDs: `app.shlinker.devs`, `app.shlinker.nightly`, `app.shlinker`.
-  Bisherige Installationen (`at.awit.shlinker.debug`) werden nicht aktualisiert.
-  Die neue App muss frisch installiert und die Server neu angelegt werden.
-- Eigene Icons je Kanal, neues offizielles Logo
-- Neuer Signaturschlüssel für Dev-Builds
-- Repository aufgeräumt, Dokumentation neu geschrieben
+- New app IDs: `app.shlinker.devs`, `app.shlinker.nightly`, `app.shlinker`.
+  Existing installs (`at.awit.shlinker.debug`) won't be updated.
+  The new app has to be installed fresh and servers have to be added again.
+- Own icon per channel, new official logo
+- New signing key for dev builds
+- Repository cleaned up, docs rewritten
 
 ## 0.3.0 – 2026-10-31
 
-- Shlinks direkt aus dem Android-Teilen-Menü erstellen, mit Serverauswahl und übernommenem Seitentitel
+- Create short URLs straight from the Android share sheet, with server selection and the page title filled in
 
 ## 0.2.15
 
-- Domain-Auswahl beim Erstellen (nur für den API-Key sichtbare Domains, manuelle Eingabe möglich)
-- Status der Redirect-Rules klarer dargestellt
+- Domain selection when creating (only domains visible to the API key, manual entry possible)
+- Clearer status display for redirect rules
 
 ## 0.2.14
 
-- Redirect-Rules vollständig verwalten: anlegen, bearbeiten, löschen, sortieren
+- Full redirect rule management: create, edit, delete, reorder
 
 ## 0.2.13
 
-- Statistik-Zeitverlauf mit sieben Abschnitten, deutlich schneller; Vorgabe „Last 4 weeks“
+- Statistics timeline with seven segments, much faster; defaults to "Last 4 weeks"
 
 ## 0.2.12
 
-- Chronologischer Besuchsverlauf mit gestapelten Bot-/Nicht-Bot-Balken
+- Chronological visit timeline with stacked bot/human bars
 
 ## 0.2.11
 
-- Kopfzeile der Statistik springt beim Laden nicht mehr
+- Statistics header no longer jumps while loading
 
 ## 0.2.10
 
-- Besuchsstatistik mit Zeiträumen und Bot-/Nicht-Bot-Zahlen
+- Visit statistics with time ranges and bot/human counts
 
 ## 0.2.9
 
-- QR-Codes aus Liste und Details, lokal erzeugt
-- Aktionsgruppe in den Details
+- QR codes from the list and details, generated locally
+- Action group on the details screen
 
 ## 0.2.8
 
-- Shlinks löschen mit Sicherheitsabfrage
-- Vorschläge vorhandener Tags vom Server
+- Delete short URLs, with confirmation
+- Suggestions for existing tags from the server
 
 ## 0.2.7
 
-- Datum und Uhrzeit bei „Enabled since/until“ direkt antippbar
+- Date and time in "Enabled since/until" can be tapped directly
 
 ## 0.2.6
 
-- Kalender- und Uhrzeitauswahl, Verwerfen-Dialog nur bei echten Änderungen
+- Date and time pickers, discard dialog only when something actually changed
 
 ## 0.2.5
 
-- Shlinks bearbeiten
-- Gemeinsame Vorgaben für neue Shlinks
+- Edit short URLs
+- Shared defaults for new short URLs
 
 ## 0.2.4
 
-- Besuchszahlen in der Liste, Detailseite je Shlink
+- Visit counts in the list, details screen per short URL
 
 ## 0.2.3
 
-- Kurz-URL im Browser öffnen, getrennte Share- und Copy-Aktionen
+- Open the short URL in the browser, separate share and copy actions
 
 ## 0.2.2
 
-- Tags als Chips, einstellbarer App-Tag, Designanpassungen
+- Tags as chips, configurable app tag, design tweaks
 
 ## 0.2.1
 
-- Shlinks anlegen
-- Serveradresse und API-Key nachträglich bearbeiten
+- Create short URLs
+- Edit server address and API key after the fact
 
 ## 0.2.0
 
-- Shlink-Sortierung nach Datum und Besuchen, dauerhaft gespeichert
+- Sort short URLs by date and visits, persisted
 
 ## 0.1.6
 
-- „Paste“-Button im API-Key-Feld
+- "Paste" button in the API key field
 
 ## 0.1.5
 
-- Server sortieren, manuell per Drag-and-drop
+- Reorder servers, manually via drag and drop
 
 ## 0.1.4
 
-- Durchgehend englische Oberfläche
-- Server umbenennen und löschen
+- English UI throughout
+- Rename and delete servers
 
 ## 0.1.3
 
-- Eindeutige Profilnamen pro Serveradresse
+- Unique profile names per server address
 
 ## 0.1.2
 
-- Doppelte Server-Profile werden verhindert
+- Duplicate server profiles are prevented
 
 ## 0.1.0
 
-- Erste Testversion: Server hinzufügen, Shlink-Liste mit Suche und Kopieren
+- First test build: add a server, short URL list with search and copy
