@@ -58,11 +58,20 @@ jobs:
           TOKEN: ${{ secrets.PACKAGES_TOKEN }}
         run: |
           BASE="$FORGEJO_SERVER_URL/api/packages/$FORGEJO_REPOSITORY_OWNER/generic/shlinker-devs/$VERSION"
+          PAGE="$FORGEJO_SERVER_URL/$FORGEJO_REPOSITORY_OWNER/-/packages/generic/shlinker-devs/$VERSION"
+          # Veröffentlichte Versionen bleiben unverändert. Builds sind (noch) nicht
+          # reproduzierbar, ein erneuter Lauf würde sonst ein abweichendes APK liefern.
+          STATUS=$(curl -sS -o /dev/null -w '%{http_code}' -I -H "Authorization: token $TOKEN" \
+            "$BASE/$(basename "$APK")")
+          if [ "$STATUS" = "200" ]; then
+            echo "::warning::Version $VERSION ist bereits veröffentlicht, Upload übersprungen: $PAGE"
+            exit 0
+          fi
           for f in "$APK" "$APK.sha256"; do
             curl --fail-with-body -sS -H "Authorization: token $TOKEN" \
               --upload-file "$f" "$BASE/$(basename "$f")"
           done
-          echo "Hochgeladen: $FORGEJO_SERVER_URL/$FORGEJO_REPOSITORY_OWNER/-/packages/generic/shlinker-devs/$VERSION"
+          echo "Hochgeladen: $PAGE"
       - name: Schlüssel entfernen
         if: always()
         run: rm -f "${RUNNER_TEMP:-/tmp}/shlinker-devs.jks"
