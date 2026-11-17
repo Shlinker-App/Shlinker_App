@@ -39,10 +39,19 @@ jobs:
           SHLINKER_DEVS_KEY_PASSWORD: ${{ secrets.SHLINKER_DEVS_KEY_PASSWORD }}
         run: ./gradlew --no-daemon assembleDevsRelease
       - name: Signatur prüfen
+        env:
+          # SHA-256 des Dev-Zertifikats, siehe README
+          EXPECTED_CERT: 453bb552a5c6ed1e3724e41a900f90c291f852db66acea5b616bd14b26f3b999
         run: |
           APK=$(ls app/build/outputs/apk/devs/release/*.apk)
-          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs "$APK" | grep -E 'Signer #1 certificate (DN|SHA-256)'
+          CERTS=$("$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs "$APK")
+          echo "$CERTS" | grep -E 'certificate (DN|SHA-256 digest):'
+          ACTUAL=$(echo "$CERTS" | sed -nE 's/.*certificate SHA-256 digest: ([0-9a-f]+)$/\1/p' | sort -u)
+          if [ "$ACTUAL" != "$EXPECTED_CERT" ]; then
+            echo "::error::APK ist nicht mit dem Dev-Schlüssel signiert (gefunden: ${ACTUAL:-keine Signatur})"; exit 1
+          fi
           sha256sum "$APK" | awk -v f="$(basename "$APK")" '{print $1"  "f}' > "$APK.sha256"
+          cat "$APK.sha256"
           echo "APK=$APK" >> "$FORGEJO_ENV"
       - name: In Package Registry hochladen
         env:
