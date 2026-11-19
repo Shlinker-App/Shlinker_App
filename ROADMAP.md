@@ -48,7 +48,7 @@ redirect rules and the share sheet. See the [changelog](CHANGELOG.md) for detail
 - [ ] Reproducible release builds
 - [ ] CI: emulator tests, faster builds
 - [ ] Project website at shlinker.app
-- [ ] Make the repository public
+- [x] Make the repository public
 
 ## Distribution
 
