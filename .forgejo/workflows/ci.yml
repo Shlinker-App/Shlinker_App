@@ -35,17 +35,18 @@ jobs:
         with:
           path: /opt/ci
           key: android-sdk-${{ hashFiles('ci/setup-android.sh') }}
-      # Each run saves under its own key, so downloads are kept even when the build fails.
+      # A complete cache is saved once per dependency state; failed runs keep their downloads as a partial cache.
       - name: Restore Gradle dependencies
+        id: gradle-cache
         uses: https://data.forgejo.org/actions/cache/restore@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.m2/repository/org/robolectric
-          key: gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}-${{ forge.run_number }}
+          key: gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}
           restore-keys: |
-            gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}-
+            gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}-partial-
             gradle-
       - name: Set up JDK and Android SDK
         id: setup
@@ -68,14 +69,23 @@ jobs:
           path: /opt/ci
           key: android-sdk-${{ hashFiles('ci/setup-android.sh') }}
       - name: Save Gradle dependencies
-        if: always() && steps.setup.outcome == 'success'
+        if: success() && steps.gradle-cache.outputs.cache-hit != 'true'
         uses: https://data.forgejo.org/actions/cache/save@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.m2/repository/org/robolectric
-          key: gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}-${{ forge.run_number }}
+          key: gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}
+      - name: Save partial Gradle dependencies
+        if: failure() && steps.setup.outcome == 'success'
+        uses: https://data.forgejo.org/actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.m2/repository/org/robolectric
+          key: gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}-partial-${{ forge.run_number }}
       - uses: https://data.forgejo.org/forgejo/upload-artifact@v4
         with:
           name: shlinker-devs-debug-apk
