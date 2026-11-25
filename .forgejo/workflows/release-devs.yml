@@ -37,6 +37,8 @@ jobs:
             echo "::error::CHANGELOG.md has no section for $VERSION"; exit 1
           fi
           echo "NOTES=$NOTES" >> "$FORGEJO_ENV"
+      - name: Run ktlint, Android lint and unit tests
+        run: ./gradlew --no-daemon ktlintCheck lintDebug lintDevsDebug testDebugUnitTest testDevsDebugUnitTest
       - name: Prepare signing key
         env:
           KEYSTORE_B64: ${{ secrets.SHLINKER_DEVS_KEYSTORE_B64 }}

@@ -1,13 +1,8 @@
 name: CI
 
+# Runs on demand (Actions → CI → Run workflow) and for pull requests, not on every push.
+# Releases run the same checks in release-devs.yml before publishing.
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - '*.md'
-      - 'docs/**'
-      - 'assets/badges/**'
-
   pull_request:
     paths-ignore:
       - '*.md'
@@ -29,6 +24,21 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v7
+      # Caching needs the runner's cache server; without it these steps only log a warning.
+      # Releases deliberately skip the cache so pull request runs cannot affect signed builds.
+      - name: Restore JDK and Android SDK
+        uses: https://data.forgejo.org/actions/cache@v4
+        with:
+          path: /opt/ci
+          key: android-sdk-${{ hashFiles('ci/setup-android.sh') }}
+      - name: Restore Gradle dependencies
+        uses: https://data.forgejo.org/actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}
+          restore-keys: gradle-
       - name: Set up JDK and Android SDK
         run: ci/setup-android.sh 2>&1 | tee -a ci.log
       - name: Run ktlint, Android lint, unit tests, and debug build

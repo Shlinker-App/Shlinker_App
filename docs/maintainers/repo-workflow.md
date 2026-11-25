@@ -79,7 +79,13 @@ The workflow `.github/workflows/issue-type.yml` runs on GitHub when an issue is 
 
 ## Continuous integration
 
-The CI workflow is `.forgejo/workflows/ci.yml`. It skips runs for changes that only touch the README, `docs/**` and `assets/badges/**`. README badges are served by a self-hosted shields service at `badge.awit.at`.
+The CI workflow is `.forgejo/workflows/ci.yml`. It runs on demand (**Actions** → **CI** → **Run workflow**) and for pull requests, not on every push, to keep dependency downloads from Maven Central low. Pull requests that only touch Markdown files, `docs/**` or `assets/badges/**` are skipped. README badges are served by a self-hosted shields service at `badge.awit.at`.
+
+### Dependency cache
+
+Maven Central answers heavy download traffic with `429 Too Many Requests`, and repeated blocks get longer. CI therefore caches `~/.gradle` and the JDK and Android SDK in `/opt/ci` with `actions/cache`. This only works if the Forgejo runner provides a cache server that job containers can reach (`cache:` section in the runner's `config.yml`). Without it, the cache steps log a warning and every run downloads everything again.
+
+The release workflow does not use the cache, so a pull request run can never influence a signed build. Releases are rare, so the full download is acceptable.
 
 ### DEVS releases
 
@@ -87,8 +93,9 @@ Pushing a tag `vX.Y.Z` runs `.forgejo/workflows/release-devs.yml`:
 
 1. The tag must match `versionName` in `app/build.gradle.kts`.
 2. `CHANGELOG.md` must contain a section that starts with `## X.Y.Z ` (for example `## 0.3.2 – 2026-11-25`). Otherwise the run fails before anything is built.
-3. The signed dev APK is built, its certificate is checked against the fingerprint in the README, and the APK and its SHA-256 file are uploaded to `generic/shlinker-devs/X.Y.Z`. An already published version is never overwritten.
-4. A Forgejo pre-release named “Shlinker DEVS X.Y.Z” is created for the tag. Its text is the changelog section plus the package link and checksum, and the files are attached exactly as published in the package registry. An existing release is left unchanged.
+3. ktlint, Android lint and the unit tests run; a failure stops the release.
+4. The signed dev APK is built, its certificate is checked against the fingerprint in the README, and the APK and its SHA-256 file are uploaded to `generic/shlinker-devs/X.Y.Z`. An already published version is never overwritten.
+5. A Forgejo pre-release named “Shlinker DEVS X.Y.Z” is created for the tag. Its text is the changelog section plus the package link and checksum, and the files are attached exactly as published in the package registry. An existing release is left unchanged.
 
 Before tagging: bump `versionName` and `versionCode`, date the changelog section and finish the device checks in `TESTING.md`. Uploads use the `PACKAGES_TOKEN` secret; the pre-release uses the workflow's own token.
 

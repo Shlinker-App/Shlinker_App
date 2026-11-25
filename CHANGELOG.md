@@ -49,8 +49,10 @@ Every version before 1.0.0 is a development snapshot.
   A GitHub workflow sets the issue type from the label.
 - Issues are synchronized between Forgejo and GitHub; see CONTRIBUTING.md and
   `docs/maintainers/repo-workflow.md`.
-- CI skips runs for documentation-only changes. The release workflow no longer overwrites a version that
-  is already published in the package registry.
+- CI no longer runs on every push; it is started manually and still checks pull requests. It caches
+  Gradle dependencies, the JDK and the Android SDK when the runner provides a cache server. Releases run
+  ktlint, Android lint and the unit tests themselves before publishing. The release workflow no longer
+  overwrites a version that is already published in the package registry.
 - Each dev build is also published as a Forgejo pre-release with its changelog section, the APK and its
   SHA-256 file. A tag without a matching changelog section fails before building.
 - README rewritten with the new logo and badges; the local badge files were removed.
