@@ -39,8 +39,8 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Screenshot-Tests (JVM, ohne Emulator). Bilder: feature/servers/build/outputs/roborazzi/
- * Aufnehmen: ./gradlew :feature:servers:recordRoborazziDebug
+ * Record JVM screenshots without an emulator: `./gradlew :feature:servers:recordRoborazziDebug`.
+ * Images are written to `feature/servers/build/outputs/roborazzi/`.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -54,16 +54,16 @@ class AddServerScreenshotTest {
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
     }
 
-    @Test fun leer() = shot("add_server_empty", state = AddServerUiState())
+    @Test fun emptyForm() = shot("add_server_empty", state = AddServerUiState())
 
-    @Test fun leerDunkel() = shot("add_server_empty_dark", dark = true, state = AddServerUiState())
+    @Test fun emptyFormInDarkMode() = shot("add_server_empty_dark", dark = true, state = AddServerUiState())
 
     @Test fun editBanner() = shot(
         "edit_server_banner",
         state = AddServerUiState(editing = true, name = "Home", url = "https://s.example.org"),
     )
 
-    @Test fun vorschau() = shot(
+    @Test fun normalizedUrlPreview() = shot(
         "add_server_preview",
         state = AddServerUiState(
             url = "S.Example.org/rest/v3",
@@ -72,7 +72,7 @@ class AddServerScreenshotTest {
         ),
     )
 
-    @Test fun zertifikatsfehler() = shot(
+    @Test fun certificateError() = shot(
         "add_server_cert_error",
         state = AddServerUiState(
             url = "shlink.home.lan",
@@ -81,7 +81,7 @@ class AddServerScreenshotTest {
         ),
     )
 
-    @Test fun httpFehlerDunkel() = shot(
+    @Test fun httpErrorInDarkMode() = shot(
         "add_server_http_error_dark",
         dark = true,
         state = AddServerUiState(
@@ -91,7 +91,7 @@ class AddServerScreenshotTest {
         ),
     )
 
-    @Test fun verbinden() = shot(
+    @Test fun connecting() = shot(
         "add_server_connecting",
         state = AddServerUiState(url = "s.example.org", apiKey = "abc", isConnecting = true),
     )

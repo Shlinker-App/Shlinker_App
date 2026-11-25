@@ -1,1 +1,1 @@
-# Projektspezifische R8-Regeln. kotlinx.serialization und Ktor bringen eigene Consumer-Regeln mit.
+# Project-specific R8 rules. kotlinx.serialization and Ktor provide their own consumer rules.

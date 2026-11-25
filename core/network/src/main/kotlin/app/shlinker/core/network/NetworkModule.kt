@@ -25,8 +25,7 @@ object NetworkModule {
     }
 
     /**
-     * Basis-HttpClient. Server-URL und API-Key werden pro Request bzw. pro Server
-     * gesetzt (Multi-Server), daher hier kein defaultRequest.
+     * Shared HTTP client without a default request, since the server URL and API key vary per request.
      */
     @Provides
     @Singleton

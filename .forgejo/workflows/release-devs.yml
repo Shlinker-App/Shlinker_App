@@ -1,7 +1,7 @@
 name: Release DEVS
 
-# Ein Tag vX.Y.Z baut das signierte Dev-APK und legt es in der
-# Forgejo Package Registry ab (generic/shlinker-devs/X.Y.Z).
+# A vX.Y.Z tag builds the signed dev APK and publishes it to the
+# Forgejo package registry (generic/shlinker-devs/X.Y.Z).
 on:
   push:
     tags: ['v*']
@@ -15,32 +15,32 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v7
-      - name: JDK und Android SDK einrichten
+      - name: Set up JDK and Android SDK
         run: ci/setup-android.sh
-      - name: Tag mit versionName abgleichen
+      - name: Verify tag matches versionName
         run: |
           VERSION="${FORGEJO_REF_NAME#v}"
           APP_VERSION=$(sed -nE 's/^\s*versionName = "(.*)"/\1/p' app/build.gradle.kts)
           if [ "$VERSION" != "$APP_VERSION" ]; then
-            echo "::error::Tag $FORGEJO_REF_NAME passt nicht zu versionName $APP_VERSION"; exit 1
+            echo "::error::Tag $FORGEJO_REF_NAME does not match versionName $APP_VERSION"; exit 1
           fi
           echo "VERSION=$VERSION" >> "$FORGEJO_ENV"
-      - name: Signaturschlüssel bereitstellen
+      - name: Prepare signing key
         env:
           KEYSTORE_B64: ${{ secrets.SHLINKER_DEVS_KEYSTORE_B64 }}
         run: |
           KEYSTORE="${RUNNER_TEMP:-/tmp}/shlinker-devs.jks"
           base64 -d <<< "$KEYSTORE_B64" > "$KEYSTORE"
           echo "SHLINKER_DEVS_STORE_FILE=$KEYSTORE" >> "$FORGEJO_ENV"
-      - name: Dev-APK bauen
+      - name: Build dev APK
         env:
           SHLINKER_DEVS_STORE_PASSWORD: ${{ secrets.SHLINKER_DEVS_STORE_PASSWORD }}
           SHLINKER_DEVS_KEY_ALIAS: ${{ secrets.SHLINKER_DEVS_KEY_ALIAS }}
           SHLINKER_DEVS_KEY_PASSWORD: ${{ secrets.SHLINKER_DEVS_KEY_PASSWORD }}
         run: ./gradlew --no-daemon assembleDevsRelease
-      - name: Signatur prüfen
+      - name: Verify APK signature
         env:
-          # SHA-256 des Dev-Zertifikats, siehe README
+          # SHA-256 fingerprint of the dev signing certificate (see README).
           EXPECTED_CERT: 453bb552a5c6ed1e3724e41a900f90c291f852db66acea5b616bd14b26f3b999
         run: |
           APK=$(ls app/build/outputs/apk/devs/release/*.apk)
@@ -48,30 +48,29 @@ jobs:
           echo "$CERTS" | grep -E 'certificate (DN|SHA-256 digest):'
           ACTUAL=$(echo "$CERTS" | sed -nE 's/.*certificate SHA-256 digest: ([0-9a-f]+)$/\1/p' | sort -u)
           if [ "$ACTUAL" != "$EXPECTED_CERT" ]; then
-            echo "::error::APK ist nicht mit dem Dev-Schlüssel signiert (gefunden: ${ACTUAL:-keine Signatur})"; exit 1
+            echo "::error::APK is not signed with the dev key (found: ${ACTUAL:-no signature})"; exit 1
           fi
           sha256sum "$APK" | awk -v f="$(basename "$APK")" '{print $1"  "f}' > "$APK.sha256"
           cat "$APK.sha256"
           echo "APK=$APK" >> "$FORGEJO_ENV"
-      - name: In Package Registry hochladen
+      - name: Upload to package registry
         env:
           TOKEN: ${{ secrets.PACKAGES_TOKEN }}
         run: |
           BASE="$FORGEJO_SERVER_URL/api/packages/$FORGEJO_REPOSITORY_OWNER/generic/shlinker-devs/$VERSION"
           PAGE="$FORGEJO_SERVER_URL/$FORGEJO_REPOSITORY_OWNER/-/packages/generic/shlinker-devs/$VERSION"
-          # Veröffentlichte Versionen bleiben unverändert. Builds sind (noch) nicht
-          # reproduzierbar, ein erneuter Lauf würde sonst ein abweichendes APK liefern.
+          # Keep published versions unchanged: rerunning the build can produce a different APK.
           STATUS=$(curl -sS -o /dev/null -w '%{http_code}' -I -H "Authorization: token $TOKEN" \
             "$BASE/$(basename "$APK")")
           if [ "$STATUS" = "200" ]; then
-            echo "::warning::Version $VERSION ist bereits veröffentlicht, Upload übersprungen: $PAGE"
+            echo "::warning::Version $VERSION is already published; skipping upload: $PAGE"
             exit 0
           fi
           for f in "$APK" "$APK.sha256"; do
             curl --fail-with-body -sS -H "Authorization: token $TOKEN" \
               --upload-file "$f" "$BASE/$(basename "$f")"
           done
-          echo "Hochgeladen: $PAGE"
-      - name: Schlüssel entfernen
+          echo "Uploaded: $PAGE"
+      - name: Remove signing key
         if: always()
         run: rm -f "${RUNNER_TEMP:-/tmp}/shlinker-devs.jks"

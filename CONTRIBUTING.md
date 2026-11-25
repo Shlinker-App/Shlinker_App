@@ -35,6 +35,12 @@ You need JDK 21 and the Android SDK, including platform 37. Build instructions a
 
 Notes on testing are in [TESTING.md](TESTING.md).
 
+## Writing style
+
+Use English for code comments, test names, diagnostics, build and CI text, and default app copy.
+Keep localized app and store text in the target language. Use neutral phrasing for names,
+labels, and comments. If a personal perspective is needed, write in the first person.
+
 ## Issue synchronization
 
 Issues can be opened on either platform. A bot copies issues and comments between Forgejo and GitHub roughly every five minutes. Copied issues and comments name the original author and link back to the source, in both directions, so you can see where something was written.

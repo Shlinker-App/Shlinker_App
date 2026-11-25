@@ -8,10 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 /**
- * App-Theme.
- *
- * @param darkTheme Dunkelmodus (Standard: Systemeinstellung).
- * @param dynamicColor Material You / Systemfarben verwenden (ab Android 12). Fällt sonst auf das AWiT-Schema zurück.
+ * @param darkTheme Enables dark mode; defaults to the system setting.
+ * @param dynamicColor Uses Material You system colors on Android 12 and later; falls back to the AWiT palette.
  */
 @Composable
 fun ShlinkerTheme(

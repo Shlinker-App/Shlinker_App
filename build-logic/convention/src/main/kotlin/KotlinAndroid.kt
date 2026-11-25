@@ -5,7 +5,6 @@ import org.gradle.kotlin.dsl.configure
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 
-/** Gemeinsame Android-/Kotlin-Konfiguration für App- und Library-Module. */
 internal fun Project.configureKotlinAndroid(extension: CommonExtension) {
     extension.apply {
         compileSdk = libs.version("compileSdk").toInt()
@@ -15,7 +14,7 @@ internal fun Project.configureKotlinAndroid(extension: CommonExtension) {
         compileOptions.targetCompatibility = JavaVersion.VERSION_21
     }
 
-    // AGP 9 bringt Kotlin-Support eingebaut mit – kein separates kotlin-android Plugin nötig.
+    // AGP 9 has built-in Kotlin support; no separate kotlin-android plugin is needed.
     extensions.configure<KotlinAndroidProjectExtension> {
         jvmToolchain(21)
         compilerOptions {

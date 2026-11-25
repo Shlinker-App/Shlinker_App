@@ -20,7 +20,7 @@ sealed interface StartState {
 
 @HiltViewModel
 class MainViewModel @Inject constructor(repository: ServerProfileRepository) : ViewModel() {
-    /** Nur für die Startentscheidung – danach übernimmt die Navigation. */
+    /** Only determines the initial destination; the back stack handles navigation after that. */
     val startState: StateFlow<StartState> = repository.profiles
         .map { if (it.isEmpty()) StartState.NoServer else StartState.Ready }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StartState.Loading)

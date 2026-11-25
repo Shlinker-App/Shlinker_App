@@ -5,47 +5,46 @@ import app.shlinker.core.model.ServerSort
 import app.shlinker.core.model.ServerUrl
 import kotlinx.coroutines.flow.Flow
 
-/** Verwaltung der Shlink-Server inkl. verschlüsselter API-Keys. */
+/** Manages Shlink server profiles and their encrypted API keys. */
 interface ServerProfileRepository {
 
-    /** Alle Server in der gespeicherten Anzeige-Reihenfolge. */
+    /** All profiles in the saved display order. */
     val profiles: Flow<List<ServerProfile>>
 
     val sort: Flow<ServerSort>
 
     suspend fun setSort(sort: ServerSort)
 
-    /** Speichert eine vollständige manuelle Reihenfolge; aktiviert keine anderen Profile. */
+    /** Saves the complete manual order without changing the active profile. */
     suspend fun reorder(ids: List<String>)
 
-    /** Aktuell gewählter Server (oder `null`, wenn noch keiner angelegt ist). */
+    /** The active profile, or `null` when there are no profiles. */
     val activeProfile: Flow<ServerProfile?>
 
     /**
-     * Legt einen Server an. Die URL wird über [ServerUrl.normalize] vereinheitlicht.
-     * Ist [name] leer, wird der Hostname verwendet.
+     * Adds a server profile using [ServerUrl.normalize]. A blank [name] defaults to the hostname.
      *
-     * @throws InvalidServerUrlException bei ungültiger URL
-     * @throws IllegalArgumentException bei leerem API-Key
-     * @throws DuplicateServerException bei gleicher normalisierter URL und gleichem API-Key
-     * @throws ServerNameConflictException bei gleicher normalisierter URL und gleichem Namen (ohne Beachtung der Groß-/Kleinschreibung)
-     * @throws DuplicateCheckUnavailableException wenn ein passender gespeicherter Key nicht lesbar ist
+     * @throws InvalidServerUrlException if the URL is invalid
+     * @throws IllegalArgumentException if the API key is blank
+     * @throws DuplicateServerException if the normalized URL and API key match an existing profile
+     * @throws ServerNameConflictException if another profile has the same normalized URL and name (case-insensitive)
+     * @throws DuplicateCheckUnavailableException if a matching stored key cannot be read
      */
     suspend fun add(name: String, url: String, apiKey: String, makeActive: Boolean = true): ServerProfile
 
     /**
-     * Ändert Name, URL und/oder API-Key. `null` = unverändert.
-     * URL-/Key-Änderungen unterliegen derselben Dublettenprüfung wie [add].
-     * Auch Namensänderungen müssen pro normalisierter Serveradresse eindeutig sein.
+     * Updates the name, URL, or API key. A `null` argument leaves the corresponding field unchanged.
+     * URL and key changes use the same duplicate checks as [add].
+     * Names must remain unique per normalized server address.
      */
     suspend fun update(id: String, name: String? = null, url: String? = null, apiKey: String? = null): ServerProfile
 
-    /** Löscht Server und zugehörigen API-Key. Ist er aktiv, wird der nächste Server aktiv. */
+    /** Deletes the profile and its API key. If it was active, selects a replacement if available. */
     suspend fun delete(id: String)
 
     suspend fun setActive(id: String)
 
-    /** Entschlüsselt den API-Key – nur unmittelbar für Requests verwenden, nicht cachen/loggen. */
+    /** Decrypts the API key for immediate use in a request. Do not cache or log the key. */
     suspend fun getApiKey(id: String): ApiKeyResult
 }
 
@@ -54,17 +53,17 @@ sealed interface ApiKeyResult {
         override fun toString() = "Available(apiKey=***)"
     }
 
-    /** Für diesen Server ist kein Key gespeichert. */
+    /** No API key is stored for this profile. */
     data object Missing : ApiKeyResult
 
-    /** Key vorhanden, aber nicht mehr entschlüsselbar (z. B. nach Wiederherstellung) → neu eingeben. */
+    /** The stored key can no longer be decrypted, for example after a restore. Enter the API key again. */
     data object Unavailable : ApiKeyResult
 }
 
 class InvalidServerUrlException(val reason: ServerUrl.Reason) :
-    IllegalArgumentException("Ungültige Server-URL: $reason")
+    IllegalArgumentException("Invalid server URL: $reason")
 
-class ServerNotFoundException(id: String) : NoSuchElementException("Server $id nicht gefunden")
+class ServerNotFoundException(id: String) : NoSuchElementException("Server $id not found")
 
 class DuplicateServerException : IllegalArgumentException("Server profile already exists")
 

@@ -35,7 +35,6 @@ data class ServerActionState(
     val error: ServerActionError? = null,
 )
 
-/** Vorläufige Startseite: zeigt gespeicherte Server. Wird durch Dashboard ersetzt. */
 @HiltViewModel
 class HomeViewModel @Inject constructor(private val repository: ServerProfileRepository) : ViewModel() {
     private val _action = MutableStateFlow(ServerActionState())

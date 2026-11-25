@@ -34,7 +34,7 @@ data class AddServerUiState(
     val isConnecting: Boolean = false,
     val connectionError: ConnectionError? = null,
     val saveError: ServerSaveError? = null,
-    /** Normalisierte URL als Vorschau, sobald gültig – zeigt, was tatsächlich gespeichert wird. */
+    /** Previews the URL as it will be saved, once the input is valid. */
     val normalizedUrlPreview: String? = null,
     val editing: Boolean = false,
     val loading: Boolean = false,
@@ -104,7 +104,7 @@ class AddServerViewModel @Inject constructor(
         it.copy(apiKey = value, apiKeyMissing = false, connectionError = null, saveError = null)
     }
 
-    /** Beim Verlassen des URL-Feldes prüfen – nicht schon beim Tippen meckern. */
+    /** Validate the URL when the field loses focus, not while typing. */
     fun onUrlFocusLost() = _state.update { s ->
         if (s.url.isBlank()) s else s.copy(urlError = (ServerUrl.normalize(s.url) as? ServerUrl.Result.Invalid)?.reason)
     }

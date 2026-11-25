@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Keine Cloud-Backups / Gerätetransfers von API-Keys. -->
+<!-- Exclude stored app data, including API keys, from cloud backup and device transfer. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" />

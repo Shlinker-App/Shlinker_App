@@ -1,17 +1,16 @@
 package app.shlinker.core.datastore
 
-/** Ver-/Entschlüsselung kleiner Geheimnisse (API-Keys). Abstrahiert für Tests. */
+/** Encrypts and decrypts small secrets such as API keys. */
 interface SecretCipher {
-    /** @param associatedData wird mit-authentifiziert (z. B. Server-ID), verhindert Vertauschen von Einträgen. */
+    /** @param associatedData authenticated context, such as a server ID, that prevents swapping entries. */
     fun encrypt(plaintext: String, associatedData: String): String
 
-    /** @throws SecretUnavailableException wenn der Schlüssel fehlt/ungültig ist oder Daten manipuliert wurden. */
+    /** @throws SecretUnavailableException if the key is missing or invalid, or the ciphertext was tampered with. */
     fun decrypt(ciphertext: String, associatedData: String): String
 }
 
 /**
- * Das Geheimnis kann nicht mehr entschlüsselt werden – z. B. nach Zurücksetzen der
- * Bildschirmsperre, Wiederherstellung auf anderem Gerät oder Datenmanipulation.
- * Die App muss den API-Key dann neu abfragen.
+ * The secret can no longer be decrypted, for example after a screen-lock reset,
+ * a restore on another device, or tampering. Prompt for the API key again.
  */
 class SecretUnavailableException(message: String, cause: Throwable? = null) : Exception(message, cause)

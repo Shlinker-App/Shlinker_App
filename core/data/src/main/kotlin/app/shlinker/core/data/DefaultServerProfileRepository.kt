@@ -92,7 +92,7 @@ internal class DefaultServerProfileRepository @Inject constructor(
                     url = normalizedUrl,
                     createdAt = System.currentTimeMillis(),
                 )
-                // Zuerst den Secret schreiben: Ein Profil ohne Key soll es nie geben.
+                // Store the key first so a profile is never saved without one.
                 putSecret(server.id, key)
                 servers.updateData { stored ->
                     stored.copy(
@@ -219,7 +219,7 @@ internal class DefaultServerProfileRepository @Inject constructor(
     }
 
     private fun requireApiKey(apiKey: String): String = apiKey.trim().also {
-        require(it.isNotEmpty()) { "API-Key darf nicht leer sein" }
+        require(it.isNotEmpty()) { "API key must not be blank" }
     }
 
     private fun hostOf(url: String): String = URI(url).host ?: url

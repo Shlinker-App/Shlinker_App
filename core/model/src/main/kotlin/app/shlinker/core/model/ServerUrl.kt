@@ -3,7 +3,7 @@ package app.shlinker.core.model
 import java.net.URI
 import java.net.URISyntaxException
 
-/** Prüft und vereinheitlicht eingegebene Server-URLs. */
+/** Validates and normalizes server URLs. */
 object ServerUrl {
 
     sealed interface Result {
@@ -21,13 +21,13 @@ object ServerUrl {
     }
 
     /**
-     * Normalisiert z. B. `  Short.Example.org/ ` zu `https://short.example.org`.
+     * Normalizes, for example, `  Short.Example.org/ ` to `https://short.example.org`.
      *
-     * - Leerzeichen entfernen, fehlendes Schema → `https://`
-     * - Host in Kleinbuchstaben, Standard-Port 443 entfernen
-     * - Abschließende `/` und ein versehentlich mitkopiertes `/rest` bzw. `/rest/vN` entfernen
-     * - `http://` wird abgelehnt (API-Key würde im Klartext übertragen)
-     * - Unterpfade bleiben erhalten (Shlink hinter Reverse Proxy unter `/s` o. ä.)
+     * - Trim surrounding whitespace and default to `https://` when no scheme is present.
+     * - Lowercase the host and omit the default port 443.
+     * - Strip trailing slashes and any copied `/rest` or `/rest/vN` suffix.
+     * - Reject `http://` to avoid sending API keys in cleartext.
+     * - Keep base paths such as `/s` when Shlink is behind a reverse proxy.
      */
     fun normalize(input: String): Result {
         val trimmed = input.trim()

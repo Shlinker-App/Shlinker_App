@@ -121,7 +121,7 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `add normalisiert URL, setzt Hostname als Name und aktiviert`() = scope.runTest {
+    fun `add normalizes the URL, defaults to the hostname and activates the profile`() = scope.runTest {
         val p = repo.add(name = " ", url = "S.Example.org/rest/v3/", apiKey = " key-123 ")
 
         assertEquals("https://s.example.org", p.url)
@@ -131,16 +131,16 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `API-Key liegt nur verschluesselt und getrennt vom Profil`() = scope.runTest {
-        val p = repo.add("Home", "https://s.example.org", "geheim")
+    fun `API key is encrypted and stored separately from the profile`() = scope.runTest {
+        val p = repo.add("Home", "https://s.example.org", "secret")
 
         val raw = secrets.current.apiKeys.getValue(p.id)
-        assertFalse(raw.contains("geheim"))
-        assertFalse(servers.current.toString().contains("geheim"))
+        assertFalse(raw.contains("secret"))
+        assertFalse(servers.current.toString().contains("secret"))
     }
 
     @Test
-    fun `zweiter Server ohne makeActive bleibt inaktiv`() = scope.runTest {
+    fun `add keeps the active profile when makeActive is false`() = scope.runTest {
         val a = repo.add("A", "a.example.org", "k1")
         repo.add("B", "b.example.org", "k2", makeActive = false)
 
@@ -149,7 +149,7 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `delete entfernt Key und aktiviert naechsten Server`() = scope.runTest {
+    fun `delete removes the API key and activates the next profile`() = scope.runTest {
         val a = repo.add("A", "a.example.org", "k1")
         val b = repo.add("B", "b.example.org", "k2", makeActive = false)
 
@@ -161,7 +161,7 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `letzten Server loeschen ergibt keinen aktiven`() = scope.runTest {
+    fun `deleting the last profile clears the active profile`() = scope.runTest {
         val a = repo.add("A", "a.example.org", "k1")
         repo.delete(a.id)
         assertNull(repo.activeProfile.first())
@@ -169,24 +169,24 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `update aendert Name, URL und Key`() = scope.runTest {
+    fun `update changes the name, URL and API key`() = scope.runTest {
         val a = repo.add("A", "a.example.org", "k1")
-        val u = repo.update(a.id, name = "Neu", url = "https://n.example.org/", apiKey = "k2")
+        val u = repo.update(a.id, name = "New", url = "https://n.example.org/", apiKey = "k2")
 
-        assertEquals("Neu", u.name)
+        assertEquals("New", u.name)
         assertEquals("https://n.example.org", u.url)
         assertEquals(ApiKeyResult.Available("k2"), repo.getApiKey(a.id))
     }
 
     @Test
-    fun `nicht entschluesselbarer Key ergibt Unavailable`() = scope.runTest {
+    fun `getApiKey returns Unavailable when the key cannot be decrypted`() = scope.runTest {
         val a = repo.add("A", "a.example.org", "k1")
         cipher.broken = true
         assertEquals(ApiKeyResult.Unavailable, repo.getApiKey(a.id))
     }
 
     @Test
-    fun `vertauschte Ciphertexte werden erkannt`() = scope.runTest {
+    fun `getApiKey rejects swapped ciphertexts`() = scope.runTest {
         val a = repo.add("A", "a.example.org", "k1")
         val b = repo.add("B", "b.example.org", "k2")
         secrets.updateData {
@@ -201,7 +201,7 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `http URL wird abgelehnt und nichts gespeichert`() = scope.runTest {
+    fun `add rejects HTTP URLs without writing anything`() = scope.runTest {
         val e = runCatching { repo.add("A", "http://a.example.org", "k1") }.exceptionOrNull()
         assertEquals(ServerUrl.Reason.INSECURE_HTTP, (e as InvalidServerUrlException).reason)
         assertTrue(servers.current.servers.isEmpty())
@@ -209,17 +209,17 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun `leerer API-Key wird abgelehnt`() = scope.runTest {
+    fun `add rejects a blank API key`() = scope.runTest {
         repo.add("A", "a.example.org", "   ")
     }
 
     @Test
-    fun `toString verraet den Key nicht`() {
-        assertFalse(ApiKeyResult.Available("geheim").toString().contains("geheim"))
+    fun `toString does not expose the API key`() {
+        assertFalse(ApiKeyResult.Available("secret").toString().contains("secret"))
     }
 
     @Test
-    fun `Dubletten werden unabhaengig vom Namen vor jedem Schreiben abgelehnt`() = scope.runTest {
+    fun `add rejects duplicate credentials before writing regardless of name`() = scope.runTest {
         val original = repo.add("Home", "s.example.org", "key")
         val beforeServers = servers.current
         val beforeSecrets = secrets.current
@@ -233,7 +233,7 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `andere Keys oder andere Basis URLs bleiben erlaubt`() = scope.runTest {
+    fun `add allows different API keys or base URLs`() = scope.runTest {
         repo.add("Same", "s.example.org", "key-1")
         repo.add("Other", "s.example.org", "key-2")
         repo.add("Same", "s.example.org/subpath", "key-1")
@@ -242,7 +242,7 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `gleiche Namen mit anderem Key werden ohne Schreiben abgelehnt`() = scope.runTest {
+    fun `add rejects duplicate names with a different key without writing`() = scope.runTest {
         repo.add("Home", "s.example.org", "key-1")
         val beforeServers = servers.current
         val beforeSecrets = secrets.current
@@ -257,7 +257,7 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `automatischer Hostname unterliegt der Namenspruefung`() = scope.runTest {
+    fun `add checks for name conflicts when defaulting to the hostname`() = scope.runTest {
         repo.add("", "s.example.org", "key-1")
         assertTrue(
             runCatching { repo.add(" ", "s.example.org", "key-2") }
@@ -267,7 +267,7 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `update prueft Namen auch bei Umbenennen oder Adressaenderung`() = scope.runTest {
+    fun `update checks for name conflicts when the name or address changes`() = scope.runTest {
         repo.add("Home", "s.example.org", "key-1")
         val second = repo.add("Work", "s.example.org", "key-2")
         val third = repo.add("Home", "other.example.org", "key-3")
@@ -290,7 +290,7 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `parallele Anlage mit verschiedenen Keys behaelt eindeutige Namen`() = scope.runTest {
+    fun `concurrent adds with different API keys keep profile names unique`() = scope.runTest {
         val results = listOf("key-1", "key-2").map { key ->
             async { runCatching { repo.add("Home", "s.example.org", key) } }
         }.awaitAll()
@@ -300,7 +300,7 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `paralleles Hinzufuegen kann die Dublettenpruefung nicht umgehen`() = scope.runTest {
+    fun `concurrent adds cannot bypass duplicate checks`() = scope.runTest {
         val results = List(2) {
             async { runCatching { repo.add("Home", "s.example.org", "key") } }
         }.awaitAll()
@@ -311,7 +311,7 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `update verhindert Key oder URL Kollision ohne Seiteneffekte`() = scope.runTest {
+    fun `update rejects duplicate credentials from key or URL changes without writing`() = scope.runTest {
         repo.add("A", "s.example.org", "key-1")
         val second = repo.add("B", "s.example.org", "key-2")
         val third = repo.add("C", "other.example.org", "key-1")
@@ -330,7 +330,7 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `update schliesst eigenes Profil aus und erlaubt Umbenennen`() = scope.runTest {
+    fun `update excludes the current profile from duplicate checks and allows renaming`() = scope.runTest {
         val original = repo.add("A", "s.example.org", "key")
         val changed = repo.update(original.id, name = "New", url = "S.Example.org/", apiKey = " key ")
         assertEquals("New", changed.name)
@@ -340,7 +340,7 @@ class DefaultServerProfileRepositoryTest {
     }
 
     @Test
-    fun `fehlende oder unlesbare Keys verhindern ungeprueftes Duplikat`() = scope.runTest {
+    fun `add fails when a missing or unreadable key prevents duplicate checks`() = scope.runTest {
         repo.add("A", "s.example.org", "key")
         val beforeServers = servers.current
         cipher.broken = true

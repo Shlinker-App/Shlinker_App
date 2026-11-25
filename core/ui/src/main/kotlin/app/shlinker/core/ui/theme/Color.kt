@@ -4,8 +4,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-// Fallback-Farbschema (wenn keine Systemfarben / Material You verfügbar oder deaktiviert).
-// Basis: AWiT-Blau. Später ggf. über den Material Theme Builder feinjustieren.
+// AWiT blue palette for when Material You dynamic colors are unavailable or disabled.
 
 internal val ShlinkerLightColors = lightColorScheme(
     primary = Color(0xFF1F5FA8),

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Nur für Splash/Fensterhintergrund; das eigentliche Theme kommt aus Compose (core:ui). -->
+    <!-- Splash screen and window background only; the Compose theme is in core:ui. -->
     <style name="Theme.Shlinker" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/window_background</item>
     </style>

@@ -7,7 +7,7 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Läuft auf Gerät/Emulator gegen den echten Android Keystore (CI: API 29 + 36). */
+/** Exercises the Android Keystore on a device or emulator. */
 @RunWith(AndroidJUnit4::class)
 class KeystoreSecretCipherTest {
 
@@ -15,9 +15,9 @@ class KeystoreSecretCipherTest {
 
     @Test
     fun roundTrip() {
-        val encrypted = cipher.encrypt("mein-api-key", associatedData = "server-1")
-        assertFalse(encrypted.contains("mein-api-key"))
-        assertEquals("mein-api-key", cipher.decrypt(encrypted, associatedData = "server-1"))
+        val encrypted = cipher.encrypt("sample-api-key", associatedData = "server-1")
+        assertFalse(encrypted.contains("sample-api-key"))
+        assertEquals("sample-api-key", cipher.decrypt(encrypted, associatedData = "server-1"))
     }
 
     @Test
@@ -27,13 +27,13 @@ class KeystoreSecretCipherTest {
 
     @Test(expected = SecretUnavailableException::class)
     fun wrongAssociatedDataFails() {
-        val encrypted = cipher.encrypt("mein-api-key", associatedData = "server-1")
+        val encrypted = cipher.encrypt("sample-api-key", associatedData = "server-1")
         cipher.decrypt(encrypted, associatedData = "server-2")
     }
 
     @Test(expected = SecretUnavailableException::class)
     fun tamperedCiphertextFails() {
-        val encrypted = cipher.encrypt("mein-api-key", associatedData = "server-1")
+        val encrypted = cipher.encrypt("sample-api-key", associatedData = "server-1")
         val chars = encrypted.toCharArray()
         val i = chars.size - 5
         chars[i] = if (chars[i] == 'A') 'B' else 'A'
@@ -42,6 +42,6 @@ class KeystoreSecretCipherTest {
 
     @Test(expected = SecretUnavailableException::class)
     fun garbageFails() {
-        cipher.decrypt("kein base64 !!!", associatedData = "server-1")
+        cipher.decrypt("not base64 !!!", associatedData = "server-1")
     }
 }

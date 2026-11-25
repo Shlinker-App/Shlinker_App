@@ -56,12 +56,11 @@ class ConnectionTesterTest {
         val auth = requests.last()
         assertEquals("key", auth.headers[ShlinkApi.API_KEY_HEADER])
         assertEquals("1", auth.url.parameters["itemsPerPage"])
-        // Health ohne Key
         assertEquals(null, requests.first().headers[ShlinkApi.API_KEY_HEADER])
     }
 
     @Test
-    fun unterpfadWirdBeibehalten() = runTest {
+    fun preservesBasePath() = runTest {
         val t = tester { req ->
             if (req.url.encodedPath == "/shlink/rest/health") json(healthy) else json("{}")
         }
@@ -86,7 +85,7 @@ class ConnectionTesterTest {
     }
 
     @Test
-    fun notShlinkBeiHtml404() = runTest {
+    fun reportsNotShlinkForHtml404() = runTest {
         val t = tester { json("<html>Not Found</html>", HttpStatusCode.NotFound, "text/html") }
         assertEquals(ConnectionResult.Failure(ConnectionError.NotShlink(404)), t.test("https://s.example.org", "x"))
     }
@@ -98,7 +97,7 @@ class ConnectionTesterTest {
     }
 
     @Test
-    fun zuAlteVersion() = runTest {
+    fun rejectsUnsupportedVersion() = runTest {
         val t = tester { json("""{"status":"pass","version":"2.10.0"}""") }
         assertEquals(
             ConnectionResult.Failure(ConnectionError.UnsupportedVersion("2.10.0")),
@@ -107,22 +106,22 @@ class ConnectionTesterTest {
     }
 
     @Test
-    fun serverFehler() = runTest {
+    fun includesServerErrorDetails() = runTest {
         val t = tester { req ->
             if (req.url.encodedPath == "/rest/health") {
                 json(healthy)
             } else {
-                json("""{"title":"Internal","detail":"DB kaputt"}""", HttpStatusCode.InternalServerError)
+                json("""{"title":"Internal","detail":"Database unavailable"}""", HttpStatusCode.InternalServerError)
             }
         }
         assertEquals(
-            ConnectionResult.Failure(ConnectionError.HttpError(500, "DB kaputt")),
+            ConnectionResult.Failure(ConnectionError.HttpError(500, "Database unavailable")),
             t.test("https://s.example.org", "x"),
         )
     }
 
     @Test
-    fun netzwerkfehlerWerdenKlassifiziert() = runTest {
+    fun classifiesNetworkErrors() = runTest {
         fun classify(e: Throwable) = KtorConnectionTester.classify(e)
 
         assertEquals(ConnectionError.HostNotFound, classify(UnknownHostException("s.example.org")))
@@ -144,7 +143,7 @@ class ConnectionTesterTest {
     }
 
     @Test
-    fun exceptionAusEngineWirdZuFailure() = runTest {
+    fun returnsFailureOnEngineException() = runTest {
         val t = tester { throw UnknownHostException("nope") }
         assertEquals(ConnectionResult.Failure(ConnectionError.HostNotFound), t.test("https://nope.example", "x"))
     }

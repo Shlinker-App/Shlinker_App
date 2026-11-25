@@ -1,9 +1,8 @@
 package app.shlinker.core.model
 
 /**
- * Ein gespeicherter Shlink-Server.
+ * A saved Shlink server profile.
  *
- * Der API-Key ist bewusst NICHT Teil des Modells: Er liegt verschlüsselt getrennt
- * und wird nur bei Bedarf (für Requests) entschlüsselt.
+ * The API key is stored separately and encrypted. It is decrypted only when needed for requests.
  */
 data class ServerProfile(val id: String, val name: String, val url: String, val createdAtEpochMillis: Long)

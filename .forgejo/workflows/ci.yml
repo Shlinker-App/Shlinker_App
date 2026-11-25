@@ -29,18 +29,18 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v7
-      - name: JDK und Android SDK einrichten
+      - name: Set up JDK and Android SDK
         run: ci/setup-android.sh 2>&1 | tee -a ci.log
-      - name: ktlint, Lint, Unit-Tests, Debug-Build
+      - name: Run ktlint, Android lint, unit tests, and debug build
         run: ./gradlew --no-daemon ktlintCheck lintDebug lintDevsDebug testDebugUnitTest testDevsDebugUnitTest assembleDevsDebug 2>&1 | tee -a ci.log
-      - name: F-Droid-Check – keine proprietären Abhängigkeiten
+      - name: Check for proprietary dependencies
         run: |
           ./gradlew --no-daemon :app:dependencies --configuration stableReleaseRuntimeClasspath -q > deps.txt 2>> ci.log
           if grep -iE 'com\.google\.(android\.gms|firebase)|com\.google\.android\.play|crashlytics|com\.android\.billingclient' deps.txt; then
-            echo "::error::Proprietäre Abhängigkeit gefunden – blockiert F-Droid" | tee -a ci.log; exit 1
+            echo "::error::Proprietary dependency found; F-Droid check failed" | tee -a ci.log; exit 1
           fi
-          echo "OK: keine proprietären Abhängigkeiten"
-      - name: Screenshots (Roborazzi)
+          echo "OK: no proprietary dependencies"
+      - name: Record screenshots with Roborazzi
         run: ./gradlew --no-daemon recordRoborazziDebug 2>&1 | tee -a ci.log
       - uses: https://data.forgejo.org/forgejo/upload-artifact@v4
         with:
@@ -58,7 +58,7 @@ jobs:
           name: reports
           path: '**/build/reports/'
           retention-days: 7
-      - name: Log-Ende in Issue #1 posten
+      - name: Post log tail to issue
         if: failure()
         env:
           TOKEN: ${{ forge.token }}

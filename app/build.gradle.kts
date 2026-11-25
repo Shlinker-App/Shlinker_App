@@ -7,9 +7,8 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-// Signaturschlüssel je Kanal. Quelle: signing/<kanal>.properties (lokal, nie im Repo)
-// oder Umgebungsvariablen SHLINKER_<KANAL>_STORE_FILE, _STORE_PASSWORD, _KEY_ALIAS,
-// _KEY_PASSWORD (CI). Ohne Schlüssel entsteht ein unsigniertes Release-APK.
+// Configure signing per channel via untracked signing/<channel>.properties or CI
+// environment variables with the SHLINKER_<CHANNEL>_ prefix. Without a key, the release APK is unsigned.
 val channels = listOf("devs", "nightly", "stable")
 
 fun signingProperties(channel: String): Properties? {

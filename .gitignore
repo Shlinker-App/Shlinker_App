@@ -6,7 +6,7 @@ captures/
 .externalNativeBuild/
 .cxx/
 
-# Lokale Konfiguration – NIEMALS committen
+# Local configuration (never commit)
 local.properties
 key.properties
 /signing/

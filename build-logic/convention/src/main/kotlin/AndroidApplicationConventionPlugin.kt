@@ -11,7 +11,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
             configureKotlinAndroid(this)
             defaultConfig.targetSdk = libs.version("targetSdk").toInt()
 
-            // F-Droid / reproducible builds: keine Google-signierten Abhängigkeits-Blobs im APK/AAB.
+            // Exclude Google-signed dependency metadata from APKs and bundles for F-Droid builds.
             dependenciesInfo {
                 includeInApk = false
                 includeInBundle = false

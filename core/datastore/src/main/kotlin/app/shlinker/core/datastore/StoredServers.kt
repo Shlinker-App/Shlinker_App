@@ -4,7 +4,7 @@ import app.shlinker.core.model.ServerSort
 import app.shlinker.core.model.ShortUrlSort
 import kotlinx.serialization.Serializable
 
-/** Persistiertes Format der Server-Profile (ohne Secrets). Versioniert für spätere Migrationen. */
+/** Versioned storage format for server profiles without their secrets. */
 @Serializable
 data class StoredServers(
     val version: Int = CURRENT_VERSION,
@@ -27,8 +27,8 @@ data class StoredServers(
 data class StoredServer(val id: String, val name: String, val url: String, val createdAt: Long)
 
 /**
- * Verschlüsselte API-Keys, Schlüssel = Server-ID.
- * Wert = Base64(IV || Ciphertext+Tag), AES-256-GCM mit Keystore-Schlüssel.
+ * Encrypted API keys indexed by server ID.
+ * Each value is Base64(IV || ciphertext + tag); encryption uses AES-256-GCM with a Keystore key.
  */
 @Serializable
 data class StoredSecrets(val version: Int = 1, val apiKeys: Map<String, String> = emptyMap())

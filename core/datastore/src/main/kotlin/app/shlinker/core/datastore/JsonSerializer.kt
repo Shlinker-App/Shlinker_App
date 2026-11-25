@@ -8,7 +8,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
-/** Generischer DataStore-Serializer auf Basis von kotlinx.serialization (JSON). */
+/** DataStore serializer backed by kotlinx.serialization JSON. */
 internal class JsonSerializer<T>(private val serializer: KSerializer<T>, override val defaultValue: T) :
     Serializer<T> {
 
@@ -16,9 +16,9 @@ internal class JsonSerializer<T>(private val serializer: KSerializer<T>, overrid
         val bytes = input.readBytes()
         if (bytes.isEmpty()) defaultValue else json.decodeFromString(serializer, bytes.decodeToString())
     } catch (e: SerializationException) {
-        throw CorruptionException("Ungültige Daten im DataStore", e)
+        throw CorruptionException("Cannot decode DataStore data", e)
     } catch (e: IllegalArgumentException) {
-        throw CorruptionException("Ungültige Daten im DataStore", e)
+        throw CorruptionException("Cannot decode DataStore data", e)
     }
 
     override suspend fun writeTo(t: T, output: OutputStream) {

@@ -24,13 +24,13 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
 /**
- * Prüft, ob unter einer URL ein erreichbarer, gesunder Shlink-Server läuft und der API-Key gültig ist.
+ * Checks that a Shlink server is reachable and healthy, and that the API key is valid.
  *
- * 1. `GET /rest/health` (ohne Key) → erreichbar? TLS ok? wirklich Shlink? Version?
- * 2. `GET /rest/v3/short-urls?itemsPerPage=1` (mit Key) → Key gültig?
+ * 1. `GET /rest/health` without the key checks reachability, TLS, Shlink health, and version.
+ * 2. `GET /rest/v3/short-urls?itemsPerPage=1` with the key checks authentication.
  */
 interface ConnectionTester {
-    /** @param serverUrl bereits normalisierte URL (siehe ServerUrl.normalize) */
+    /** @param serverUrl a normalized server URL; see [app.shlinker.core.model.ServerUrl.normalize]. */
     suspend fun test(serverUrl: String, apiKey: String): ConnectionResult
 }
 
@@ -81,7 +81,7 @@ internal class KtorConnectionTester @Inject constructor(private val client: Http
         Result.failure(e)
     }
 
-    // Shlink liefert u. a. application/health+json bzw. application/problem+json → manuell dekodieren.
+    // Decode explicitly because Shlink can return application/health+json or application/problem+json.
     private suspend fun <T> HttpResponse.decodeOrNull(serializer: kotlinx.serialization.KSerializer<T>): T? = try {
         json.decodeFromString(serializer, bodyAsText())
     } catch (_: SerializationException) {
@@ -124,20 +124,20 @@ sealed interface ConnectionResult {
 }
 
 sealed interface ConnectionError {
-    /** DNS kennt den Host nicht (Tippfehler, kein Netz, internes DNS nicht erreichbar). */
+    /** DNS could not resolve the host. */
     data object HostNotFound : ConnectionError
 
-    /** Host bekannt, aber Verbindung abgelehnt / keine Route (Port, Firewall, VPN). */
+    /** The connection was refused or no route to the host exists. */
     data object Unreachable : ConnectionError
 
     data object Timeout : ConnectionError
 
     data class Certificate(val problem: CertificateProblem) : ConnectionError
 
-    /** Antwort kam, ist aber keine Shlink-Health-Antwort (falscher Pfad, anderer Dienst, Proxy-Fehlerseite). */
+    /** The response is not a Shlink health response, such as a proxy error page. */
     data class NotShlink(val httpStatus: Int) : ConnectionError
 
-    /** Shlink meldet "fail", meist ist die Datenbank nicht erreichbar. */
+    /** Shlink reports a failed health check, often due to an unreachable database. */
     data class Unhealthy(val version: String?) : ConnectionError
 
     data class UnsupportedVersion(val version: String?) : ConnectionError
@@ -150,10 +150,10 @@ sealed interface ConnectionError {
 }
 
 enum class CertificateProblem {
-    /** Unbekannte/eigene CA oder selbst signiert. */
+    /** The certificate is self-signed or issued by an untrusted CA. */
     UNTRUSTED,
 
-    /** Zertifikat passt nicht zum Hostnamen. */
+    /** The certificate does not match the hostname. */
     HOSTNAME_MISMATCH,
 
     EXPIRED,

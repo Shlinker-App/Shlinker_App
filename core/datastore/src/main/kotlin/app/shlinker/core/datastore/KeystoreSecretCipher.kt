@@ -14,10 +14,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * AES-256-GCM mit einem nicht exportierbaren Schlüssel im Android Keystore
- * (wenn verfügbar in StrongBox / Secure Element, sonst TEE).
- *
- * Ersetzt das veraltete `EncryptedSharedPreferences` (androidx.security:security-crypto).
+ * Uses AES-256-GCM with a non-exportable Android Keystore key.
+ * Prefers StrongBox and falls back to the default Keystore implementation.
  */
 @Singleton
 class KeystoreSecretCipher @Inject constructor() : SecretCipher {
@@ -33,17 +31,17 @@ class KeystoreSecretCipher @Inject constructor() : SecretCipher {
 
     override fun decrypt(ciphertext: String, associatedData: String): String {
         try {
-            val key = loadKey() ?: throw SecretUnavailableException("Kein Schlüssel im Keystore")
+            val key = loadKey() ?: throw SecretUnavailableException("No key in Android Keystore")
             val bytes = Base64.decode(ciphertext, Base64.NO_WRAP)
-            require(bytes.size > IV_LENGTH) { "Ciphertext zu kurz" }
+            require(bytes.size > IV_LENGTH) { "Ciphertext is too short" }
             val cipher = Cipher.getInstance(TRANSFORMATION)
             cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(TAG_LENGTH_BITS, bytes, 0, IV_LENGTH))
             cipher.updateAAD(associatedData.encodeToByteArray())
             return cipher.doFinal(bytes, IV_LENGTH, bytes.size - IV_LENGTH).decodeToString()
         } catch (e: GeneralSecurityException) {
-            throw SecretUnavailableException("API-Key kann nicht entschlüsselt werden", e)
+            throw SecretUnavailableException("Cannot decrypt API key", e)
         } catch (e: IllegalArgumentException) {
-            throw SecretUnavailableException("API-Key-Daten sind beschädigt", e)
+            throw SecretUnavailableException("API key data is corrupt", e)
         }
     }
 

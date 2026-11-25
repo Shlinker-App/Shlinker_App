@@ -41,7 +41,7 @@ fun ShlinkerApp(mainViewModel: MainViewModel) {
 
 @Composable
 private fun AppNavigation(start: NavKey) {
-    // Startziel nur beim ersten Aufbau festlegen; spätere Änderungen von startState ignorieren.
+    // Keep subsequent start-state changes from resetting the back stack.
     val initial = remember { start }
     val backStack = rememberNavBackStack(initial)
     var refreshKey by rememberSaveable { mutableIntStateOf(0) }

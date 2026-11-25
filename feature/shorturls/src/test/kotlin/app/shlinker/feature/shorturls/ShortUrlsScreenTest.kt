@@ -89,7 +89,7 @@ class ShortUrlsScreenTest {
                 ShortUrlsScreen(
                     urls = flow.collectAsLazyPagingItems(),
                     search = search,
-                    serverName = "Testserver",
+                    serverName = "Test server",
                     onSearchChange = { query = it },
                     onBack = { wentBack = true },
                     onCreate = { creating = true },
@@ -206,7 +206,7 @@ class ShortUrlsScreenTest {
         )
         assertText("Article")
         assertText("Shlinks")
-        assertText("Server: Testserver")
+        assertText("Server: Test server")
         assertText("https://example.org/article")
         assertText("work")
         assertText("Visits: 12345678901")
@@ -356,7 +356,7 @@ class ShortUrlsScreenTest {
     fun englishTitleAndServerNameAreVisible() {
         screen(flowOf(loadedEmpty))
         assertText("Shlinks")
-        assertText("Server: Testserver")
+        assertText("Server: Test server")
         assertText("No shlinks on this server yet.")
         compose.onNodeWithContentDescription("Back to server overview").assertIsDisplayed()
     }

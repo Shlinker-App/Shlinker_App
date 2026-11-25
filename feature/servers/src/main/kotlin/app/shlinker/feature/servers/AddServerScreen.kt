@@ -206,7 +206,7 @@ fun AddServerScreen(
 
             SubmitRow(state, onSubmit, onCancel)
 
-            // Bewusst immer sichtbar – nicht hinter einem Info-Icon verstecken.
+            // Keep this information visible rather than hiding it behind an info icon.
             HintCard(
                 icon = Icons.Outlined.Lock,
                 title = stringResource(UiR.string.server_hint_tls_title),

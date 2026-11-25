@@ -19,7 +19,7 @@ internal class InMemoryDataStore<T>(initial: T) : DataStore<T> {
     }
 }
 
-/** Nicht-kryptografischer Fake: prüft aber AAD wie AES-GCM. */
+/** Checks associated data like AES-GCM without performing encryption. */
 internal class FakeCipher : SecretCipher {
     var broken = false
 

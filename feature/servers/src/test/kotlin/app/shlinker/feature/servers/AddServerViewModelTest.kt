@@ -131,7 +131,7 @@ class AddServerViewModelTest {
     }
 
     @Test
-    fun `erfolgreiche Verbindung speichert und meldet Saved`() = runTest(dispatcher) {
+    fun `a successful connection saves the profile and emits Saved`() = runTest(dispatcher) {
         vm.onUrlChange("S.example.org/")
         vm.onApiKeyChange(" key ")
         vm.onSubmit()
@@ -144,10 +144,10 @@ class AddServerViewModelTest {
     }
 
     @Test
-    fun `Fehler wird angezeigt und nichts gespeichert`() = runTest(dispatcher) {
+    fun `a failed connection sets an error without saving`() = runTest(dispatcher) {
         tester.result = ConnectionResult.Failure(ConnectionError.InvalidApiKey)
         vm.onUrlChange("s.example.org")
-        vm.onApiKeyChange("falsch")
+        vm.onApiKeyChange("invalid-key")
         vm.onSubmit()
         advanceUntilIdle()
 
@@ -156,7 +156,7 @@ class AddServerViewModelTest {
     }
 
     @Test
-    fun `http wird vor dem Netzwerkzugriff abgelehnt`() = runTest(dispatcher) {
+    fun `HTTP is rejected before any network request`() = runTest(dispatcher) {
         vm.onUrlChange("http://s.example.org")
         vm.onApiKeyChange("key")
         vm.onSubmit()
@@ -167,7 +167,7 @@ class AddServerViewModelTest {
     }
 
     @Test
-    fun `fehlender Key wird markiert`() = runTest(dispatcher) {
+    fun `a missing API key is flagged`() = runTest(dispatcher) {
         vm.onUrlChange("s.example.org")
         vm.onSubmit()
         assertTrue(vm.state.value.apiKeyMissing)
@@ -175,7 +175,7 @@ class AddServerViewModelTest {
     }
 
     @Test
-    fun `Eingabe setzt Fehler zurueck und zeigt Vorschau`() = runTest(dispatcher) {
+    fun `changing the URL clears the error and shows the preview`() = runTest(dispatcher) {
         tester.result = ConnectionResult.Failure(ConnectionError.Timeout)
         vm.onUrlChange("s.example.org")
         vm.onApiKeyChange("k")
@@ -188,7 +188,7 @@ class AddServerViewModelTest {
     }
 
     @Test
-    fun `URL-Pruefung erst beim Verlassen des Feldes`() = runTest(dispatcher) {
+    fun `URL validation waits until the field loses focus`() = runTest(dispatcher) {
         vm.onUrlChange("ftp://x")
         assertNull(vm.state.value.urlError)
         vm.onUrlFocusLost()
@@ -245,7 +245,7 @@ class AddServerViewModelTest {
     }
 
     @Test
-    fun `Dublettenfehler wird angezeigt ohne Saved Event und Eingaben bleiben erhalten`() = runTest(dispatcher) {
+    fun `a duplicate error keeps the input and does not emit Saved`() = runTest(dispatcher) {
         repo.addFailure = DuplicateServerException()
         vm.onNameChange("Other")
         vm.onUrlChange("s.example.org")
@@ -270,7 +270,7 @@ class AddServerViewModelTest {
     }
 
     @Test
-    fun `Pruef und Speicherfehler werden explizit angezeigt`() = runTest(dispatcher) {
+    fun `duplicate check and storage failures set distinct errors`() = runTest(dispatcher) {
         vm.onUrlChange("s.example.org")
         vm.onApiKeyChange("key")
         for ((error, expected) in listOf(
@@ -289,7 +289,7 @@ class AddServerViewModelTest {
     }
 
     @Test
-    fun `Namenskonflikt bleibt korrigierbar und sendet kein Saved Event`() = runTest(dispatcher) {
+    fun `a name conflict can be corrected and does not emit Saved`() = runTest(dispatcher) {
         repo.addFailure = ServerNameConflictException()
         vm.onNameChange("Home")
         vm.onUrlChange("s.example.org")

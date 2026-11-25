@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Installiert JDK 21 und das Android SDK im CI-Job-Container (Debian).
-# Versionen und Prüfsummen sind fest gepinnt, damit Builds reproduzierbar bleiben.
+# Install JDK 21 and the Android SDK in the Debian CI container.
+# Pin tool downloads and verify their checksums.
 set -euo pipefail
 
 JDK_URL="https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13%2B9/OpenJDK21U-jdk_x64_linux_hotspot_21.0.13_9.tar.gz"
@@ -19,7 +19,7 @@ if ! command -v unzip >/dev/null; then
 fi
 
 if [ ! -x "$JAVA_HOME/bin/java" ]; then
-  echo "JDK 21 laden …"
+  echo "Downloading JDK 21..."
   curl -fsSL "$JDK_URL" -o /tmp/jdk.tgz
   echo "$JDK_SHA256  /tmp/jdk.tgz" | sha256sum -c -
   mkdir -p "$JAVA_HOME" && tar -xzf /tmp/jdk.tgz -C "$JAVA_HOME" --strip-components=1
@@ -27,7 +27,7 @@ if [ ! -x "$JAVA_HOME/bin/java" ]; then
 fi
 
 if [ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
-  echo "Android cmdline-tools laden …"
+  echo "Downloading Android command-line tools..."
   curl -fsSL "$CMDLINE_URL" -o /tmp/cmdline.zip
   echo "$CMDLINE_SHA1  /tmp/cmdline.zip" | sha1sum -c -
   mkdir -p "$ANDROID_HOME/cmdline-tools"
@@ -41,7 +41,7 @@ yes | sdkmanager --licenses >/dev/null || true
 sdkmanager --install "${SDK_PACKAGES[@]}" "$@" >/dev/null
 java -version 2>&1 | head -1
 
-# Für folgende Workflow-Schritte bereitstellen (Forgejo/GitHub-kompatibel)
+# Export tool paths for later steps on Forgejo and GitHub.
 if [ -n "${GITHUB_ENV:-}" ]; then
   { echo "JAVA_HOME=$JAVA_HOME"; echo "ANDROID_HOME=$ANDROID_HOME"; echo "ANDROID_SDK_ROOT=$ANDROID_HOME"; } >> "$GITHUB_ENV"
   { echo "$JAVA_HOME/bin"; echo "$ANDROID_HOME/cmdline-tools/latest/bin"; echo "$ANDROID_HOME/platform-tools"; echo "$ANDROID_HOME/emulator"; } >> "$GITHUB_PATH"

@@ -65,6 +65,6 @@ class JsonSerializerTest {
 
     @Test(expected = CorruptionException::class)
     fun garbageThrowsCorruption() = runTest {
-        serializer.readFrom(ByteArrayInputStream("kaputt{".encodeToByteArray()))
+        serializer.readFrom(ByteArrayInputStream("broken{".encodeToByteArray()))
     }
 }
