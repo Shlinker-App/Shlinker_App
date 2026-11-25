@@ -1,0 +1,28 @@
+name: Set issue type
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  issues: write
+
+jobs:
+  set-type:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Map label to type
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+          LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
+          CURRENT: ${{ github.event.issue.type.name }}
+        run: |
+          [ -n "$CURRENT" ] && exit 0
+          case ",$LABELS," in
+            *,bug,*)         T=Bug ;;
+            *,enhancement,*) T=Feature ;;
+            *,question,*)    T=Feedback ;;
+            *) exit 0 ;;
+          esac
+          gh api -X PATCH "repos/${{ github.repository }}/issues/$NUMBER" -f type="$T"
