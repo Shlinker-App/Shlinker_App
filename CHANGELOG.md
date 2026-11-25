@@ -50,7 +50,8 @@ Every version before 1.0.0 is a development snapshot.
 - Issues are synchronized between Forgejo and GitHub; see CONTRIBUTING.md and
   `docs/maintainers/repo-workflow.md`.
 - CI no longer runs on every push; it is started manually and still checks pull requests. It caches
-  Gradle dependencies, the JDK and the Android SDK when the runner provides a cache server. Releases run
+  Gradle dependencies, the JDK and the Android SDK, also after failed runs. CI and releases load Maven
+  Central artifacts from Google's mirror to avoid rate limits. Releases run
   ktlint, Android lint and the unit tests themselves before publishing. The release workflow no longer
   overwrites a version that is already published in the package registry.
 - Each dev build is also published as a Forgejo pre-release with its changelog section, the APK and its

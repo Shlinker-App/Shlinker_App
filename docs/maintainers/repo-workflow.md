@@ -83,7 +83,12 @@ The CI workflow is `.forgejo/workflows/ci.yml`. It runs on demand (**Actions** â
 
 ### Dependency cache
 
-Maven Central answers heavy download traffic with `429 Too Many Requests`, and repeated blocks get longer. CI therefore caches `~/.gradle` and the JDK and Android SDK in `/opt/ci` with `actions/cache`. This only works if the Forgejo runner provides a cache server that job containers can reach (`cache:` section in the runner's `config.yml`). Without it, the cache steps log a warning and every run downloads everything again.
+Maven Central answers heavy download traffic with `429 Too Many Requests`, and repeated blocks get longer. The 152 MB Robolectric native runtime (`nativeruntime-dist-compat`) was the file that kept failing. Two measures reduce the traffic:
+
+- **Cache:** CI restores `~/.gradle` and the JDK and Android SDK in `/opt/ci`, and saves them at the end of every run, including failed runs, so downloads are never lost. Each run saves the Gradle cache under its own key. This needs the runner's cache server (`cache:` section in `config.yml`, with `container.network` set to the runner's network). Without it, the cache steps only log a warning.
+- **Mirror:** Both workflows set `MAVEN_CENTRAL_MIRROR` to Google's mirror of Maven Central (`https://maven-central.storage-download.googleapis.com/maven2/`). `settings.gradle.kts` and `build-logic/settings.gradle.kts` use it instead of Maven Central when the variable is set. Local builds are unchanged.
+
+Runner setup on the Forgejo host (`/opt/docker/forgejo-runner/data/config.yml`): `cache.enabled: true`, `cache.dir: /data/cache`, `cache.port: 4000`, `cache.proxy_port: 4001` and `container.network: "forgejo-runner_default"`.
 
 The release workflow does not use the cache, so a pull request run can never influence a signed build. Releases are rare, so the full download is acceptable.
 

@@ -18,6 +18,9 @@ concurrency:
 jobs:
   build:
     runs-on: docker
+    env:
+      # Google's mirror of Maven Central; Maven Central rate-limits repeated CI downloads.
+      MAVEN_CENTRAL_MIRROR: https://maven-central.storage-download.googleapis.com/maven2/
     defaults:
       run:
         shell: bash
@@ -27,19 +30,24 @@ jobs:
       # Caching needs the runner's cache server; without it these steps only log a warning.
       # Releases deliberately skip the cache so pull request runs cannot affect signed builds.
       - name: Restore JDK and Android SDK
-        uses: https://data.forgejo.org/actions/cache@v4
+        id: sdk-cache
+        uses: https://data.forgejo.org/actions/cache/restore@v4
         with:
           path: /opt/ci
           key: android-sdk-${{ hashFiles('ci/setup-android.sh') }}
+      # Each run saves under its own key, so downloads are kept even when the build fails.
       - name: Restore Gradle dependencies
-        uses: https://data.forgejo.org/actions/cache@v4
+        uses: https://data.forgejo.org/actions/cache/restore@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}
-          restore-keys: gradle-
+          key: gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}-${{ forge.run_number }}
+          restore-keys: |
+            gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}-
+            gradle-
       - name: Set up JDK and Android SDK
+        id: setup
         run: ci/setup-android.sh 2>&1 | tee -a ci.log
       - name: Run ktlint, Android lint, unit tests, and debug build
         run: ./gradlew --no-daemon ktlintCheck lintDebug lintDevsDebug testDebugUnitTest testDevsDebugUnitTest assembleDevsDebug 2>&1 | tee -a ci.log
@@ -52,6 +60,20 @@ jobs:
           echo "OK: no proprietary dependencies"
       - name: Record screenshots with Roborazzi
         run: ./gradlew --no-daemon recordRoborazziDebug 2>&1 | tee -a ci.log
+      - name: Save JDK and Android SDK
+        if: always() && steps.setup.outcome == 'success' && steps.sdk-cache.outputs.cache-hit != 'true'
+        uses: https://data.forgejo.org/actions/cache/save@v4
+        with:
+          path: /opt/ci
+          key: android-sdk-${{ hashFiles('ci/setup-android.sh') }}
+      - name: Save Gradle dependencies
+        if: always() && steps.setup.outcome == 'success'
+        uses: https://data.forgejo.org/actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}-${{ forge.run_number }}
       - uses: https://data.forgejo.org/forgejo/upload-artifact@v4
         with:
           name: shlinker-devs-debug-apk
