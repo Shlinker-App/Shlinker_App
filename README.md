@@ -10,7 +10,7 @@ A native Android client for [Shlink](https://shlink.io/), the self-hosted URL sh
 Manage links, fine-tune redirects and check visit statistics — without handing your workflow to another cloud service.
 
 [![CI](https://code.awit.at/Shlinker/Shlinker_App/badges/workflows/ci.yml/badge.svg?branch=main)](https://code.awit.at/Shlinker/Shlinker_App/actions)
-[![Version](https://badge.awit.at/badge/dev-0.3.1-b3261e)](https://code.awit.at/Shlinker/-/packages/generic/shlinker-devs)
+[![Version](https://badge.awit.at/badge/dev-0.3.2-b3261e)](https://code.awit.at/Shlinker/-/packages/generic/shlinker-devs)
 [![License: GPL-3.0](https://badge.awit.at/badge/license-GPL--3.0-007ec6)](LICENSE)
 <br>
 [![Android 10+](https://badge.awit.at/badge/Android-10%2B%20%28API%2029%29-3ddc84?logo=android&logoColor=white)](https://developer.android.com/about/versions/10)
