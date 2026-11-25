@@ -1,6 +1,9 @@
 name: Feedback or question
 description: Share feedback or ask a question
 title: "[Feedback]: "
+labels:
+  - question
+  - triage
 body:
   - type: markdown
     attributes:
