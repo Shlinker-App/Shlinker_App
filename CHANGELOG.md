@@ -4,12 +4,20 @@ Every version before 1.0.0 is a development snapshot.
 
 ## 0.3.1 – 2026-11-17
 
-- New app IDs: `app.shlinker.devs`, `app.shlinker.nightly`, `app.shlinker`.
+- Separate app IDs for dev (`app.shlinker.devs`), nightly (`app.shlinker.nightly`),
+  and stable (`app.shlinker`), with `app.shlinker` as the shared Android namespace.
   Existing installs (`at.awit.shlinker.debug`) won't be updated.
   The new app has to be installed fresh and servers have to be added again.
-- Own icon per channel, new official logo
-- New signing key for dev builds
-- Repository cleaned up, docs rewritten
+- Debug builds no longer add a suffix to the app ID or version name. Debug and release
+  builds within the same channel share an app ID but use different signing keys,
+  so switching between them requires reinstalling.
+- Separate launcher icons for each channel: stable uses the new official logo and
+  supports themed icons; dev and nightly keep their channel colors.
+- Separate release signing configuration per channel and a new signing key for dev builds.
+- On version tags, CI verifies the dev signing certificate and publishes the signed APK
+  and its SHA-256 checksum to the Forgejo package registry.
+- Repository cleanup and rewritten English documentation, including the README, roadmap,
+  changelog, and test log. The README shows the new logo and project badges.
 
 ## 0.3.0 – 2026-10-31
 

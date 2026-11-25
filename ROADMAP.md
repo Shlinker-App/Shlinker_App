@@ -7,18 +7,10 @@ Draft, currently being reworked.
 Until mid to end of January 2027 there will only be small steps, since a lot is going on
 privately. After that, development picks up again, part-time to full-time.
 
-## Done (up to 0.3.0)
+## Released changes
 
 Server management, creating/editing/deleting short URLs, tags, QR codes, statistics,
 redirect rules and the share sheet. See the [changelog](CHANGELOG.md) for details.
-
-## 0.3.1 – dev release
-
-- [x] Clean up the repository, rewrite the docs
-- [x] Separate app IDs for dev, nightly and stable, namespace `app.shlinker`
-- [x] Own icon per channel
-- [x] New signing key for dev builds
-- [x] Signed dev APK published to the Forgejo package registry on every tag
 
 ## 0.3.2
 
@@ -26,7 +18,17 @@ redirect rules and the share sheet. See the [changelog](CHANGELOG.md) for detail
 - [ ] Share: copy/share as icons with accessibility labels
 - [ ] Share: QR code on the success screen
 - [ ] Easter egg in the delete-server dialog
-- [ ] Open items from the [test log](TESTING.md)
+- [x] Complete the required 0.3.2 device checks in the [test log](TESTING.md)
+
+### App start and Shlink list
+
+- [ ] Open the selected server's Shlink list on app launch instead of the server list.
+- [ ] Remove the back arrow from the Shlink list and add a native menu with **Servers** and **Settings**.
+- [ ] Add a server-wide overview above the search field, between it and the sort hint (e.g. "Newest first").
+  Show **Shlinks** (total links), **Clicks** (total, excluding orphan visits), and **Tags** (total tags).
+- [ ] Add a toggle in **Settings** to show or hide the overview.
+- [ ] Fetch at most 50 Shlinks per server request. When scrolling, prefetch the next page well before
+  reaching the end of the loaded results.
 
 ## Release channels
 

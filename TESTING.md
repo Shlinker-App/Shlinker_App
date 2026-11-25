@@ -31,20 +31,22 @@ Automated tests (unit tests, lint, ktlint, screenshots) run in CI on top of that
 | 0.2.15 | 23 | Domain selection, rule status | ok |
 | 0.3.0 | 24 | Share sheet, page title taken over | ok |
 
-## Open for 0.3.1
+## 0.3.2 dev release
 
-The basics are covered. These cases are still open:
-
-- [ ] Restart and persistence: profiles, active server, settings, sorting
-- [ ] Multiple profiles and domains, same short code on different domains
-- [ ] Offline and retry: visible errors, no false successes
-- [ ] Check defaults for new short URLs against server/admin settings, also when sharing
-- [ ] Share: one and several servers, switching servers keeps input, correct domain
-- [ ] Share: rotation, sharing again while the app is open, no duplicate after a cancelled request
-- [ ] Share: success screen with icons, screen reader labels, QR code
+- [x] Restart and persistence: profiles, active server, settings, sorting
+- [x] Multiple profiles and domains, same short code on different domains
+- [x] Offline and retry: a visible error appears instead of a false success, and retry works once the connection returns
+- [x] Check defaults for new short URLs against server/admin settings, also when sharing
+- [x] Share with one or multiple servers: switching servers preserves input, the link uses the correct domain, and the hostname is visible below the server name and in the dropdown
+- [x] Share: rotation, sharing again while the app is open, no duplicate after a cancelled request
+- [x] Share success screen: copy and share icons work, and the QR code resolves to the correct short URL
 
 Optional: edge cases for domain selection, tags, delete, QR codes and statistics
 (custom domains, rotation, dark mode, errors/retry).
+
+## Pre-release
+
+- [ ] Verify the TalkBack labels for the copy and share icons once the final text is ready.
 
 ## Repo Mirror Sync-Push-Test 2 Github
 - Auto-Sync-Test #2
