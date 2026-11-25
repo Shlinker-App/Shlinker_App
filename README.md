@@ -32,10 +32,15 @@ Manage links, fine-tune redirects and check visit statistics — without handing
 ## 🧭 Development lives on Forgejo
 
 The canonical repository is [Shlinker/Shlinker_App on code.awit.at](https://code.awit.at/Shlinker/Shlinker_App).
-[GitHub](https://github.com/akjwjun/Shlinker_App) is an automatically updated, one-way code mirror for discovery and convenient access.
+[GitHub](https://github.com/Shlinker-App/Shlinker_App) is an automatically updated mirror of the code for discovery and convenient access.
 
 Please submit code contributions and development discussions on Forgejo rather than opening GitHub pull requests.
-For bug reports and feature requests, please use the [Forgejo issue tracker](https://code.awit.at/Shlinker/Shlinker_App/issues).
+
+### Issues on Forgejo and GitHub
+
+Bug reports and feature requests are welcome on the [Forgejo issue tracker](https://code.awit.at/Shlinker/Shlinker_App/issues), which is the preferred place. If you do not want to create an account there, you can also open an issue on [GitHub](https://github.com/Shlinker-App/Shlinker_App/issues).
+
+Issues and comments are synchronized between both platforms using a lightly extended version of [forgesync](https://github.com/eleboucher/forgesync). Forgejo is the source of truth: the open or closed state of an issue always follows Forgejo, and issue numbers can differ between the platforms. Details are in [CONTRIBUTING.md](CONTRIBUTING.md#issue-synchronization).
 
 Like the project? A star on GitHub or Forgejo, a shared link, or a useful bug report helps other self-hosters discover it.
 
