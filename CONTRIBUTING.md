@@ -12,6 +12,10 @@ Please submit code contributions and development discussions on Forgejo. Please 
 
 Open an issue on [Forgejo](https://code.awit.at/Shlinker/Shlinker_App/issues) (preferred) or on [GitHub](https://github.com/Shlinker-App/Shlinker_App/issues). Both trackers are synchronized, see [Issue synchronization](#issue-synchronization).
 
+Please use one of the issue templates: Bug report, Feature request or Feedback/Question.
+
+Labels are copied along with the issue. On GitHub, the issue type (for example `Bug`, `Feature` or `Feedback`) is set automatically from the labels. If you pick a type yourself, it is kept.
+
 A useful bug report includes:
 
 - What you did, what you expected and what happened instead.
@@ -50,4 +54,6 @@ Issues are public and copied to a second platform. Never post API keys, password
 
 ### About the tooling
 
-The synchronization uses [forgesync](https://github.com/eleboucher/forgesync) by Erwan Leboucher, extended with an optional setting that makes the Forgejo issue state authoritative on GitHub. This extension is not published yet. It has been offered upstream as an opt-in feature in [forgesync issue #40](https://git.erwanleboucher.dev/eleboucher/forgesync/issues/40), together with an offer to contribute a pull request. If upstream does not adopt it, the changes will be published as a public fork with full credit to the original project.
+The synchronization uses [forgesync](https://github.com/eleboucher/forgesync) by Erwan Leboucher, extended with an optional setting that makes the Forgejo issue state authoritative on GitHub. This extension is not published yet. It has been offered upstream as an opt-in feature in [forgesync issue #40](https://git.erwanleboucher.dev/eleboucher/forgesync/issues/40), together with an offer to contribute a pull request. If upstream does not adopt it, the changes will be published as a public fork with full credit to the original project. 
+
+It also contains a small fix for the GitHub issue search, which GitHub now requires to be restricted with `is:issue`.
