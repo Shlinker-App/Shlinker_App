@@ -19,7 +19,7 @@ Configured in Forgejo under **Settings** → **Repository** → **Mirror setting
 
 ## Issue synchronization (forgesync)
 
-[forgesync](https://github.com/eleboucher/forgesync) runs as a container next to the Forgejo host and polls both platforms at its configured interval. It copies new issues, comments, labels and state changes, names the original author and links back to the source.
+[forgesync](https://github.com/eleboucher/forgesync) runs as a container next to the Forgejo host and polls both platforms at its configured interval (`FORGESYNC_POLL_INTERVAL`, default `5m`). It copies new issues, comments, labels and state changes, names the original author and links back to the source.
 
 ### Accounts and permissions
 
@@ -28,7 +28,7 @@ Configured in Forgejo under **Settings** → **Repository** → **Mirror setting
 | `shlinker-bot` | Forgejo | Reads the push-mirror configuration and writes synchronized issues |
 | `aw-sync-bot` | GitHub | Pushes the mirror and writes synchronized issues and comments |
 
-- Each bot is restricted to the Shlinker repository. forgesync processes every repository on which its Forgejo user has admin access, so keep `shlinker-bot` limited to this one.
+- Each bot is restricted to the Shlinker repository. forgesync only processes repositories on which its Forgejo user has admin access, because listing push mirrors requires it. Keep `shlinker-bot` limited to this one repository.
 - `aw-sync-bot` uses two fine-grained tokens, **Shlinker Push Mirror** (mirror push, including workflows) and **Shlinker Issues Sync** (issue synchronization). The exact permissions can be checked by an organization owner in the GitHub organization settings under **Personal access tokens**.
 - The Forgejo token for `shlinker-bot` is named `Issues-Sync`. Its permissions can be checked by an instance administrator in the Forgejo user settings.
 - Tokens live in the server configuration. Never commit them and never paste them into issues.
@@ -39,15 +39,30 @@ Configured in Forgejo under **Settings** → **Repository** → **Mirror setting
 - Issue numbers can differ between platforms.
 - State is authoritative on Forgejo. Closing or reopening on GitHub is reverted at the next run.
 - Deleting an issue is not synchronized and must be done on both platforms.
+- An issue with the label `local-only` (any case) is not copied to the mirror. Add the label before the next run, because an issue that has already been copied keeps its mirror copy and only stops receiving updates.
 
 ### Local modifications
 
-The deployed forgesync build differs from upstream in two ways:
+The deployed forgesync build is based on upstream release v0.0.6 and differs from it in two ways. Both exist only as local branches in the server's source checkout and are **not pushed anywhere** while we wait for the upstream maintainer's reply.
 
-1. An opt-in setting that makes the Forgejo issue state authoritative on GitHub. It was offered upstream in forgesync issue #40.
-2. A one-line fix in the GitHub sink: the marker search query now ends with `is:issue`. GitHub rejects the search without it, and the sink then fails before creating the issue.
+| Change | Branch | Notes |
+|---|---|---|
+| Opt-in setting that makes the Forgejo issue state authoritative on GitHub | `feat/canonical-forgejo-issue-state` | Offered upstream in [forgesync issue #40](https://git.erwanleboucher.dev/eleboucher/forgesync/issues/40) |
+| GitHub marker search restricted with `is:issue`, plus a regression test | `fix/github-marker-search-is-issue` | Branched from upstream `main`, independent of the feature |
 
-An upstream update can overwrite these changes. Before updating, check whether both are included upstream, and keep the previous image so you can roll back.
+- The feature branch contains the fix as its own commit, followed by the feature commit. The deployed image is built from this branch.
+- The fix branch contains only the fix and its test. All upstream tests pass on it without the feature.
+- The fix is needed because GitHub rejects the marker search query without `is:issue`. Without it, the sink fails before it creates the issue.
+- Upstream must not be pulled into the working copy casually. An update can conflict with or silently drop these changes. Before updating, check whether upstream has adopted either change, rebuild, run the full test suite and keep the previous image for rollback.
+- If upstream declines the feature, the plan is a public fork with full credit to the original project (see [CONTRIBUTING.md](../../CONTRIBUTING.md#about-the-tooling)).
+- Do not push any of the branches until the upstream maintainer has replied.
+
+#### Rebuilding after a change
+
+1. Work on `feat/canonical-forgejo-issue-state`.
+2. Run the full test suite (`go test ./...`).
+3. Build the image and recreate the container.
+4. Check the log for a clean tick (`tick done`, no `failed` lines).
 
 ## Labels and issue types
 
@@ -70,8 +85,9 @@ The CI workflow is `.forgejo/workflows/ci.yml`. It skips runs for changes that o
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Mirror shows `PushRejected` mentioning `workflow` scope | Mirror token lacks the workflow permission | Add the `workflow` scope or **Workflows: Read and write**, update the token in the mirror settings, trigger a sync |
+| Mirror shows `PushRejected` mentioning `workflow` scope | Mirror token is not allowed to update workflows | Allow workflow updates for the token (**Workflows: Read and write**), update the token in the mirror settings, trigger a sync |
 | Issue appears on one platform only | forgesync error or the next run has not happened yet | Check the container log for `upsert issue failed`, wait one interval |
 | Log shows `search by marker` errors | GitHub search query without `is:issue` | Use a build that contains the `is:issue` fix |
 | Issue has no type on GitHub | Label missing or workflow did not run | Check the issue labels and the **Actions** tab on GitHub |
 | Duplicate issue after a restart | Marker lookup failed | Check the log for errors before the duplicate was created, close the duplicate on both platforms |
+| Issue is not copied at all | Label `local-only` is set | Remove the label before the next run |
