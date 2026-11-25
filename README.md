@@ -7,17 +7,17 @@
 A native Android client for [Shlink](https://shlink.io/), the self-hosted URL shortener.
 
 [![CI](https://code.awit.at/Shlinker/Shlinker_App/badges/workflows/ci.yml/badge.svg?branch=main)](https://code.awit.at/Shlinker/Shlinker_App/actions)
-[![Version](assets/badges/version-dev.svg)](https://code.awit.at/Shlinker/-/packages/generic/shlinker-devs)
-[![License: GPL-3.0](assets/badges/license.svg)](LICENSE)
+[![Version](https://badge.awit.at/badge/dev-0.3.1-b3261e)](https://code.awit.at/Shlinker/-/packages/generic/shlinker-devs)
+[![License: GPL-3.0](https://badge.awit.at/badge/license-GPL--3.0-007ec6)](LICENSE)
 <br>
-[![Android 10+](assets/badges/android.svg)](https://developer.android.com/about/versions/10)
-[![Kotlin](assets/badges/kotlin.svg)](https://kotlinlang.org/)
-[![Jetpack Compose](assets/badges/compose.svg)](https://developer.android.com/compose)
-[![Shlink](assets/badges/shlink.svg)](https://shlink.io/)
+[![Android 10+](https://badge.awit.at/badge/Android-10%2B%20%28API%2029%29-3ddc84?logo=android&logoColor=white)](https://developer.android.com/about/versions/10)
+[![Kotlin](https://badge.awit.at/badge/Kotlin-2.4-7f52ff?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Jetpack Compose](https://badge.awit.at/badge/Jetpack%20Compose-Material%203-4285f4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/compose)
+[![Shlink](https://badge.awit.at/badge/Shlink-3.0%2B-4696e5)](https://shlink.io/)
 <br>
-[![No Google Play Services](assets/badges/no-gms.svg)](#privacy-and-security)
-[![No tracking](assets/badges/no-tracking.svg)](#privacy-and-security)
-[![Forgejo](assets/badges/forgejo.svg)](https://code.awit.at/Shlinker/Shlinker_App)
+[![No Google Play Services](https://badge.awit.at/badge/Google%20Play%20Services-none-1c624b)](#privacy-and-security)
+[![No tracking](https://badge.awit.at/badge/tracking-none-1c624b)](#privacy-and-security)
+[![Forgejo](https://badge.awit.at/badge/hosted%20on-Forgejo-fb923c?logo=forgejo&logoColor=white)](https://code.awit.at/Shlinker/Shlinker_App)
 
 </div>
 
