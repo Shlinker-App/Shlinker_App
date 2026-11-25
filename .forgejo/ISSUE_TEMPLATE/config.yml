@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Contributing guide
+    url: https://code.awit.at/Shlinker/Shlinker_App/src/branch/main/CONTRIBUTING.md
+    about: How issues, synchronization and contributions work

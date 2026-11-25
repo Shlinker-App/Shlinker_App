@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report on Forgejo (preferred)
+    url: https://code.awit.at/Shlinker/Shlinker_App/issues
+    about: Development happens on Forgejo; GitHub issues are synchronized
+  - name: Contributing guide
+    url: https://github.com/Shlinker-App/Shlinker_App/blob/main/CONTRIBUTING.md
+    about: How issues, synchronization and contributions work

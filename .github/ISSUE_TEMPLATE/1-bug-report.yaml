@@ -1,0 +1,70 @@
+name: Bug report
+description: Report something that does not work as expected
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Issues are public and are copied between Forgejo and GitHub. Never post API keys, passwords, tokens or confidential server URLs. Redact addresses where needed.
+  - type: input
+    id: version
+    attributes:
+      label: Shlinker version
+      description: For example 0.3.1.
+      placeholder: 0.3.1
+    validations:
+      required: true
+  - type: dropdown
+    id: channel
+    attributes:
+      label: Release channel
+      description: Which build are you using?
+      options:
+        - Dev
+        - Nightly
+        - Stable
+    validations:
+      required: true
+  - type: input
+    id: android
+    attributes:
+      label: Android version and device
+      description: For example Android 15 on Pixel 8.
+    validations:
+      required: true
+  - type: input
+    id: shlink
+    attributes:
+      label: Shlink server version
+      description: Leave empty if the problem is not related to a server.
+      placeholder: 3.7.0
+    validations:
+      required: false
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected to happen instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the steps so that we can reproduce the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Optional. Paste log text in a code block or attach screenshots. Remove API keys, tokens and confidential URLs first.
+    validations:
+      required: false
+  - type: checkboxes
+    id: secrets
+    attributes:
+      label: Before you submit
+      options:
+        - label: I removed API keys, passwords, tokens and confidential server URLs from this report.
+          required: true

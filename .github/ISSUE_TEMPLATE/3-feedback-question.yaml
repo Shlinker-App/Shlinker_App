@@ -1,0 +1,42 @@
+name: Feedback or question
+description: Share feedback or ask a question
+title: "[Feedback]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your feedback. Issues are public and are copied between Forgejo and GitHub. Never post API keys, passwords, tokens or confidential server URLs. Redact addresses where needed.
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: What is this about?
+      options:
+        - General feedback
+        - Question
+        - Usability
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: message
+    attributes:
+      label: Your message
+      description: Tell us what is on your mind.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Shlinker version
+      description: Optional.
+      placeholder: 0.3.1
+    validations:
+      required: false
+  - type: checkboxes
+    id: secrets
+    attributes:
+      label: Before you submit
+      options:
+        - label: I did not include API keys, passwords, tokens or confidential server URLs.
+          required: true
