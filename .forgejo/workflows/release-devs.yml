@@ -1,7 +1,7 @@
 name: Release DEVS
 
-# A vX.Y.Z tag builds the signed dev APK and publishes it to the
-# Forgejo package registry (generic/shlinker-devs/X.Y.Z).
+# A vX.Y.Z tag builds the signed dev APK, publishes it to the Forgejo package registry
+# (generic/shlinker-devs/X.Y.Z) and creates a pre-release with the matching CHANGELOG.md section.
 on:
   push:
     tags: ['v*']
@@ -25,6 +25,18 @@ jobs:
             echo "::error::Tag $FORGEJO_REF_NAME does not match versionName $APP_VERSION"; exit 1
           fi
           echo "VERSION=$VERSION" >> "$FORGEJO_ENV"
+      - name: Read release notes from CHANGELOG.md
+        run: |
+          NOTES="${RUNNER_TEMP:-/tmp}/release-notes.md"
+          awk -v heading="## $VERSION " '
+            index($0, heading) == 1 { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md | sed -e '/./,$!d' > "$NOTES"
+          if ! grep -q '[^[:space:]]' "$NOTES"; then
+            echo "::error::CHANGELOG.md has no section for $VERSION"; exit 1
+          fi
+          echo "NOTES=$NOTES" >> "$FORGEJO_ENV"
       - name: Prepare signing key
         env:
           KEYSTORE_B64: ${{ secrets.SHLINKER_DEVS_KEYSTORE_B64 }}
@@ -71,6 +83,50 @@ jobs:
               --upload-file "$f" "$BASE/$(basename "$f")"
           done
           echo "Uploaded: $PAGE"
+      - name: Create pre-release with changelog
+        env:
+          TOKEN: ${{ forge.token }}
+          PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+        run: |
+          REPO="${FORGEJO_REPOSITORY:-$GITHUB_REPOSITORY}"
+          API="$FORGEJO_SERVER_URL/api/v1/repos/$REPO"
+          TAG="$FORGEJO_REF_NAME"
+          STATUS=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: token $TOKEN" "$API/releases/tags/$TAG")
+          if [ "$STATUS" = "200" ]; then
+            echo "::warning::Release $TAG already exists; skipping"
+            exit 0
+          fi
+          BASE="$FORGEJO_SERVER_URL/api/packages/$FORGEJO_REPOSITORY_OWNER/generic/shlinker-devs/$VERSION"
+          PAGE="$FORGEJO_SERVER_URL/$FORGEJO_REPOSITORY_OWNER/-/packages/generic/shlinker-devs/$VERSION"
+          NAME=$(basename "$APK")
+          DIR="${RUNNER_TEMP:-/tmp}/release-assets"
+          mkdir -p "$DIR"
+          # Attach the files exactly as published, even if this run rebuilt a different APK.
+          for f in "$NAME" "$NAME.sha256"; do
+            curl --fail-with-body -sS -H "Authorization: token $PACKAGES_TOKEN" -o "$DIR/$f" "$BASE/$f"
+          done
+          {
+            cat "$NOTES"
+            printf '\n---\n\nPackage: %s\n\nSHA-256: `%s`\n' "$PAGE" "$(cut -d' ' -f1 "$DIR/$NAME.sha256")"
+          } > "$DIR/body.md"
+          BODY=$(TAG="$TAG" VERSION="$VERSION" BODY_FILE="$DIR/body.md" node -e '
+            const fs = require("fs");
+            console.log(JSON.stringify({
+              tag_name: process.env.TAG,
+              name: "Shlinker DEVS " + process.env.VERSION,
+              body: fs.readFileSync(process.env.BODY_FILE, "utf8"),
+              draft: false,
+              prerelease: true,
+            }));
+          ')
+          ID=$(curl --fail-with-body -sS -X POST -H "Authorization: token $TOKEN" \
+            -H 'Content-Type: application/json' -d "$BODY" "$API/releases" \
+            | node -e 'let s = ""; process.stdin.on("data", d => s += d).on("end", () => console.log(JSON.parse(s).id))')
+          for f in "$NAME" "$NAME.sha256"; do
+            curl --fail-with-body -sS -H "Authorization: token $TOKEN" \
+              -F "attachment=@$DIR/$f" "$API/releases/$ID/assets?name=$f" > /dev/null
+          done
+          echo "Pre-release: $FORGEJO_SERVER_URL/$REPO/releases/tag/$TAG"
       - name: Remove signing key
         if: always()
         run: rm -f "${RUNNER_TEMP:-/tmp}/shlinker-devs.jks"

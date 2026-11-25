@@ -1,15 +1,23 @@
 package app.shlinker.feature.shorturls
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.text.TextLayoutResult
 import app.shlinker.core.model.ServerDomain
 import app.shlinker.core.model.ServerProfile
 import app.shlinker.core.model.ShortUrl
@@ -49,9 +57,12 @@ class SharedCreateScreenTest {
     private var closed = 0
     private var opened = 0
 
-    private fun screen(interrupted: Boolean = false, invalid: Boolean = false) {
+    private var onSurface = Color.Unspecified
+
+    private fun screen(interrupted: Boolean = false, invalid: Boolean = false, dark: Boolean = false) {
         compose.setContent {
-            ShlinkerTheme(dynamicColor = false) {
+            ShlinkerTheme(darkTheme = dark, dynamicColor = false) {
+                onSurface = MaterialTheme.colorScheme.onSurface
                 SharedCreateScreen(
                     servers, form, interrupted, invalid, null,
                     onChange = { form = it },
@@ -72,7 +83,9 @@ class SharedCreateScreenTest {
         screen()
         compose.onNodeWithText("https://destination.example/a?b=1#part").assertIsDisplayed()
         assertNull(submitted)
+        compose.onNodeWithText("second.example").assertIsDisplayed()
         compose.onNodeWithText("Server: Second").performClick()
+        compose.onNodeWithText("first.example").assertIsDisplayed()
         compose.onNodeWithText("First").performClick()
         compose.onNodeWithText("Custom slug (optional)").performScrollTo().performTextReplacement("custom")
         compose.onNodeWithText("Title (optional)").performScrollTo().performTextReplacement("Title")
@@ -83,20 +96,42 @@ class SharedCreateScreenTest {
         assertEquals("https://destination.example/a?b=1#part", submitted?.longUrl)
     }
 
-    @Test fun successHasIndependentCopyShareAndDoneWithoutAutomaticSharing() {
+    @Test fun successHasLabeledCopyShareIconsQrCodeAndDoneWithoutAutomaticSharing() {
         form = form.copy(created = ShortUrl("abc", "https://s.example/abc", form.longUrl, null, emptyList()))
         screen()
         compose.onNodeWithText("Shlink created").assertIsDisplayed()
         compose.onNodeWithText("Create").assertDoesNotExist()
         assertNull(copied)
         assertNull(shared)
-        compose.onNodeWithText("Share").performClick()
+        compose.onNodeWithContentDescription("Share https://s.example/abc").performClick()
         assertEquals("https://s.example/abc", shared)
         assertNull(copied)
-        compose.onNodeWithText("Copy").performClick()
+        compose.onNodeWithContentDescription("Copy https://s.example/abc").performClick()
         assertEquals("https://s.example/abc", copied)
-        compose.onNodeWithText("Done").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithContentDescription("QR code for https://s.example/abc")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Done").performScrollTo().performClick()
         assertEquals(1, closed)
+    }
+
+    @Test fun darkThemeUsesReadableTextColors() {
+        form = form.copy(created = ShortUrl("abc", "https://s.example/abc", form.longUrl, null, emptyList()))
+        screen(dark = true)
+        val texts = listOf(
+            "Create shared shlink",
+            "Server: Second",
+            "second.example",
+            "Shlink created",
+            "https://s.example/abc",
+        )
+        for (text in texts) {
+            val layouts = mutableListOf<TextLayoutResult>()
+            compose.onNodeWithText(text, useUnmergedTree = true)
+                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertEquals(text, onSurface, layouts.single().layoutInput.style.color)
+        }
     }
 
     @Test
@@ -104,7 +139,7 @@ class SharedCreateScreenTest {
     fun interruptedOrBusyFormCannotWriteSwitchServerOrCloseDuringRequest() {
         form = form.copy(busy = true)
         screen()
-        compose.onNodeWithText("Server: Second").assertIsNotEnabled()
+        compose.onNodeWithText("Server: Second").assertIsDisplayed().assertHasNoClickAction()
         compose.onNodeWithText("Create").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText("Cancel").performScrollTo().assertIsNotEnabled()
         assertNull(submitted)

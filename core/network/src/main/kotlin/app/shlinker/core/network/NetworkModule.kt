@@ -62,6 +62,9 @@ internal abstract class ConnectionModule {
     abstract fun bindDeleteShortUrlService(impl: KtorDeleteShortUrlService): DeleteShortUrlService
 
     @Binds
+    abstract fun bindServerOverviewService(impl: KtorServerOverviewService): ServerOverviewService
+
+    @Binds
     abstract fun bindServerTagsService(impl: KtorServerTagsService): ServerTagsService
 
     @Binds

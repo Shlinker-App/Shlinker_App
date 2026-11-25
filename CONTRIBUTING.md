@@ -41,6 +41,17 @@ Use English for code comments, test names, diagnostics, build and CI text, and d
 Keep localized app and store text in the target language. Use neutral phrasing for names,
 labels, and comments. If a personal perspective is needed, write in the first person.
 
+## UI conventions
+
+- **Danger Zone:** Confirm every destructive action, such as deleting a server, a shlink or a redirect rule,
+  with `DangerZoneDialog` from `core:ui`. It is titled “DANGER ZONE” (a nod to *Archer*) and framed in red.
+  Do not use a plain dialog for these actions.
+- **DEVS banner:** DEVS builds show a red banner at the bottom of every screen that reads
+  `DEVS build v<version>`, centered. Wrap the content of every new activity in `DevsBuildFrame`
+  so the banner also appears there. Nightly and stable builds do not show it.
+- **Channel-specific values** live in `app/src/<channel>/res/values/channel.xml`, for example the app name and
+  the default app tag (`shlinker-devs` in DEVS builds). DEVS builds also show a warning on the About page.
+
 ## Issue synchronization
 
 Issues can be opened on either platform. A bot copies issues and comments between Forgejo and GitHub roughly every five minutes. Copied issues and comments name the original author and link back to the source, in both directions, so you can see where something was written.

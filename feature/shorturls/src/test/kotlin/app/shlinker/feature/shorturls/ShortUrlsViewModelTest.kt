@@ -6,14 +6,19 @@ import androidx.paging.AsyncPagingDataDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
 import app.shlinker.core.data.ApiKeyResult
+import app.shlinker.core.data.AppTagSettingsRepository
+import app.shlinker.core.data.ServerOverviewRepository
 import app.shlinker.core.data.ServerProfileRepository
 import app.shlinker.core.data.ShortUrlRepository
 import app.shlinker.core.datastore.StoredServers
+import app.shlinker.core.model.ServerOverview
 import app.shlinker.core.model.ServerProfile
 import app.shlinker.core.model.ServerSort
 import app.shlinker.core.model.ShortUrl
 import app.shlinker.core.model.ShortUrlPage
 import app.shlinker.core.model.ShortUrlSort
+import app.shlinker.core.network.ServerOverviewService
+import app.shlinker.core.network.ServerTagsService
 import app.shlinker.core.network.ShortUrlService
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +51,8 @@ class ShortUrlsViewModelTest {
     private var blockFirstServer = false
     private var firstCancelled = false
     private val sortCalls = mutableListOf<ShortUrlSort>()
+    private val pageRequests = mutableListOf<Pair<Int, Int>>()
+    private var pagesCount = 1
     private var settingsFailure = false
     private val stored = MutableStateFlow(StoredServers())
     private val settings = object : DataStore<StoredServers> {
@@ -66,6 +73,7 @@ class ShortUrlsViewModelTest {
         ): ShortUrlPage {
             calls += serverUrl to searchTerm
             sortCalls += sort
+            pageRequests += page to itemsPerPage
             assertEquals("$serverUrl/key", apiKey)
             if (blockFirstServer && serverUrl == first.url) {
                 try {
@@ -74,6 +82,12 @@ class ShortUrlsViewModelTest {
                     firstCancelled = true
                 }
             }
+            if (pagesCount > 1) {
+                val items = List(itemsPerPage) {
+                    ShortUrl("p$page-$it", "$serverUrl/p$page-$it", "https://example.org", null, emptyList())
+                }
+                return ShortUrlPage(items, page, pagesCount)
+            }
             return ShortUrlPage(
                 listOf(ShortUrl("abc", "$serverUrl/abc", "https://example.org", null, emptyList())),
                 1,
@@ -81,6 +95,29 @@ class ShortUrlsViewModelTest {
             )
         }
     }
+
+    private val overviewCalls = mutableListOf<String>()
+    private var overviewFailure: IOException? = null
+    private val overviewService = object : ServerOverviewService {
+        override suspend fun shlinkCount(serverUrl: String, apiKey: String): Long {
+            overviewCalls += serverUrl
+            overviewFailure?.let { throw it }
+            return if (serverUrl == first.url) 10 else 20
+        }
+
+        override suspend fun humanClickCount(serverUrl: String, apiKey: String): Long = 5
+    }
+    private val tagsService = object : ServerTagsService {
+        override suspend fun get(serverUrl: String, apiKey: String) = listOf("a", "b")
+    }
+
+    private fun viewModel(saved: SavedStateHandle) = ShortUrlsViewModel(
+        profiles,
+        ShortUrlRepository(profiles, service, settings),
+        saved,
+        ServerOverviewRepository(profiles, overviewService, tagsService),
+        AppTagSettingsRepository(settings),
+    )
 
     @Before fun setUp() = Dispatchers.setMain(dispatcher)
 
@@ -104,7 +141,7 @@ class ShortUrlsViewModelTest {
 
     @Test fun searchIsDebouncedTrimmedAndPersisted() = runTest(dispatcher) {
         val saved = SavedStateHandle()
-        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service, settings), saved)
+        val vm = viewModel(saved)
         val differ = differ()
         val job = launch { vm.urls.collectLatest { differ.submitData(it) } }
         try {
@@ -132,7 +169,7 @@ class ShortUrlsViewModelTest {
 
     @Test fun serverSwitchCancelsOldRequestAndUsesNewCredentials() = runTest(dispatcher) {
         blockFirstServer = true
-        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service, settings), SavedStateHandle())
+        val vm = viewModel(SavedStateHandle())
         val differ = differ()
         val job = launch { vm.urls.collectLatest { differ.submitData(it) } }
         try {
@@ -149,7 +186,7 @@ class ShortUrlsViewModelTest {
 
     @Test fun noActiveServerProducesLoadedEmptyListWithoutRequests() = runTest(dispatcher) {
         profiles.activeProfile.value = null
-        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service, settings), SavedStateHandle())
+        val vm = viewModel(SavedStateHandle())
         val differ = differ()
         val job = launch { vm.urls.collectLatest { differ.submitData(it) } }
         try {
@@ -165,7 +202,7 @@ class ShortUrlsViewModelTest {
     @Test fun changingSortCancelsOldLoadAndKeepsSearchAndServer() = runTest(dispatcher) {
         blockFirstServer = true
         val saved = SavedStateHandle(mapOf("search" to "article"))
-        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service, settings), saved)
+        val vm = viewModel(saved)
         val differ = differ()
         val job = launch { vm.urls.collectLatest { differ.submitData(it) } }
         try {
@@ -186,7 +223,7 @@ class ShortUrlsViewModelTest {
     @Test fun persistedSortAppliesOnRecreationAndServerSwitch() = runTest(dispatcher) {
         val repository = ShortUrlRepository(profiles, service, settings)
         repository.setSort(ShortUrlSort.OLDEST)
-        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service, settings), SavedStateHandle())
+        val vm = viewModel(SavedStateHandle())
         val differ = differ()
         val job = launch { vm.urls.collectLatest { differ.submitData(it) } }
         try {
@@ -206,7 +243,7 @@ class ShortUrlsViewModelTest {
     }
 
     @Test fun failedSortSaveKeepsPreviousSelectionAndIsRetryable() = runTest(dispatcher) {
-        val vm = ShortUrlsViewModel(profiles, ShortUrlRepository(profiles, service, settings), SavedStateHandle())
+        val vm = viewModel(SavedStateHandle())
         settingsFailure = true
         vm.onSortChange(ShortUrlSort.MOST_VISITED)
         advanceUntilIdle()
@@ -220,6 +257,67 @@ class ShortUrlsViewModelTest {
         advanceUntilIdle()
         assertEquals(false, vm.sortError.value)
         assertEquals(ShortUrlSort.MOST_VISITED, stored.value.shortUrlSort)
+    }
+
+    @Test fun listLoadsFiftyShlinksAndPrefetchesTheNextPageOnlyAfterScrolling() = runTest(dispatcher) {
+        pagesCount = 3
+        val vm = viewModel(SavedStateHandle())
+        val differ = differ()
+        val job = launch { vm.urls.collectLatest { differ.submitData(it) } }
+        try {
+            advanceUntilIdle()
+            assertEquals(listOf(1 to 50), pageRequests)
+            // A phone shows the first few rows, which must not trigger another request yet.
+            differ.getItem(8)
+            advanceUntilIdle()
+            assertEquals(listOf(1 to 50), pageRequests)
+            // With 30 rows left, the next page loads well before the end of the list.
+            differ.getItem(20)
+            advanceUntilIdle()
+            assertEquals(listOf(1 to 50, 2 to 50), pageRequests)
+            assertEquals(100, differ.itemCount)
+        } finally {
+            job.cancel()
+        }
+    }
+
+    @Test fun overviewLoadsForActiveServerAndFollowsServerSwitchAndRefresh() = runTest(dispatcher) {
+        val vm = viewModel(SavedStateHandle())
+        advanceUntilIdle()
+        assertEquals(ServerOverview(10, 5, 2), vm.overview.value.overview)
+        assertEquals(first.id, vm.overview.value.serverId)
+        profiles.activeProfile.value = second
+        advanceUntilIdle()
+        assertEquals(ServerOverview(20, 5, 2), vm.overview.value.overview)
+        vm.refreshOverview()
+        advanceUntilIdle()
+        assertEquals(listOf(first.url, second.url, second.url), overviewCalls)
+    }
+
+    @Test fun failedOverviewRefreshKeepsLastCountsAndReportsError() = runTest(dispatcher) {
+        val vm = viewModel(SavedStateHandle())
+        advanceUntilIdle()
+        overviewFailure = IOException("offline")
+        vm.refreshOverview()
+        advanceUntilIdle()
+        assertEquals(ServerOverview(10, 5, 2), vm.overview.value.overview)
+        assertTrue(vm.overview.value.error is IOException)
+        overviewFailure = null
+        vm.refreshOverview()
+        advanceUntilIdle()
+        assertEquals(null, vm.overview.value.error)
+    }
+
+    @Test fun disabledOverviewIsHiddenAndSendsNoRequests() = runTest(dispatcher) {
+        stored.value = stored.value.copy(showServerOverview = false)
+        val vm = viewModel(SavedStateHandle())
+        advanceUntilIdle()
+        assertEquals(false, vm.overview.value.visible)
+        assertTrue(overviewCalls.isEmpty())
+        stored.value = stored.value.copy(showServerOverview = true)
+        advanceUntilIdle()
+        assertEquals(true, vm.overview.value.visible)
+        assertEquals(listOf(first.url), overviewCalls)
     }
 
     private class FakeProfiles(server: ServerProfile) : ServerProfileRepository {

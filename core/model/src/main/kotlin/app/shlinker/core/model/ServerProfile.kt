@@ -1,8 +1,13 @@
 package app.shlinker.core.model
 
+import java.net.URI
+
 /**
  * A saved Shlink server profile.
  *
  * The API key is stored separately and encrypted. It is decrypted only when needed for requests.
  */
 data class ServerProfile(val id: String, val name: String, val url: String, val createdAtEpochMillis: Long)
+
+val ServerProfile.hostname: String
+    get() = runCatching { URI(url).host }.getOrNull()?.takeIf { it.isNotBlank() } ?: url

@@ -42,7 +42,7 @@ class HomeScreenTest {
     private var reordered: List<String>? = null
     private var selected: String? = null
     private var edited: String? = null
-    private var settings = false
+    private var back = false
 
     private fun screen(
         empty: Boolean = false,
@@ -60,10 +60,9 @@ class HomeScreenTest {
                     state = state,
                     action = action,
                     onAddServer = { added = true },
-                    onShortUrls = {},
                     onSelect = { selected = it },
                     onEditServer = { edited = it },
-                    onSettings = { settings = true },
+                    onBack = { back = true },
                     onRename = { action = ServerActionState(server = it, name = it.name) },
                     onDelete = { action = ServerActionState(server = it, deleting = true) },
                     onNameChange = {
@@ -92,11 +91,18 @@ class HomeScreenTest {
         }
     }
 
-    @Test fun settingsActionDoesNotChangeTheSelectedServer() {
+    @Test fun backReturnsToShlinksWithoutChangingTheSelectedServer() {
         screen()
-        compose.onNodeWithContentDescription("Settings").performClick()
-        assertTrue(settings)
+        compose.onNodeWithText("Servers").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back to shlinks").performClick()
+        assertTrue(back)
         assertNull(selected)
+    }
+
+    @Test fun tappingServerSelectsIt() {
+        screen()
+        compose.onNodeWithText("Home").performClick()
+        assertEquals(server.id, selected)
     }
 
     @Test fun editMenuPassesProfileIdWithoutChangingSelection() {
@@ -187,7 +193,6 @@ class HomeScreenTest {
 
     @Test fun renameMenuOpensEditableDialog() {
         screen()
-        compose.onNodeWithText("Server Overview").assertIsDisplayed()
         compose.onNodeWithContentDescription("Actions for Home").performClick()
         compose.onNodeWithText("Rename").performClick()
         compose.onNodeWithText("Rename server").assertIsDisplayed()
@@ -201,7 +206,7 @@ class HomeScreenTest {
         screen()
         compose.onNodeWithContentDescription("Actions for Home").performClick()
         compose.onNodeWithText("Delete").performClick()
-        compose.onNodeWithText("Delete server?").assertIsDisplayed()
+        compose.onNodeWithText("DANGER ZONE").assertIsDisplayed()
         compose.onNodeWithText(
             "Remove “Home” and its saved API key from this device? Shlinks on the server will not be deleted.",
         ).assertIsDisplayed()
@@ -213,10 +218,9 @@ class HomeScreenTest {
         assertEquals(1, confirmed)
     }
 
-    @Test fun emptyOverviewAllowsAddingButNotOpeningShlinks() {
+    @Test fun emptyListAllowsAddingAServer() {
         screen(empty = true)
         compose.onNodeWithText("No servers configured. Add a server to get started.").assertIsDisplayed()
-        compose.onNodeWithText("Show shlinks").assertIsNotEnabled()
         compose.onNodeWithText("Add server", useUnmergedTree = true).performClick()
         assertEquals(true, added)
     }

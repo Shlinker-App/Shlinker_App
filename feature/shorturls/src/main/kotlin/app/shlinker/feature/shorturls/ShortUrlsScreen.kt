@@ -1,27 +1,34 @@
 package app.shlinker.feature.shorturls
 
 import android.content.ClipData
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.QrCode
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,15 +38,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,6 +68,7 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -63,6 +77,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import app.shlinker.core.data.ShortUrlApiKeyException
+import app.shlinker.core.model.NavigationMenuStyle
 import app.shlinker.core.model.ShortUrl
 import app.shlinker.core.model.ShortUrlSort
 import app.shlinker.core.network.ConnectionError
@@ -72,7 +87,10 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ShortUrlsRoute(
-    onBack: () -> Unit,
+    onServers: () -> Unit,
+    onSettings: () -> Unit,
+    onAbout: () -> Unit,
+    onAddServer: () -> Unit,
     onCreate: (String) -> Unit,
     onDetails: (String, ShortUrl) -> Unit,
     refreshKey: Int = 0,
@@ -83,8 +101,15 @@ fun ShortUrlsRoute(
     val sort by viewModel.sort.collectAsStateWithLifecycle()
     val sortSaving by viewModel.sortSaving.collectAsStateWithLifecycle()
     val sortError by viewModel.sortError.collectAsStateWithLifecycle()
+    val display by viewModel.display.collectAsStateWithLifecycle()
+    val overview by viewModel.overview.collectAsStateWithLifecycle()
     val urls = viewModel.urls.collectAsLazyPagingItems()
-    LaunchedEffect(refreshKey) { if (refreshKey > 0) urls.refresh() }
+    LaunchedEffect(refreshKey) {
+        if (refreshKey > 0) {
+            urls.refresh()
+            viewModel.refreshOverview()
+        }
+    }
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
@@ -111,7 +136,14 @@ fun ShortUrlsRoute(
         search = search,
         serverName = server?.name,
         onSearchChange = viewModel::onSearchChange,
-        onBack = onBack,
+        menuStyle = display.menuStyle,
+        onServers = onServers,
+        onSettings = onSettings,
+        onAbout = onAbout,
+        onAddServer = onAddServer,
+        overview = overview,
+        onRetryOverview = viewModel::refreshOverview,
+        onRefresh = viewModel::refreshOverview,
         onCopy = { url ->
             scope.launch {
                 clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Short URL", url)))
@@ -138,7 +170,6 @@ internal fun ShortUrlsScreen(
     search: String,
     serverName: String?,
     onSearchChange: (String) -> Unit,
-    onBack: () -> Unit,
     onCopy: (String) -> Unit,
     onOpen: (String) -> Unit,
     onShare: (String) -> Unit,
@@ -150,135 +181,266 @@ internal fun ShortUrlsScreen(
     sortError: Boolean = false,
     onDismissSortError: () -> Unit = {},
     onCreate: () -> Unit = {},
+    menuStyle: NavigationMenuStyle = NavigationMenuStyle.DRAWER,
+    onServers: () -> Unit = {},
+    onSettings: () -> Unit = {},
+    onAbout: () -> Unit = {},
+    onAddServer: () -> Unit = {},
+    overview: ServerOverviewState = ServerOverviewState(),
+    onRetryOverview: () -> Unit = {},
+    onRefresh: () -> Unit = {},
 ) {
     var sortMenu by remember { mutableStateOf(false) }
+    var overflowMenu by remember { mutableStateOf(false) }
     var qrUrl by rememberSaveable { mutableStateOf<String?>(null) }
     qrUrl?.let { ShlinkQrDialog(it) { qrUrl = null } }
     val listState = rememberLazyListState()
     LaunchedEffect(search, serverName, sort) { listState.scrollToItem(0) }
     val refresh = urls.loadState.refresh
-    Scaffold(
-        floatingActionButton = {
-            if (serverName != null) {
-                ExtendedFloatingActionButton(
-                    onClick = onCreate,
-                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                    text = { Text(stringResource(R.string.create_title)) },
-                )
-            }
-        },
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(stringResource(R.string.short_urls_title))
-                        serverName?.let {
-                            Text(
-                                stringResource(R.string.short_urls_server, it),
-                                style = MaterialTheme.typography.labelMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
+    val refreshAll = {
+        urls.refresh()
+        onRefresh()
+    }
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    val navigate = { destination: () -> Unit ->
+        overflowMenu = false
+        scope.launch { drawerState.close() }
+        destination()
+    }
+    val screen = @Composable {
+        Scaffold(
+            floatingActionButton = {
+                if (serverName != null) {
+                    ExtendedFloatingActionButton(
+                        onClick = onCreate,
+                        icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                        text = { Text(stringResource(R.string.create_title)) },
+                    )
+                }
+            },
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(stringResource(R.string.short_urls_title))
+                            serverName?.let {
+                                Text(
+                                    stringResource(R.string.short_urls_server, it),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
                         }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.short_urls_back))
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { sortMenu = true }, enabled = !sortSaving) {
-                        Icon(Icons.AutoMirrored.Filled.Sort, stringResource(R.string.short_urls_sort))
-                    }
-                    DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
-                        ShortUrlSort.entries.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(shortUrlSortLabel(option)) },
-                                leadingIcon = {
-                                    if (sort == option) Icon(Icons.Outlined.CheckCircle, contentDescription = null)
-                                },
-                                onClick = {
-                                    sortMenu = false
-                                    onSortChange(option)
-                                },
-                            )
-                        }
-                    }
-                    IconButton(onClick = urls::refresh, enabled = refresh !is LoadState.Loading) {
-                        Icon(Icons.Outlined.Refresh, stringResource(R.string.short_urls_refresh))
-                    }
-                },
-            )
-        },
-        snackbarHost = {
-            if (sortError) {
-                Snackbar(
-                    modifier = Modifier.padding(16.dp),
-                    action = {
-                        TextButton(onClick = onDismissSortError) { Text(stringResource(R.string.short_urls_dismiss)) }
                     },
-                ) { Text(stringResource(R.string.short_urls_sort_error)) }
-            } else {
-                SnackbarHost(snackbar)
-            }
-        },
-    ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            Text(
-                shortUrlSortLabel(sort),
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-            OutlinedTextField(
-                value = search,
-                onValueChange = onSearchChange,
-                label = { Text(stringResource(R.string.short_urls_search)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-            PullToRefreshBox(
-                isRefreshing = refresh is LoadState.Loading,
-                onRefresh = urls::refresh,
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 96.dp),
-                ) {
-                    if (refresh is LoadState.Error) {
-                        item { LoadError(refresh.error, urls::retry) }
-                    }
-                    if (refresh is LoadState.NotLoading && urls.itemCount == 0) {
-                        item {
-                            Text(
-                                stringResource(
-                                    when {
-                                        serverName == null -> R.string.short_urls_no_server
-                                        search.isBlank() -> R.string.short_urls_empty
-                                        else -> R.string.short_urls_no_results
+                    navigationIcon = {
+                        if (menuStyle == NavigationMenuStyle.DRAWER) {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(Icons.Filled.Menu, stringResource(R.string.menu_open))
+                            }
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { sortMenu = true }, enabled = !sortSaving) {
+                            Icon(Icons.AutoMirrored.Filled.Sort, stringResource(R.string.short_urls_sort))
+                        }
+                        DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
+                            ShortUrlSort.entries.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(shortUrlSortLabel(option)) },
+                                    leadingIcon = {
+                                        if (sort == option) Icon(Icons.Outlined.CheckCircle, contentDescription = null)
                                     },
-                                ),
-                                modifier = Modifier.padding(24.dp),
-                            )
+                                    onClick = {
+                                        sortMenu = false
+                                        onSortChange(option)
+                                    },
+                                )
+                            }
                         }
-                    }
-                    items(count = urls.itemCount) { index ->
-                        urls[index]?.let { url ->
-                            ShortUrlRow(url, onCopy, onOpen, onShare, onDetails, onQr = { qrUrl = it })
-                            HorizontalDivider()
+                        IconButton(onClick = refreshAll, enabled = refresh !is LoadState.Loading) {
+                            Icon(Icons.Outlined.Refresh, stringResource(R.string.short_urls_refresh))
                         }
-                    }
-                    when (val append = urls.loadState.append) {
-                        is LoadState.Loading -> item {
-                            CircularProgressIndicator(Modifier.padding(16.dp))
+                        if (menuStyle == NavigationMenuStyle.OVERFLOW) {
+                            IconButton(onClick = { overflowMenu = true }) {
+                                Icon(Icons.Filled.MoreVert, stringResource(R.string.menu_more))
+                            }
+                            DropdownMenu(expanded = overflowMenu, onDismissRequest = { overflowMenu = false }) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.menu_servers)) },
+                                    leadingIcon = { Icon(Icons.Outlined.Dns, contentDescription = null) },
+                                    onClick = { navigate(onServers) },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.menu_settings)) },
+                                    leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
+                                    onClick = { navigate(onSettings) },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.menu_about)) },
+                                    leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) },
+                                    onClick = { navigate(onAbout) },
+                                )
+                            }
                         }
-                        is LoadState.Error -> item { LoadError(append.error, urls::retry) }
-                        is LoadState.NotLoading -> Unit
+                    },
+                )
+            },
+            snackbarHost = {
+                if (sortError) {
+                    Snackbar(
+                        modifier = Modifier.padding(16.dp),
+                        action = {
+                            TextButton(onClick = onDismissSortError) {
+                                Text(stringResource(R.string.short_urls_dismiss))
+                            }
+                        },
+                    ) { Text(stringResource(R.string.short_urls_sort_error)) }
+                } else {
+                    SnackbarHost(snackbar)
+                }
+            },
+        ) { padding ->
+            Column(Modifier.fillMaxSize().padding(padding)) {
+                Text(
+                    shortUrlSortLabel(sort),
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+                if (overview.visible) ServerOverviewRow(overview, onRetryOverview)
+                OutlinedTextField(
+                    value = search,
+                    onValueChange = onSearchChange,
+                    label = { Text(stringResource(R.string.short_urls_search)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+                PullToRefreshBox(
+                    isRefreshing = refresh is LoadState.Loading,
+                    onRefresh = refreshAll,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 96.dp),
+                    ) {
+                        if (refresh is LoadState.Error) {
+                            item { LoadError(refresh.error, urls::retry) }
+                        }
+                        if (refresh is LoadState.NotLoading && urls.itemCount == 0) {
+                            item {
+                                Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    Text(
+                                        stringResource(
+                                            when {
+                                                serverName == null -> R.string.short_urls_no_server
+                                                search.isBlank() -> R.string.short_urls_empty
+                                                else -> R.string.short_urls_no_results
+                                            },
+                                        ),
+                                    )
+                                    if (serverName == null) {
+                                        Button(onClick = onAddServer) {
+                                            Text(stringResource(R.string.short_urls_add_server))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        items(count = urls.itemCount) { index ->
+                            urls[index]?.let { url ->
+                                ShortUrlRow(url, onCopy, onOpen, onShare, onDetails, onQr = { qrUrl = it })
+                                HorizontalDivider()
+                            }
+                        }
+                        when (val append = urls.loadState.append) {
+                            is LoadState.Loading -> item {
+                                CircularProgressIndicator(Modifier.padding(16.dp))
+                            }
+                            is LoadState.Error -> item { LoadError(append.error, urls::retry) }
+                            is LoadState.NotLoading -> Unit
+                        }
                     }
                 }
             }
+        }
+    }
+    if (menuStyle == NavigationMenuStyle.DRAWER) {
+        BackHandler(enabled = drawerState.isOpen) { scope.launch { drawerState.close() } }
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                ModalDrawerSheet {
+                    Text(
+                        stringResource(R.string.menu_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(horizontal = 28.dp, vertical = 16.dp),
+                    )
+                    NavigationDrawerItem(
+                        label = { Text(stringResource(R.string.menu_servers)) },
+                        icon = { Icon(Icons.Outlined.Dns, contentDescription = null) },
+                        selected = false,
+                        onClick = { navigate(onServers) },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    )
+                    NavigationDrawerItem(
+                        label = { Text(stringResource(R.string.menu_settings)) },
+                        icon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
+                        selected = false,
+                        onClick = { navigate(onSettings) },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    )
+                    NavigationDrawerItem(
+                        label = { Text(stringResource(R.string.menu_about)) },
+                        icon = { Icon(Icons.Outlined.Info, contentDescription = null) },
+                        selected = false,
+                        onClick = { navigate(onAbout) },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    )
+                }
+            },
+        ) { screen() }
+    } else {
+        screen()
+    }
+}
+
+@Composable
+private fun ServerOverviewRow(state: ServerOverviewState, onRetry: () -> Unit) {
+    val placeholder = if (state.loading) "…" else "–"
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val counts = state.overview
+            OverviewStat(R.string.overview_shlinks, counts?.shlinks?.toString() ?: placeholder, Modifier.weight(1f))
+            OverviewStat(R.string.overview_clicks, counts?.humanClicks?.toString() ?: placeholder, Modifier.weight(1f))
+            OverviewStat(R.string.overview_tags, counts?.tags?.toString() ?: placeholder, Modifier.weight(1f))
+        }
+        if (state.error != null && !state.loading) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.overview_error),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onRetry) { Text(stringResource(R.string.short_urls_retry)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OverviewStat(label: Int, value: String, modifier: Modifier) {
+    Surface(
+        modifier = modifier.semantics(mergeDescendants = true) {},
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Text(value, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(stringResource(label), style = MaterialTheme.typography.labelSmall)
         }
     }
 }

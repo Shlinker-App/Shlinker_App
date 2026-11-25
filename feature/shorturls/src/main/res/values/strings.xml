@@ -10,8 +10,6 @@
     <string name="shared_interrupted">A previous creation attempt may already have reached the server. Check your shlinks in the app before sharing the URL again. This form will not repeat the request.</string>
     <string name="shared_domain">Short URL domain: %1$s</string>
     <string name="shared_defaults_hint">Uses your app tag and new-shlink defaults. Further settings are available afterwards in Details.</string>
-    <string name="shared_copy">Copy</string>
-    <string name="shared_share">Share</string>
     <string name="shared_cancel">Cancel</string>
     <string name="shared_action_error">Could not open Android sharing. No compatible app is available or Android denied the action. You can still copy the short URL.</string>
     <string name="create_details_hint">Keep creation quick: validity dates, visit limits and further settings can be adjusted afterwards in the shlink details.</string>
@@ -131,7 +129,6 @@
     <string name="stats_invalid">The server returned missing, invalid or inconsistent visit counts. Refresh to try again; no zero values were assumed.</string>
     <string name="stats_load_error">Could not load visit statistics. Check your connection and try again.</string>
     <string name="delete_action">Delete shlink</string>
-    <string name="delete_title">DANGER ZONE</string>
     <string name="delete_warning">Permanently delete this shlink and its visit history from the server? The short URL will stop working. This cannot be undone.</string>
     <string name="delete_confirm">Delete permanently</string>
     <string name="delete_threshold">Shlink refused deletion because this link exceeds the server’s visit threshold. The app will not bypass that protection.</string>
@@ -236,7 +233,6 @@
     <string name="create_error_server">Shlink could not complete the request. Check the list before trying again.</string>
     <string name="create_error_uncertain">The result could not be confirmed. The shlink may already have been created. Go back and check the refreshed list before trying again.</string>
     <string name="short_urls_title">Shlinks</string>
-    <string name="short_urls_back">Back to server overview</string>
     <string name="short_urls_refresh">Refresh</string>
     <string name="short_urls_sort">Sort shlinks</string>
     <string name="short_urls_sort_newest">Newest first</string>
@@ -248,7 +244,7 @@
     <string name="short_urls_search">Search shlinks</string>
     <string name="short_urls_empty">No shlinks on this server yet.</string>
     <string name="short_urls_no_results">No matching shlinks found.</string>
-    <string name="short_urls_no_server">No active server. Please select a server.</string>
+    <string name="short_urls_no_server">No server configured. Add a server to get started.</string>
     <string name="short_urls_copy">Copy %1$s</string>
     <string name="short_urls_share">Share %1$s</string>
     <string name="short_urls_open">Open %1$s in browser</string>
@@ -267,4 +263,15 @@
     <string name="short_urls_certificate">The TLS certificate could not be verified. Check the certificate, server address and device time.</string>
     <string name="short_urls_http_error">The server returned HTTP %1$d. Shlinks could not be loaded.</string>
     <string name="short_urls_load_error">Shlinks could not be loaded. Please try again.</string>
+    <string name="short_urls_add_server">Add server</string>
+    <string name="menu_title">Shlinker</string>
+    <string name="menu_open">Open menu</string>
+    <string name="menu_more">More options</string>
+    <string name="menu_servers">Servers</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_about">About</string>
+    <string name="overview_shlinks">Shlinks</string>
+    <string name="overview_clicks">Clicks</string>
+    <string name="overview_tags">Tags</string>
+    <string name="overview_error">Could not load the server overview.</string>
 </resources>

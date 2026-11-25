@@ -34,12 +34,20 @@ class ShortUrlRepository @Inject constructor(
         searchTerm: String,
         sort: ShortUrlSort = ShortUrlSort.NEWEST,
     ): Flow<PagingData<ShortUrl>> = Pager(
-        config = PagingConfig(pageSize = PAGE_SIZE, initialLoadSize = PAGE_SIZE, enablePlaceholders = false),
+        config = PagingConfig(
+            pageSize = PAGE_SIZE,
+            prefetchDistance = PREFETCH_DISTANCE,
+            initialLoadSize = PAGE_SIZE,
+            enablePlaceholders = false,
+        ),
         pagingSourceFactory = { ShortUrlPagingSource(server, searchTerm, profiles, service, sort) },
     ).flow
 
     internal companion object {
-        const val PAGE_SIZE = 30
+        const val PAGE_SIZE = 50
+
+        // Loads the next page while 30 rows remain, but not before scrolling starts on a phone-sized list.
+        const val PREFETCH_DISTANCE = 30
     }
 }
 

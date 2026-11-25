@@ -3,6 +3,8 @@ package app.shlinker.core.data
 import app.shlinker.core.datastore.StoredServer
 import app.shlinker.core.datastore.StoredServers
 import app.shlinker.core.model.AppTagSettings
+import app.shlinker.core.model.DisplaySettings
+import app.shlinker.core.model.NavigationMenuStyle
 import app.shlinker.core.model.ServerSort
 import app.shlinker.core.model.ShlinkDefaults
 import app.shlinker.core.model.ShortUrlSort
@@ -63,5 +65,17 @@ class AppTagSettingsRepositoryTest {
         assertEquals(ShlinkDefaults(true, false), repo.preferences.first().shlinkDefaults)
         repo.save(AppTagSettings(), ShlinkDefaults(false, null))
         assertEquals(ShlinkDefaults(false, null), repo.preferences.first().shlinkDefaults)
+    }
+
+    @Test fun displaySettingsDefaultToVisibleOverviewAndDrawerAndPersistOnlyWhenGiven() = runTest {
+        val store = InMemoryDataStore(StoredServers())
+        val repo = AppTagSettingsRepository(store)
+        assertEquals(DisplaySettings(true, NavigationMenuStyle.DRAWER), repo.display.first())
+        val changed = DisplaySettings(false, NavigationMenuStyle.OVERFLOW)
+        repo.save(AppTagSettings(), ShlinkDefaults(), changed)
+        assertEquals(changed, AppTagSettingsRepository(store).display.first())
+        assertEquals(changed, repo.preferences.first().display)
+        repo.save(AppTagSettings(), ShlinkDefaults(true, null))
+        assertEquals(changed, repo.display.first())
     }
 }

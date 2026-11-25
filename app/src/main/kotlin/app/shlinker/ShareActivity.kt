@@ -17,12 +17,14 @@ class ShareActivity : ComponentActivity() {
         val shared = readIncomingShare(intent)
         setContent {
             ShlinkerTheme {
-                SharedCreateRoute(
-                    url = shared.url,
-                    title = shared.title,
-                    onClose = { finish() },
-                    onOpenApp = { startActivity(Intent(this, MainActivity::class.java)) },
-                )
+                DevsBuildFrame(devsBuildLabel()) {
+                    SharedCreateRoute(
+                        url = shared.url,
+                        title = shared.title,
+                        onClose = { finish() },
+                        onOpenApp = { startActivity(Intent(this, MainActivity::class.java)) },
+                    )
+                }
             }
         }
     }

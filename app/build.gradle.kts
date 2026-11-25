@@ -29,8 +29,8 @@ android {
 
     defaultConfig {
         applicationId = "app.shlinker"
-        versionCode = 25
-        versionName = "0.3.1"
+        versionCode = 26
+        versionName = "0.3.2"
     }
 
     signingConfigs {
@@ -94,6 +94,7 @@ androidComponents {
 dependencies {
     implementation(projects.core.ui)
     implementation(projects.core.data)
+    implementation(projects.core.datastore)
     implementation(projects.feature.servers)
     implementation(projects.feature.shorturls)
 
@@ -110,7 +111,6 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.reorderable)
     testImplementation(libs.junit)
-    testImplementation(projects.core.datastore)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)

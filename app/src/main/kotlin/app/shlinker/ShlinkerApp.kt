@@ -13,18 +13,20 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import app.shlinker.about.AboutRoute as AboutScreenRoute
 import app.shlinker.feature.servers.AddServerRoute as AddServerScreenRoute
 import app.shlinker.feature.shorturls.CreateShortUrlRoute as CreateShortUrlScreenRoute
 import app.shlinker.feature.shorturls.RedirectRulesRoute as RedirectRulesScreenRoute
 import app.shlinker.feature.shorturls.ShortUrlDetailsRoute as ShortUrlDetailsScreenRoute
 import app.shlinker.feature.shorturls.ShortUrlsRoute as ShortUrlsScreenRoute
 import app.shlinker.feature.shorturls.VisitStatisticsRoute as VisitStatisticsScreenRoute
-import app.shlinker.home.HomeScreen
+import app.shlinker.home.ServersScreen
+import app.shlinker.navigation.AboutRoute
 import app.shlinker.navigation.AddServerRoute
 import app.shlinker.navigation.CreateShortUrlRoute
 import app.shlinker.navigation.EditServerRoute
-import app.shlinker.navigation.HomeRoute
 import app.shlinker.navigation.RedirectRulesRoute
+import app.shlinker.navigation.ServersRoute
 import app.shlinker.navigation.SettingsRoute
 import app.shlinker.navigation.ShortUrlDetailsRoute
 import app.shlinker.navigation.ShortUrlsRoute
@@ -35,7 +37,7 @@ import app.shlinker.settings.SettingsRoute as SettingsScreenRoute
 fun ShlinkerApp(mainViewModel: MainViewModel) {
     val startState by mainViewModel.startState.collectAsStateWithLifecycle()
     if (startState != StartState.Loading) {
-        AppNavigation(start = if (startState == StartState.NoServer) AddServerRoute else HomeRoute)
+        AppNavigation(start = if (startState == StartState.NoServer) AddServerRoute else ShortUrlsRoute)
     }
 }
 
@@ -55,20 +57,26 @@ private fun AppNavigation(start: NavKey) {
             rememberViewModelStoreNavEntryDecorator(),
         ),
         entryProvider = entryProvider {
-            entry<HomeRoute> {
-                HomeScreen(
+            entry<ServersRoute> {
+                ServersScreen(
+                    onBack = { backStack.removeLastOrNull() },
                     onAddServer = { backStack.add(AddServerRoute) },
-                    onShortUrls = { backStack.add(ShortUrlsRoute) },
+                    onServerSelected = { backStack.removeLastOrNull() },
                     onEditServer = { backStack.add(EditServerRoute(it)) },
-                    onSettings = { backStack.add(SettingsRoute) },
                 )
+            }
+            entry<AboutRoute> {
+                AboutScreenRoute(onBack = { backStack.removeLastOrNull() })
             }
             entry<SettingsRoute> {
                 SettingsScreenRoute(onBack = { backStack.removeLastOrNull() })
             }
             entry<ShortUrlsRoute> {
                 ShortUrlsScreenRoute(
-                    onBack = { backStack.removeLastOrNull() },
+                    onServers = { backStack.add(ServersRoute) },
+                    onSettings = { backStack.add(SettingsRoute) },
+                    onAbout = { backStack.add(AboutRoute) },
+                    onAddServer = { backStack.add(AddServerRoute) },
                     onCreate = { backStack.add(CreateShortUrlRoute(it)) },
                     onDetails = { serverId, url ->
                         backStack.add(ShortUrlDetailsRoute(serverId, url.shortCode, url.domain))
@@ -135,7 +143,7 @@ private fun AppNavigation(start: NavKey) {
                     onSaved = {
                         if (isFirstServer) {
                             backStack.clear()
-                            backStack.add(HomeRoute)
+                            backStack.add(ShortUrlsRoute)
                         } else {
                             backStack.removeLastOrNull()
                         }

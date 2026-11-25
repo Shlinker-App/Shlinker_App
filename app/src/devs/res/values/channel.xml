@@ -2,4 +2,5 @@
 <resources>
     <color name="ic_launcher_background">#FFB3261E</color>
     <string name="app_name">Shlinker DEVS</string>
+    <string name="default_app_tag" translatable="false">shlinker-devs</string>
 </resources>

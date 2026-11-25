@@ -37,16 +37,38 @@ Automated tests (unit tests, lint, ktlint, screenshots) run in CI on top of that
 - [x] Multiple profiles and domains, same short code on different domains
 - [x] Offline and retry: a visible error appears instead of a false success, and retry works once the connection returns
 - [x] Check defaults for new short URLs against server/admin settings, also when sharing
-- [x] Share with one or multiple servers: switching servers preserves input, the link uses the correct domain, and the hostname is visible below the server name and in the dropdown
+- [x] Share with one or multiple servers: switching servers preserves input and the link uses the correct domain
 - [x] Share: rotation, sharing again while the app is open, no duplicate after a cancelled request
-- [x] Share success screen: copy and share icons work, and the QR code resolves to the correct short URL
+
+New in 0.3.2, still to be checked on a device:
+
+- [ ] Share: the hostname is visible below the server name and in the server dropdown
+- [ ] Share success screen: copy and share icons work, and the QR code resolves to the correct short URL
+- [ ] Share screen in dark mode: all text, icons and hints are readable
+- [ ] App start opens the active server's Shlink list; the first server setup also leads there
+- [ ] Side menu and top bar menu both open **Servers** and **Settings**; the style can be switched in Settings
+- [ ] Servers: tapping a server selects it and returns to its Shlink list; the back arrow changes nothing
+- [ ] Overview matches the server (shlinks, clicks without bots, tags), updates on refresh and can be hidden
+- [ ] A server with more than 50 shlinks loads further pages while scrolling, without visible waiting
+- [ ] Deleting a server, a shlink or a redirect rule shows the red frame and the centered **DANGER ZONE** title;
+  Cancel changes nothing
+- [ ] Fresh DEVS install: the app tag in Settings defaults to `shlinker-devs`
+- [ ] About: opens from both menu styles; the Forgejo, issue and license links open in the browser;
+  the DEVS warning is visible
+- [ ] DEVS build: the red `DEVS build v<version>` banner is centered at the bottom of every screen,
+  including the share screen, and covers no content or buttons, also with the keyboard open
 
 Optional: edge cases for domain selection, tags, delete, QR codes and statistics
 (custom domains, rotation, dark mode, errors/retry).
 
+## Upcoming (0.3.x)
+
+- [ ] Redirect rules: escaping of free-text condition values (query parameter keys and values, language,
+  IP address and similar). Save rules with regex-like input such as `^a.*b$`, `\d+`, `[a-z]`, `(x|y)`,
+  URL-sensitive characters such as `?`, `&`, `=`, `#`, `%20`, `+`, `/`, plus quotes, spaces and umlauts.
+  Check that each value is stored exactly as entered, appears unchanged after reloading in the app and in
+  the Shlink web app, and that the redirect behaves as expected.
+
 ## Pre-release
 
 - [ ] Verify the TalkBack labels for the copy and share icons once the final text is ready.
-
-## Repo Mirror Sync-Push-Test 2 Github
-- Auto-Sync-Test #2

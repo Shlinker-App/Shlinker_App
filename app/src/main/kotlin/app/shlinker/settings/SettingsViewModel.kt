@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.shlinker.core.data.AppTagSettingsRepository
 import app.shlinker.core.model.AppTagSettings
+import app.shlinker.core.model.DisplaySettings
 import app.shlinker.core.model.ShlinkDefaults
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.IOException
@@ -16,6 +17,7 @@ import kotlinx.coroutines.launch
 data class SettingsState(
     val appTag: AppTagSettings = AppTagSettings(),
     val defaults: ShlinkDefaults = ShlinkDefaults(),
+    val display: DisplaySettings = DisplaySettings(),
     val loading: Boolean = true,
     val saving: Boolean = false,
     val loadFailed: Boolean = false,
@@ -42,6 +44,7 @@ class SettingsViewModel @Inject constructor(private val repository: AppTagSettin
                 _state.value = SettingsState(
                     appTag = preferences.appTag,
                     defaults = preferences.shlinkDefaults,
+                    display = preferences.display,
                     loading = false,
                 )
             } catch (_: IOException) {
@@ -65,7 +68,7 @@ class SettingsViewModel @Inject constructor(private val repository: AppTagSettin
         _state.value = state.copy(saving = true, saveFailed = false, saved = false)
         viewModelScope.launch {
             try {
-                repository.save(state.appTag, state.defaults)
+                repository.save(state.appTag, state.defaults, state.display)
                 _state.value = _state.value.copy(
                     appTag = state.appTag.copy(name = state.appTag.name.trim()),
                     saving = false,
@@ -80,5 +83,10 @@ class SettingsViewModel @Inject constructor(private val repository: AppTagSettin
     fun changeDefaults(value: ShlinkDefaults) {
         if (_state.value.loading || _state.value.saving || _state.value.loadFailed) return
         _state.value = _state.value.copy(defaults = value, saveFailed = false, saved = false)
+    }
+
+    fun changeDisplay(value: DisplaySettings) {
+        if (_state.value.loading || _state.value.saving || _state.value.loadFailed) return
+        _state.value = _state.value.copy(display = value, saveFailed = false, saved = false)
     }
 }

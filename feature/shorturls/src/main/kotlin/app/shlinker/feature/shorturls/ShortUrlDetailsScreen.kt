@@ -54,6 +54,7 @@ import app.shlinker.core.network.InvalidShortUrlResponseException
 import app.shlinker.core.network.ShortUrlRequestException
 import app.shlinker.core.network.UpdateShortUrlException
 import app.shlinker.core.network.UpdateShortUrlFailure
+import app.shlinker.core.ui.DangerZoneDialog
 
 @Composable
 fun ShortUrlDetailsRoute(
@@ -131,9 +132,8 @@ internal fun ShortUrlDetailsScreen(
         val maxDialogTextHeight = with(LocalDensity.current) {
             LocalWindowInfo.current.containerSize.height.toDp() * 0.6f
         }
-        AlertDialog(
+        DangerZoneDialog(
             onDismissRequest = onCancelDelete,
-            title = { Text(stringResource(R.string.delete_title)) },
             text = {
                 Column(
                     Modifier.heightIn(max = maxDialogTextHeight)

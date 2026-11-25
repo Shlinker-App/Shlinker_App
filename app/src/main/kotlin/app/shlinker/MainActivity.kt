@@ -17,7 +17,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             ShlinkerTheme {
-                ShlinkerApp(mainViewModel)
+                DevsBuildFrame(devsBuildLabel()) {
+                    ShlinkerApp(mainViewModel)
+                }
             }
         }
     }

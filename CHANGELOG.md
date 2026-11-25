@@ -2,6 +2,59 @@
 
 Every version before 1.0.0 is a development snapshot.
 
+## 0.3.2 – 2026-11-25
+
+### App
+
+- The app opens the Shlink list of the active server instead of the server list.
+- The back arrow in the Shlink list is replaced by a menu with **Servers**, **Settings** and **About**.
+  A side menu and a top bar menu can be compared in Settings.
+- The server list is now called **Servers** and has a back arrow. Tapping a server makes it active and returns
+  to its Shlinks. The “Show shlinks” button and the settings shortcut were removed; both are in the menu now.
+- Without a server, the Shlink list offers an “Add server” button.
+- Optional server overview between the sort hint and the search field: total Shlinks, clicks without bots and
+  orphan visits, and tags. It reloads with the list and can be turned off in Settings.
+- The Shlink list loads 50 Shlinks per request instead of 30 and fetches the next page well before the end
+  of the list, but only once scrolling starts.
+- Deleting a server, a Shlink or a redirect rule asks for confirmation in a red-framed dialog with a centered
+  DANGER ZONE title. Deleting a server previously used a plain dialog.
+- New About page with the version, links to the source code and issues on Forgejo, and the license.
+
+### Sharing
+
+- The server hostname appears below the server name and in the server selection.
+- Copy and share are icon buttons with accessibility labels.
+- The success screen shows a QR code, generated on the device.
+- Fixed: text and icons on the share screen were dark on a dark background and hard to read in dark mode.
+  After creating a Shlink, the server name and hostname were shown faded; they are now regular text.
+
+### Settings
+
+- New **Shlink list** section with the server overview switch and the menu style.
+- The back button is labeled “Back”, since Settings is no longer opened from the server overview.
+
+### DEVS builds
+
+- Red `DEVS build v<version>` banner at the bottom of every screen, including the share screen.
+- New installs use the app tag `shlinker-devs` by default; existing settings are kept.
+- The About page shows a warning that this is a DEVS build.
+
+### Project and CI
+
+- Version 0.3.2 (versionCode 26).
+- Code comments, test names, diagnostics, and build and CI messages are now in English.
+  CONTRIBUTING.md describes the writing style and the UI conventions (Danger Zone, DEVS banner,
+  channel-specific values).
+- Issue forms for bug reports, feature requests and feedback on Forgejo and GitHub, with default labels.
+  A GitHub workflow sets the issue type from the label.
+- Issues are synchronized between Forgejo and GitHub; see CONTRIBUTING.md and
+  `docs/maintainers/repo-workflow.md`.
+- CI skips runs for documentation-only changes. The release workflow no longer overwrites a version that
+  is already published in the package registry.
+- Each dev build is also published as a Forgejo pre-release with its changelog section, the APK and its
+  SHA-256 file. A tag without a matching changelog section fails before building.
+- README rewritten with the new logo and badges; the local badge files were removed.
+
 ## 0.3.1 – 2026-11-17
 
 - Separate app IDs for dev (`app.shlinker.devs`), nightly (`app.shlinker.nightly`),

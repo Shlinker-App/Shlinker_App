@@ -11,7 +11,13 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Qualifier
 import javax.inject.Singleton
+
+/** App tag for a fresh install; each release channel provides its own value. */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DefaultAppTagName
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -19,12 +25,17 @@ object DataStoreModule {
 
     @Provides
     @Singleton
-    fun provideServersDataStore(@ApplicationContext context: Context): DataStore<StoredServers> =
-        DataStoreFactory.create(
-            serializer = JsonSerializer(StoredServers.serializer(), StoredServers()),
-            corruptionHandler = ReplaceFileCorruptionHandler { StoredServers() },
+    fun provideServersDataStore(
+        @ApplicationContext context: Context,
+        @DefaultAppTagName defaultAppTag: String,
+    ): DataStore<StoredServers> {
+        val defaults = StoredServers(appTagName = defaultAppTag)
+        return DataStoreFactory.create(
+            serializer = JsonSerializer(StoredServers.serializer(), defaults),
+            corruptionHandler = ReplaceFileCorruptionHandler { defaults },
             produceFile = { context.dataStoreFile("servers.json") },
         )
+    }
 
     @Provides
     @Singleton

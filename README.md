@@ -84,7 +84,7 @@ Like the project? A star on GitHub or Forgejo, a shared link, or a useful bug re
 
 ## 📦 Download
 
-Dev builds are available in the [Forgejo package registry](https://code.awit.at/Shlinker/-/packages/generic/shlinker-devs), each with a SHA-256 checksum.
+Dev builds are available in the [Forgejo package registry](https://code.awit.at/Shlinker/-/packages/generic/shlinker-devs), each with a SHA-256 checksum. From 0.3.2 on, each dev build also appears as a [pre-release](https://code.awit.at/Shlinker/Shlinker_App/releases) with its changelog.
 
 These are development builds, not stable releases. Feedback and reproducible bug reports are welcome.
 
@@ -107,7 +107,7 @@ SHA-256 fingerprint of the dev signing key:
 | Nightly | `app.shlinker.nightly` | Blue, “Nightly”, non-themed | Pre-releases, planned                         |
 | Stable  | `app.shlinker`         | Green, themed               | Releases starting with 1.0.0                  |
 
-The channels use separate app IDs and can be installed side by side. Debug and release builds within a channel share an app ID but use different signing keys, so switching between them requires a reinstall.
+The channels use separate app IDs and can be installed side by side. Dev builds show a red “DEVS build” banner at the bottom of every screen. Debug and release builds within a channel share an app ID but use different signing keys, so switching between them requires a reinstall.
 
 ## 🗓️ Roadmap and development pace
 

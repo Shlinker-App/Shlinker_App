@@ -33,6 +33,8 @@ import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.paging.compose.collectAsLazyPagingItems
+import app.shlinker.core.model.NavigationMenuStyle
+import app.shlinker.core.model.ServerOverview
 import app.shlinker.core.model.ShortUrl
 import app.shlinker.core.model.ShortUrlSort
 import app.shlinker.core.network.ConnectionError
@@ -65,7 +67,10 @@ class ShortUrlsScreenTest {
     private var opened: String? = null
     private var shared: String? = null
     private var query: String? = null
-    private var wentBack = false
+    private var openedServers = 0
+    private var openedSettings = 0
+    private var openedAbout = 0
+    private var addedServer = 0
     private var creating = false
     private var selectedSort: ShortUrlSort? = null
     private var primary = Color.Unspecified
@@ -79,7 +84,15 @@ class ShortUrlsScreenTest {
         ),
     )
 
-    private fun screen(flow: Flow<PagingData<ShortUrl>>, search: String = "", sortError: Boolean = false) {
+    private fun screen(
+        flow: Flow<PagingData<ShortUrl>>,
+        search: String = "",
+        sortError: Boolean = false,
+        serverName: String? = "Test server",
+        menuStyle: NavigationMenuStyle = NavigationMenuStyle.DRAWER,
+        overview: ServerOverviewState = ServerOverviewState(),
+        onRetryOverview: () -> Unit = {},
+    ) {
         restoration.setContent {
             var sort by remember { mutableStateOf(ShortUrlSort.NEWEST) }
             var error by remember { mutableStateOf(sortError) }
@@ -89,9 +102,15 @@ class ShortUrlsScreenTest {
                 ShortUrlsScreen(
                     urls = flow.collectAsLazyPagingItems(),
                     search = search,
-                    serverName = "Test server",
+                    serverName = serverName,
                     onSearchChange = { query = it },
-                    onBack = { wentBack = true },
+                    menuStyle = menuStyle,
+                    onServers = { openedServers++ },
+                    onSettings = { openedSettings++ },
+                    onAbout = { openedAbout++ },
+                    onAddServer = { addedServer++ },
+                    overview = overview,
+                    onRetryOverview = onRetryOverview,
                     onCreate = { creating = true },
                     onCopy = { copied = it },
                     onOpen = { opened = it },
@@ -212,8 +231,9 @@ class ShortUrlsScreenTest {
         assertText("Visits: 12345678901")
         compose.onNodeWithContentDescription("Copy https://s.example/abc").performClick()
         assertEquals("https://s.example/abc", copied)
-        compose.onNodeWithContentDescription("Back to server overview").performClick()
-        assertTrue(wentBack)
+        compose.onNodeWithContentDescription("Open menu").performClick()
+        compose.onNodeWithText("Servers").performClick()
+        assertEquals(1, openedServers)
     }
 
     @Test fun openShareAndCopyAreIndependentForTitledAndTitlelessShlinks() {
@@ -358,7 +378,74 @@ class ShortUrlsScreenTest {
         assertText("Shlinks")
         assertText("Server: Test server")
         assertText("No shlinks on this server yet.")
-        compose.onNodeWithContentDescription("Back to server overview").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Open menu").assertIsDisplayed()
+        compose.onNodeWithContentDescription("More options").assertDoesNotExist()
+    }
+
+    @Test fun drawerOffersServersSettingsAndAbout() {
+        screen(flowOf(loadedEmpty))
+        compose.onNodeWithContentDescription("Open menu").performClick()
+        compose.onNodeWithText("Settings").performClick()
+        compose.onNodeWithContentDescription("Open menu").performClick()
+        compose.onNodeWithText("About").performClick()
+        assertEquals(1, openedSettings)
+        assertEquals(1, openedAbout)
+        assertEquals(0, openedServers)
+    }
+
+    @Test fun overflowMenuReplacesDrawerAndOffersServersAndSettings() {
+        screen(flowOf(loadedEmpty), menuStyle = NavigationMenuStyle.OVERFLOW)
+        compose.onNodeWithContentDescription("Open menu").assertDoesNotExist()
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Servers").performClick()
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Settings").performClick()
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("About").performClick()
+        assertEquals(1, openedServers)
+        assertEquals(1, openedSettings)
+        assertEquals(1, openedAbout)
+    }
+
+    @Test fun overviewShowsCountsBetweenSortHintAndSearch() {
+        screen(
+            flowOf(loadedEmpty),
+            overview = ServerOverviewState(true, "1", ServerOverview(1234, 567, 8)),
+        )
+        assertText("1234")
+        assertText("567")
+        assertText("8")
+        assertText("Clicks")
+        val sortHint = compose.onNodeWithText("Newest first").fetchSemanticsNode().boundsInRoot
+        val counts = compose.onNodeWithText("1234", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val search = compose.onNodeWithText("Search shlinks").fetchSemanticsNode().boundsInRoot
+        assertTrue(sortHint.bottom <= counts.top)
+        assertTrue(counts.bottom <= search.top)
+    }
+
+    @Test fun hiddenOverviewIsNotShown() {
+        screen(flowOf(loadedEmpty))
+        assertText("Newest first")
+        compose.onNodeWithText("Clicks").assertDoesNotExist()
+    }
+
+    @Test fun failedOverviewCanBeRetried() {
+        var retried = 0
+        screen(
+            flowOf(loadedEmpty),
+            overview = ServerOverviewState(true, "1", error = java.io.IOException("offline")),
+            onRetryOverview = { retried++ },
+        )
+        assertText("Could not load the server overview.")
+        compose.onNodeWithText("Try again").performClick()
+        assertEquals(1, retried)
+    }
+
+    @Test fun missingServerOffersAddingOne() {
+        screen(flowOf(loadedEmpty), serverName = null)
+        assertText("No server configured. Add a server to get started.")
+        compose.onNodeWithText("Add server").performClick()
+        assertEquals(1, addedServer)
     }
 
     @Test fun buttonAndPullGestureLoadFreshData() {

@@ -4,6 +4,8 @@ import androidx.datastore.core.DataStore
 import app.shlinker.core.data.AppTagSettingsRepository
 import app.shlinker.core.datastore.StoredServers
 import app.shlinker.core.model.AppTagSettings
+import app.shlinker.core.model.DisplaySettings
+import app.shlinker.core.model.NavigationMenuStyle
 import app.shlinker.core.model.ShlinkDefaults
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
@@ -64,6 +66,19 @@ class SettingsViewModelTest {
         assertEquals(vm.state.value.appTag, reopened.state.value.appTag)
         assertEquals(ShlinkDefaults(true, false), reopened.state.value.defaults)
         assertEquals(1, writes)
+    }
+
+    @Test fun displaySettingsLoadAndSaveWithTheForm() = runTest(dispatcher) {
+        stored = stored.copy(showServerOverview = false)
+        val vm = SettingsViewModel(repository)
+        advanceUntilIdle()
+        assertEquals(DisplaySettings(false, NavigationMenuStyle.DRAWER), vm.state.value.display)
+        vm.changeDisplay(DisplaySettings(true, NavigationMenuStyle.OVERFLOW))
+        assertEquals(0, writes)
+        vm.save()
+        advanceUntilIdle()
+        assertEquals(true, stored.showServerOverview)
+        assertEquals(NavigationMenuStyle.OVERFLOW, stored.navigationMenu)
     }
 
     @Test fun loadFailureCannotSaveDefaultsAndRetryLoadsPersistedValues() = runTest(dispatcher) {

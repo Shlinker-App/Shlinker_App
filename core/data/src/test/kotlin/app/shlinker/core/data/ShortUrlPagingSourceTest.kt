@@ -92,7 +92,7 @@ class ShortUrlPagingSourceTest {
                 PagingSource.LoadParams.Append(3, 30, false),
             ),
         )
-        assertEquals(listOf("https://s.example", "key", 1, 30, "query"), calls.first())
+        assertEquals(listOf("https://s.example", "key", 1, 50, "query"), calls.first())
         assertEquals(listOf(1, 2, 3), calls.map { it[2] })
     }
 

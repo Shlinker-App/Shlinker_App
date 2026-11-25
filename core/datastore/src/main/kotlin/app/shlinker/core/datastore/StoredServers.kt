@@ -1,5 +1,6 @@
 package app.shlinker.core.datastore
 
+import app.shlinker.core.model.NavigationMenuStyle
 import app.shlinker.core.model.ServerSort
 import app.shlinker.core.model.ShortUrlSort
 import kotlinx.serialization.Serializable
@@ -17,6 +18,8 @@ data class StoredServers(
     val appTagName: String = "shlinker",
     val forwardQuery: Boolean = false,
     val crawlable: Boolean? = null,
+    val showServerOverview: Boolean = true,
+    val navigationMenu: NavigationMenuStyle = NavigationMenuStyle.DRAWER,
 ) {
     companion object {
         const val CURRENT_VERSION = 1

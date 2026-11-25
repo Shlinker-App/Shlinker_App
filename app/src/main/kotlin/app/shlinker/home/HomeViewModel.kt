@@ -11,11 +11,13 @@ import app.shlinker.core.model.ServerSort
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.IOException
 import javax.inject.Inject
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -39,6 +41,10 @@ data class ServerActionState(
 class HomeViewModel @Inject constructor(private val repository: ServerProfileRepository) : ViewModel() {
     private val _action = MutableStateFlow(ServerActionState())
     val action = _action.asStateFlow()
+    private val _selected = Channel<Unit>(Channel.BUFFERED)
+
+    /** Emits once a tapped server has been saved as the active server. */
+    val selected = _selected.receiveAsFlow()
     val state: StateFlow<HomeUiState> = combine(repository.profiles, repository.activeProfile, repository.sort) {
             all,
             active,
@@ -47,8 +53,11 @@ class HomeViewModel @Inject constructor(private val repository: ServerProfileRep
         HomeUiState(all, active?.id, sort)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
-    fun setActive(id: String) {
-        mutate { repository.setActive(id) }
+    fun select(id: String) {
+        mutate {
+            repository.setActive(id)
+            _selected.send(Unit)
+        }
     }
 
     fun setSort(sort: ServerSort) {

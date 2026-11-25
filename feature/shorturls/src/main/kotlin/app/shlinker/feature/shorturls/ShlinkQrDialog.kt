@@ -38,10 +38,6 @@ import kotlinx.coroutines.withContext
 
 @Composable
 internal fun ShlinkQrDialog(shortUrl: String, onDismiss: () -> Unit) {
-    val code by produceState<ShlinkQrCode>(ShlinkQrCode.Loading, shortUrl) {
-        value = ShlinkQrCode.Loading
-        value = withContext(Dispatchers.Default) { generateShlinkQrCode(shortUrl) }
-    }
     val maxHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() * 0.65f }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -54,59 +50,59 @@ internal fun ShlinkQrDialog(shortUrl: String, onDismiss: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 SelectionContainer { Text(shortUrl) }
-                when (val result = code) {
-                    ShlinkQrCode.Loading -> CircularProgressIndicator()
-                    ShlinkQrCode.InvalidUrl -> Text(
-                        stringResource(R.string.qr_invalid),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                    ShlinkQrCode.EncodingFailed -> Text(
-                        stringResource(R.string.qr_failed),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                    is ShlinkQrCode.Ready -> {
-                        val description = stringResource(R.string.qr_description, shortUrl)
-                        BoxWithConstraints(
-                            Modifier.align(Alignment.CenterHorizontally)
-                                .widthIn(max = maxHeight * 0.6f).fillMaxWidth(),
-                        ) {
-                            val modules = result.modules
-                            if (constraints.maxWidth < modules.width) {
-                                Text(
-                                    stringResource(R.string.qr_window_small),
-                                    color = MaterialTheme.colorScheme.error,
-                                )
-                            } else {
-                                Canvas(
-                                    Modifier.fillMaxWidth().aspectRatio(1f)
-                                        .semantics { contentDescription = description },
-                                ) {
-                                    drawRect(Color.White)
-                                    // Whole physical pixels keep edges sharp, including the quiet zone.
-                                    val scale = floor(size.minDimension / modules.width)
-                                    val left = floor((size.width - modules.width * scale) / 2)
-                                    val top = floor((size.height - modules.height * scale) / 2)
-                                    for (y in 0 until modules.height) {
-                                        for (x in 0 until modules.width) {
-                                            if (modules[x, y]) {
-                                                drawRect(
-                                                    Color.Black,
-                                                    Offset(left + x * scale, top + y * scale),
-                                                    Size(scale, scale),
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        Text(stringResource(R.string.qr_hint))
-                    }
-                }
+                ShlinkQrCodeContent(
+                    shortUrl,
+                    Modifier.align(Alignment.CenterHorizontally).widthIn(max = maxHeight * 0.6f).fillMaxWidth(),
+                )
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.qr_close)) }
         },
     )
+}
+
+/** Generates the QR code on the device and shows it with its scanning hint, or an explanation if it fails. */
+@Composable
+internal fun ShlinkQrCodeContent(shortUrl: String, imageModifier: Modifier) {
+    val code by produceState<ShlinkQrCode>(ShlinkQrCode.Loading, shortUrl) {
+        value = ShlinkQrCode.Loading
+        value = withContext(Dispatchers.Default) { generateShlinkQrCode(shortUrl) }
+    }
+    when (val result = code) {
+        ShlinkQrCode.Loading -> CircularProgressIndicator()
+        ShlinkQrCode.InvalidUrl -> Text(stringResource(R.string.qr_invalid), color = MaterialTheme.colorScheme.error)
+        ShlinkQrCode.EncodingFailed -> Text(stringResource(R.string.qr_failed), color = MaterialTheme.colorScheme.error)
+        is ShlinkQrCode.Ready -> {
+            val description = stringResource(R.string.qr_description, shortUrl)
+            BoxWithConstraints(imageModifier) {
+                val modules = result.modules
+                if (constraints.maxWidth < modules.width) {
+                    Text(stringResource(R.string.qr_window_small), color = MaterialTheme.colorScheme.error)
+                } else {
+                    Canvas(
+                        Modifier.fillMaxWidth().aspectRatio(1f).semantics { contentDescription = description },
+                    ) {
+                        drawRect(Color.White)
+                        // Whole physical pixels keep edges sharp, including the quiet zone.
+                        val scale = floor(size.minDimension / modules.width)
+                        val left = floor((size.width - modules.width * scale) / 2)
+                        val top = floor((size.height - modules.height * scale) / 2)
+                        for (y in 0 until modules.height) {
+                            for (x in 0 until modules.width) {
+                                if (modules[x, y]) {
+                                    drawRect(
+                                        Color.Black,
+                                        Offset(left + x * scale, top + y * scale),
+                                        Size(scale, scale),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Text(stringResource(R.string.qr_hint))
+        }
+    }
 }

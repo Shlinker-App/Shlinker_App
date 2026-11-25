@@ -81,6 +81,17 @@ The workflow `.github/workflows/issue-type.yml` runs on GitHub when an issue is 
 
 The CI workflow is `.forgejo/workflows/ci.yml`. It skips runs for changes that only touch the README, `docs/**` and `assets/badges/**`. README badges are served by a self-hosted shields service at `badge.awit.at`.
 
+### DEVS releases
+
+Pushing a tag `vX.Y.Z` runs `.forgejo/workflows/release-devs.yml`:
+
+1. The tag must match `versionName` in `app/build.gradle.kts`.
+2. `CHANGELOG.md` must contain a section that starts with `## X.Y.Z ` (for example `## 0.3.2 – 2026-11-25`). Otherwise the run fails before anything is built.
+3. The signed dev APK is built, its certificate is checked against the fingerprint in the README, and the APK and its SHA-256 file are uploaded to `generic/shlinker-devs/X.Y.Z`. An already published version is never overwritten.
+4. A Forgejo pre-release named “Shlinker DEVS X.Y.Z” is created for the tag. Its text is the changelog section plus the package link and checksum, and the files are attached exactly as published in the package registry. An existing release is left unchanged.
+
+Before tagging: bump `versionName` and `versionCode`, date the changelog section and finish the device checks in `TESTING.md`. Uploads use the `PACKAGES_TOKEN` secret; the pre-release uses the workflow's own token.
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |

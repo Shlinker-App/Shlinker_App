@@ -13,15 +13,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Dns
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,26 +54,28 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.shlinker.R
 import app.shlinker.core.model.ServerProfile
 import app.shlinker.core.model.ServerSort
+import app.shlinker.core.ui.DangerZoneDialog
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
-fun HomeScreen(
+fun ServersScreen(
+    onBack: () -> Unit,
     onAddServer: () -> Unit,
-    onShortUrls: () -> Unit,
+    onServerSelected: () -> Unit,
     onEditServer: (String) -> Unit,
-    onSettings: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val action by viewModel.action.collectAsStateWithLifecycle()
+    LaunchedEffect(viewModel) { viewModel.selected.collect { onServerSelected() } }
     HomeContent(
-        state, action, onAddServer, onShortUrls,
-        viewModel::setActive, viewModel::rename, viewModel::delete,
+        state, action, onAddServer,
+        viewModel::select, viewModel::rename, viewModel::delete,
         viewModel::changeName, viewModel::confirm, viewModel::dismiss,
         viewModel::setSort, viewModel::reorder,
         onEditServer,
-        onSettings,
+        onBack,
     )
 }
 
@@ -84,7 +85,6 @@ internal fun HomeContent(
     state: HomeUiState,
     action: ServerActionState,
     onAddServer: () -> Unit,
-    onShortUrls: () -> Unit,
     onSelect: (String) -> Unit,
     onRename: (ServerProfile) -> Unit,
     onDelete: (ServerProfile) -> Unit,
@@ -94,7 +94,7 @@ internal fun HomeContent(
     onSort: (ServerSort) -> Unit,
     onReorder: (List<String>) -> Unit,
     onEditServer: (String) -> Unit = {},
-    onSettings: () -> Unit = {},
+    onBack: () -> Unit = {},
 ) {
     var displayed by remember { mutableStateOf(state.servers) }
     var dragging by remember { mutableStateOf(false) }
@@ -117,11 +117,13 @@ internal fun HomeContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
-                actions = {
-                    IconButton(onClick = onSettings, enabled = controlsEnabled) {
-                        Icon(Icons.Outlined.Settings, stringResource(R.string.settings_title))
+                title = { Text(stringResource(R.string.servers_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack, enabled = controlsEnabled) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.servers_back))
                     }
+                },
+                actions = {
                     IconButton(onClick = { sortMenu = true }, enabled = controlsEnabled) {
                         Icon(Icons.AutoMirrored.Filled.Sort, stringResource(R.string.home_sort))
                     }
@@ -171,14 +173,11 @@ internal fun HomeContent(
             contentPadding = PaddingValues(bottom = 96.dp),
         ) {
             item {
-                Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    Text(
-                        stringResource(R.string.home_servers),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(serverSortLabel(state.sort), style = MaterialTheme.typography.bodySmall)
-                }
+                Text(
+                    serverSortLabel(state.sort),
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
             }
             if (state.servers.isEmpty()) {
                 item { Text(stringResource(R.string.home_empty), Modifier.padding(16.dp)) }
@@ -290,51 +289,53 @@ internal fun HomeContent(
                     )
                 }
             }
-            item {
-                Button(
-                    onClick = onShortUrls,
-                    enabled = state.activeId != null && controlsEnabled,
-                    modifier = Modifier.padding(16.dp),
-                ) {
-                    Text(stringResource(R.string.home_short_urls))
-                }
-            }
         }
     }
-    action.server?.let { server ->
-        AlertDialog(
-            // Avoid wrap-content window remeasurement when the name field changes size.
-            modifier = Modifier.padding(horizontal = 24.dp).widthIn(max = 560.dp).fillMaxWidth(),
-            properties = DialogProperties(usePlatformDefaultWidth = false),
+    action.server?.takeIf { action.deleting }?.let { server ->
+        DangerZoneDialog(
             onDismissRequest = onDismiss,
-            title = {
-                Text(
-                    stringResource(
-                        if (action.deleting) R.string.home_delete_title else R.string.home_rename_title,
-                    ),
-                )
-            },
             text = {
                 Column {
-                    if (action.deleting) {
-                        Text(stringResource(R.string.home_delete_message, server.name))
-                    } else {
-                        OutlinedTextField(
-                            modifier = Modifier.fillMaxWidth(),
-                            value = action.name,
-                            onValueChange = onNameChange,
-                            label = { Text(stringResource(R.string.home_name)) },
-                            singleLine = true,
-                            enabled = !action.busy,
-                            isError = action.error != null,
-                        )
-                    }
+                    Text(stringResource(R.string.home_delete_message, server.name))
                     action.error?.let { Text(actionErrorMessage(it), color = MaterialTheme.colorScheme.error) }
                 }
             },
             confirmButton = {
                 TextButton(onClick = onConfirm, enabled = !action.busy) {
-                    Text(stringResource(if (action.deleting) R.string.home_delete else R.string.home_save))
+                    Text(stringResource(R.string.home_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss, enabled = !action.busy) {
+                    Text(stringResource(R.string.home_cancel))
+                }
+            },
+        )
+    }
+    action.server?.takeUnless { action.deleting }?.let {
+        AlertDialog(
+            // Avoid wrap-content window remeasurement when the name field changes size.
+            modifier = Modifier.padding(horizontal = 24.dp).widthIn(max = 560.dp).fillMaxWidth(),
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+            onDismissRequest = onDismiss,
+            title = { Text(stringResource(R.string.home_rename_title)) },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = action.name,
+                        onValueChange = onNameChange,
+                        label = { Text(stringResource(R.string.home_name)) },
+                        singleLine = true,
+                        enabled = !action.busy,
+                        isError = action.error != null,
+                    )
+                    action.error?.let { Text(actionErrorMessage(it), color = MaterialTheme.colorScheme.error) }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onConfirm, enabled = !action.busy) {
+                    Text(stringResource(R.string.home_save))
                 }
             },
             dismissButton = {

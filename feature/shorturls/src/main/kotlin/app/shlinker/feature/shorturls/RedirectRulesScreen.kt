@@ -59,6 +59,7 @@ import app.shlinker.core.model.redirectBrowsers
 import app.shlinker.core.model.redirectDevices
 import app.shlinker.core.network.RedirectRulesException
 import app.shlinker.core.network.RedirectRulesFailure
+import app.shlinker.core.ui.DangerZoneDialog
 
 @Composable
 fun RedirectRulesRoute(
@@ -119,15 +120,20 @@ internal fun RedirectRulesScreen(
         )
     }
     removing?.let { index ->
-        RulesDialog(
-            R.string.rules_remove,
-            stringResource(R.string.rules_remove_hint, index + 1),
-            R.string.rules_remove,
-            {
-                state.draft?.let { rules -> onChange(rules.filterIndexed { i, _ -> i != index }) }
-                removing = null
+        DangerZoneDialog(
+            onDismissRequest = { removing = null },
+            text = { Text(stringResource(R.string.rules_remove_hint, index + 1)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.draft?.let { rules -> onChange(rules.filterIndexed { i, _ -> i != index }) }
+                    removing = null
+                }) {
+                    Text(stringResource(R.string.rules_remove), color = MaterialTheme.colorScheme.error)
+                }
             },
-            { removing = null },
+            dismissButton = {
+                TextButton(onClick = { removing = null }) { Text(stringResource(R.string.edit_picker_cancel)) }
+            },
         )
     }
     if (state.confirmSave) {

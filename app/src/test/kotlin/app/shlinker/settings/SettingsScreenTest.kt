@@ -15,6 +15,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import app.shlinker.core.model.AppTagSettings
+import app.shlinker.core.model.DisplaySettings
+import app.shlinker.core.model.NavigationMenuStyle
 import app.shlinker.core.model.ShlinkDefaults
 import app.shlinker.core.ui.theme.ShlinkerTheme
 import org.junit.Assert.assertEquals
@@ -34,6 +36,7 @@ class SettingsScreenTest {
     private var retried = false
     private var back = false
     private var defaults: ShlinkDefaults? = null
+    private var display: DisplaySettings? = null
 
     private fun screen(initial: SettingsState = SettingsState(loading = false)) {
         compose.setContent {
@@ -45,10 +48,12 @@ class SettingsScreenTest {
                     {
                         saved = state.appTag
                         defaults = state.defaults
+                        display = state.display
                     },
                     { retried = true },
                     { back = true },
                     { state = state.copy(defaults = it) },
+                    { state = state.copy(display = it) },
                 )
             }
         }
@@ -61,7 +66,7 @@ class SettingsScreenTest {
         compose.onNodeWithText("App tag name").performScrollTo().performTextReplacement("custom")
         compose.onNodeWithText("Save").performScrollTo().performClick()
         assertEquals(AppTagSettings(false, "custom"), saved)
-        compose.onNodeWithContentDescription("Back to server overview").performClick()
+        compose.onNodeWithContentDescription("Back").performClick()
         assertEquals(true, back)
     }
 
@@ -87,7 +92,15 @@ class SettingsScreenTest {
         compose.onNodeWithContentDescription("Add app tag").assertIsNotEnabled()
         compose.onNodeWithText("App tag name").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText("Save").performScrollTo().assertIsNotEnabled()
-        compose.onNodeWithContentDescription("Back to server overview").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Back").assertIsNotEnabled()
+    }
+
+    @Test fun overviewToggleAndMenuStyleAreSavedWithTheForm() {
+        screen()
+        compose.onNodeWithContentDescription("Show server overview").assertIsOn().performClick().assertIsOff()
+        compose.onNodeWithText("Top bar menu").performScrollTo().performClick()
+        compose.onNodeWithText("Save").performScrollTo().performClick()
+        assertEquals(DisplaySettings(false, NavigationMenuStyle.OVERFLOW), display)
     }
 
     @Test fun creationDefaultsCanBeChangedAndSavedIndependentlyOfTag() {

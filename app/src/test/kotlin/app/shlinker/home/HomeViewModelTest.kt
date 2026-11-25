@@ -153,12 +153,24 @@ class HomeViewModelTest {
         assertEquals(listOf(second), repository.profiles.value)
     }
 
+    @Test fun selectingServerSavesItBeforeReportingSelection() = runTest(dispatcher) {
+        val events = mutableListOf<Unit>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.selected.collect { events += it } }
+        vm.select(second.id)
+        advanceUntilIdle()
+        assertEquals(second, repository.activeProfile.value)
+        assertEquals(1, events.size)
+    }
+
     @Test fun selectionFailureAndMissingProfileAreVisible() = runTest(dispatcher) {
+        val events = mutableListOf<Unit>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.selected.collect { events += it } }
         repository.failure = IOException("disk")
-        vm.setActive(second.id)
+        vm.select(second.id)
         advanceUntilIdle()
         assertEquals(ServerActionError.STORAGE, vm.action.value.error)
         assertNull(vm.action.value.server)
+        assertTrue(events.isEmpty())
         vm.dismiss()
         repository.failure = ServerNotFoundException(first.id)
         vm.rename(first)

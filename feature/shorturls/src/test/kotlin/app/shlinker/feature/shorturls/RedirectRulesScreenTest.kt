@@ -109,6 +109,7 @@ class RedirectRulesScreenTest {
         compose.onNodeWithText("Edit rules").performScrollTo().performClick()
         compose.onNodeWithText("Remove rule").performScrollTo().performClick()
         assertEquals(1, state.draft?.size)
+        compose.onNode(hasText("DANGER ZONE") and hasAnyAncestor(isDialog())).assertIsDisplayed()
         compose.onNode(hasText("Remove rule") and hasAnyAncestor(isDialog()) and hasClickAction()).performClick()
         assertEquals(0, state.draft?.size)
         compose.onNodeWithText("Save changes").performScrollTo().performClick()

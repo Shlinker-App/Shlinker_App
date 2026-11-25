@@ -39,13 +39,23 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.shlinker.R
 import app.shlinker.core.model.AppTagSettings
+import app.shlinker.core.model.DisplaySettings
+import app.shlinker.core.model.NavigationMenuStyle
 import app.shlinker.core.model.ShlinkDefaults
 
 @Composable
 fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     BackHandler(enabled = state.saving) {}
-    SettingsScreen(state, viewModel::change, viewModel::save, viewModel::load, onBack, viewModel::changeDefaults)
+    SettingsScreen(
+        state = state,
+        onChange = viewModel::change,
+        onSave = viewModel::save,
+        onRetry = viewModel::load,
+        onBack = onBack,
+        onDefaultsChange = viewModel::changeDefaults,
+        onDisplayChange = viewModel::changeDisplay,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,6 +67,7 @@ internal fun SettingsScreen(
     onRetry: () -> Unit,
     onBack: () -> Unit,
     onDefaultsChange: (ShlinkDefaults) -> Unit,
+    onDisplayChange: (DisplaySettings) -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -81,9 +92,42 @@ internal fun SettingsScreen(
                 Text(stringResource(R.string.settings_load_error), color = MaterialTheme.colorScheme.error)
                 TextButton(onClick = onRetry) { Text(stringResource(R.string.settings_retry)) }
             } else {
+                val enabled = !state.saving
+                Text(stringResource(R.string.settings_list_title), style = MaterialTheme.typography.titleLarge)
+                val overviewLabel = stringResource(R.string.settings_overview)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(overviewLabel, Modifier.weight(1f))
+                    Switch(
+                        checked = state.display.showServerOverview,
+                        onCheckedChange = { onDisplayChange(state.display.copy(showServerOverview = it)) },
+                        enabled = enabled,
+                        modifier = Modifier.semantics { contentDescription = overviewLabel },
+                    )
+                }
+                Text(stringResource(R.string.settings_overview_hint))
+                Text(stringResource(R.string.settings_menu_style), style = MaterialTheme.typography.titleMedium)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NavigationMenuStyle.entries.forEach { style ->
+                        FilterChip(
+                            selected = state.display.menuStyle == style,
+                            onClick = { onDisplayChange(state.display.copy(menuStyle = style)) },
+                            enabled = enabled,
+                            label = {
+                                Text(
+                                    stringResource(
+                                        when (style) {
+                                            NavigationMenuStyle.DRAWER -> R.string.settings_menu_drawer
+                                            NavigationMenuStyle.OVERFLOW -> R.string.settings_menu_overflow
+                                        },
+                                    ),
+                                )
+                            },
+                        )
+                    }
+                }
+                Text(stringResource(R.string.settings_menu_hint))
                 Text(stringResource(R.string.settings_tag_title), style = MaterialTheme.typography.titleLarge)
                 Text(stringResource(R.string.settings_tag_intro))
-                val enabled = !state.saving
                 val label = stringResource(R.string.settings_tag_enabled)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(label, Modifier.weight(1f))
