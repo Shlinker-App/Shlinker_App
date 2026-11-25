@@ -41,6 +41,7 @@ redirect rules and the share sheet. See the [changelog](CHANGELOG.md) for detail
 - [ ] App settings: language, light/dark/system, color scheme
 - [ ] Per-server defaults for new short URLs
 - [ ] Per-server or all shlinks default redirect rules
+- [ ] Save/Editable Redirect rule sets
 - [ ] Sorting either shared or per server
 - [ ] Adaptive layout for tablets and foldables
 - [ ] Visual overhaul of the details screen
