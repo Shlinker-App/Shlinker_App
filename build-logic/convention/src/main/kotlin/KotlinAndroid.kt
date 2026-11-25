@@ -12,6 +12,10 @@ internal fun Project.configureKotlinAndroid(extension: CommonExtension) {
         defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         compileOptions.sourceCompatibility = JavaVersion.VERSION_21
         compileOptions.targetCompatibility = JavaVersion.VERSION_21
+        // Robolectric downloads its Android framework jars itself, bypassing Gradle's repositories.
+        providers.environmentVariable("MAVEN_CENTRAL_MIRROR").orNull?.takeIf { it.isNotBlank() }?.let { mirror ->
+            testOptions.unitTests.all { it.systemProperty("robolectric.dependency.repo.url", mirror) }
+        }
     }
 
     // AGP 9 has built-in Kotlin support; no separate kotlin-android plugin is needed.
