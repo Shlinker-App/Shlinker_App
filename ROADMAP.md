@@ -42,6 +42,7 @@ redirect rules and the share sheet. See the [changelog](CHANGELOG.md) for detail
 - [ ] Per-server defaults for new short URLs
 - [ ] Per-server or all shlinks default redirect rules
 - [ ] Save/Editable Redirect rule sets
+- [ ] Shlink Options: Valid since/until, max visits (per shlink, servet, app)
 - [ ] Sorting either shared or per server
 - [ ] Adaptive layout for tablets and foldables
 - [ ] Visual overhaul of the details screen
