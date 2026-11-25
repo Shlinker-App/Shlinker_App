@@ -45,3 +45,5 @@ The basics are covered. These cases are still open:
 
 Optional: edge cases for domain selection, tags, delete, QR codes and statistics
 (custom domains, rotation, dark mode, errors/retry).
+
+TEST - New CI Filter
