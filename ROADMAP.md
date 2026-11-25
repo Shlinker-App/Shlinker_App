@@ -47,7 +47,7 @@ redirect rules and the share sheet. See the [changelog](CHANGELOG.md) for detail
 - [ ] Custom certificates / homelab CA
 - [ ] Reproducible release builds
 - [ ] CI: emulator tests, faster builds
-- [ ] Project website at shlinker.app
+- [x] Project website at shlinker.app
 - [x] Make the repository public
 
 ## Distribution
