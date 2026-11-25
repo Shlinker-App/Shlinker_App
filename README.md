@@ -44,6 +44,7 @@ Issues and comments are synchronized between both platforms using a lightly exte
 
 Like the project? A star on GitHub or Forgejo, a shared link, or a useful bug report helps other self-hosters discover it.
 
+
 ## ✨ Features
 
 ### Multiple servers, one app
