@@ -50,18 +50,18 @@ jobs:
             gradle-
       - name: Set up JDK and Android SDK
         id: setup
-        run: ci/setup-android.sh 2>&1 | tee -a ci.log
+        run: ci/setup-android.sh
       - name: Run ktlint, Android lint, unit tests, and debug build
-        run: ./gradlew --no-daemon ktlintCheck lintDebug lintDevsDebug testDebugUnitTest testDevsDebugUnitTest assembleDevsDebug 2>&1 | tee -a ci.log
+        run: ./gradlew --no-daemon ktlintCheck lintDebug lintDevsDebug testDebugUnitTest testDevsDebugUnitTest assembleDevsDebug
       - name: Check for proprietary dependencies
         run: |
-          ./gradlew --no-daemon :app:dependencies --configuration stableReleaseRuntimeClasspath -q > deps.txt 2>> ci.log
+          ./gradlew --no-daemon :app:dependencies --configuration stableReleaseRuntimeClasspath -q > deps.txt
           if grep -iE 'com\.google\.(android\.gms|firebase)|com\.google\.android\.play|crashlytics|com\.android\.billingclient' deps.txt; then
-            echo "::error::Proprietary dependency found; F-Droid check failed" | tee -a ci.log; exit 1
+            echo "::error::Proprietary dependency found; F-Droid check failed"; exit 1
           fi
           echo "OK: no proprietary dependencies"
       - name: Record screenshots with Roborazzi
-        run: ./gradlew --no-daemon recordRoborazziDebug 2>&1 | tee -a ci.log
+        run: ./gradlew --no-daemon recordRoborazziDebug
       - name: Save JDK and Android SDK
         if: always() && steps.setup.outcome == 'success' && steps.sdk-cache.outputs.cache-hit != 'true'
         uses: https://data.forgejo.org/actions/cache/save@v4
@@ -102,8 +102,3 @@ jobs:
           name: reports
           path: '**/build/reports/'
           retention-days: 7
-      - name: Post log tail to issue
-        if: failure()
-        env:
-          TOKEN: ${{ forge.token }}
-        run: ci/report-failure.sh ci.log

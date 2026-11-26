@@ -2,6 +2,11 @@
 
 Every version before 1.0.0 is a development snapshot.
 
+## Unreleased
+
+- CI no longer posts the end of a failed run's log as an issue comment; issues are public and mirrored to
+  GitHub. The full log stays in Forgejo Actions and the reports remain available as an artifact.
+
 ## 0.3.2 – 2026-11-25
 
 ### App
