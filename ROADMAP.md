@@ -39,6 +39,7 @@ redirect rules and the share sheet. See the [changelog](CHANGELOG.md) for detail
 ## 0.3.x – refinements and tests
 
 The 0.3 series refines and tests the current feature set.
+- [ ] In-App Update check, on/off via Settings, checks per build-tree, info to turn off if installed via an app-store (f-droid, obtainium, accrescent)
 
 ### Redirect rules
 
@@ -105,6 +106,8 @@ CI checks this on every build.
 
 - [ ] Own F-Droid repo for test builds
 - [ ] Inclusion in the official F-Droid repo
+- [ ] After 4 months from release -> official obtainium, up to 4 months -> an own obtainium to forgejo button (4 months is the obtainium cooldown period)
+- [ ] Accrescent (Rules?)
 - [ ] Google Play Store
 
 ## Ideas for later
