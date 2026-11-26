@@ -43,20 +43,20 @@ Automated tests (unit tests, lint, ktlint, screenshots) run in CI and before eve
 
 New in 0.3.2, still to be checked on a device:
 
-- [ ] Share: the hostname is visible below the server name and in the server dropdown
-- [ ] Share success screen: copy and share icons work, and the QR code resolves to the correct short URL
-- [ ] Share screen in dark mode: all text, icons and hints are readable
-- [ ] App start opens the active server's Shlink list; the first server setup also leads there
-- [ ] Side menu and top bar menu both open **Servers** and **Settings**; the style can be switched in Settings
-- [ ] Servers: tapping a server selects it and returns to its Shlink list; the back arrow changes nothing
-- [ ] Overview matches the server (shlinks, clicks without bots, tags), updates on refresh and can be hidden
-- [ ] A server with more than 50 shlinks loads further pages while scrolling, without visible waiting
-- [ ] Deleting a server, a shlink or a redirect rule shows the red frame and the centered **DANGER ZONE** title;
+- [x] Share: the hostname is visible below the server name and in the server dropdown
+- [x] Share success screen: copy and share icons work, and the QR code resolves to the correct short URL
+- [x] Share screen in dark mode: all text, icons and hints are readable
+- [x] App start opens the active server's Shlink list; the first server setup also leads there
+- [x] Side menu and top bar menu both open **Servers** and **Settings**; the style can be switched in Settings
+- [x] Servers: tapping a server selects it and returns to its Shlink list; the back arrow changes nothing
+- [x] Overview matches the server (shlinks, clicks without bots, tags), updates on refresh and can be hidden
+- [x] A server with more than 50 shlinks loads further pages while scrolling, without visible waiting
+- [x] Deleting a server, a shlink or a redirect rule shows the red frame and the centered **DANGER ZONE** title;
   Cancel changes nothing
-- [ ] Fresh DEVS install: the app tag in Settings defaults to `shlinker-devs`
-- [ ] About: opens from both menu styles; the Forgejo, issue and license links open in the browser;
+- [x] Fresh DEVS install: the app tag in Settings defaults to `shlinker-devs`
+- [x] About: opens from both menu styles; the Forgejo, issue and license links open in the browser;
   the DEVS warning is visible
-- [ ] DEVS build: the red `DEVS build v<version>` banner is centered at the bottom of every screen,
+- [x] DEVS build: the red `DEVS build v<version>` banner is centered at the bottom of every screen,
   including the share screen, and covers no content or buttons, also with the keyboard open
 
 Optional: edge cases for domain selection, tags, delete, QR codes and statistics
