@@ -36,7 +36,7 @@ redirect rules and the share sheet. See the [changelog](CHANGELOG.md) for detail
 - [x] Fetch at most 50 Shlinks per server request. When scrolling, prefetch the next page well before
   reaching the end of the loaded results.
 
-## 0.3.x – refinements and tests
+## 0.3.x  refinements and tests
 
 The 0.3 series refines and tests the current feature set.
 - [ ] In-App Update check, on/off via Settings, checks per build-tree, info to turn off if installed via an app-store (f-droid, obtainium, accrescent)
@@ -65,7 +65,7 @@ The 0.3 series refines and tests the current feature set.
   mirror already has them so CI does not hit Maven Central rate limits.
 - [ ] Remove the `ObsoleteLintCustomCheck` suppression in `lint.xml` once Lifecycle 2.12 is stable.
 
-## 0.4.0 – Redirect rule sets
+## 0.4.0  Redirect rule sets
 
 A milestone of its own: reusable redirect rule sets, which the Shlink web app does not offer.
 
@@ -92,7 +92,8 @@ A milestone of its own: reusable redirect rule sets, which the Shlink web app do
 - [ ] Adaptive layout for tablets and foldables
 - [ ] Visual overhaul of the details screen
 - [ ] Nightly design polish: choose the final menu style (side menu or top bar menu)
-- [ ] Translations, German first
+- [ ] Translations, German first (via Weblate, self-hosted)
+- [ ] Bug Report Feature -> SemiAuto creating Forgejo Issue incl. Logs
 - [ ] Custom certificates / homelab CA
 - [ ] Reproducible release builds
 - [ ] CI: emulator tests, faster builds
