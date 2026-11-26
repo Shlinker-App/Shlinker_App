@@ -102,7 +102,7 @@ Pushing a tag `vX.Y.Z` runs `.forgejo/workflows/release-devs.yml`:
 4. The signed dev APK is built, its certificate is checked against the fingerprint in the README, and the APK and its SHA-256 file are uploaded to `generic/shlinker-devs/X.Y.Z`. An already published version is never overwritten.
 5. A Forgejo pre-release named “Shlinker DEVS X.Y.Z” is created for the tag. Its text is the changelog section plus the package link and checksum, and the files are attached exactly as published in the package registry. An existing release is left unchanged.
 
-Before tagging: bump `versionName` and `versionCode`, date the changelog section and finish the device checks in `TESTING.md`. Uploads use the `PACKAGES_TOKEN` secret; the pre-release uses the workflow's own token.
+Before tagging: bump `versionName` and `versionCode` and date the changelog section. Device checks run on the published dev build while it is the current release and are tracked in `TESTING.md`; fixes go into the next version. Uploads use the `PACKAGES_TOKEN` secret; the pre-release uses the workflow's own token.
 
 ## Troubleshooting
 

@@ -1,7 +1,8 @@
 # Test log
 
-Manual tests on real Android devices against a self-hosted Shlink instance.
-Automated tests (unit tests, lint, ktlint, screenshots) run in CI on top of that.
+Manual tests on real Android devices against a self-hosted Shlink instance, using the published dev build
+while it is the current release. Problems found there are fixed in the next version.
+Automated tests (unit tests, lint, ktlint, screenshots) run in CI and before every release.
 
 ## Results
 
