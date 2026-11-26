@@ -1,16 +1,16 @@
 # Roadmap
 
-Draft, currently being reworked.
+Draft – currently being reworked.
 
 ## Pace
 
-Until mid to end of January 2027 there will only be small steps, since a lot is going on
-privately. After that, development picks up again, part-time to full-time.
+Until mid-to-late January 2027, development will progress slowly due to personal commitments.
+After that, development will resume on a part-time to full-time basis.
 
 ## Released changes
 
 Server management, creating/editing/deleting short URLs, tags, QR codes, statistics,
-redirect rules and the share sheet. See the [changelog](CHANGELOG.md) for details.
+redirect rules, and the share sheet. See the [changelog](CHANGELOG.md) for details.
 
 ## 0.3.2
 
@@ -27,53 +27,50 @@ redirect rules and the share sheet. See the [changelog](CHANGELOG.md) for detail
 
 ### App start and Shlink list
 
-- [x] Open the selected server's Shlink list on app launch instead of the server list.
+- [x] Open the selected server's Shlink list on app launch instead of showing the server list.
 - [x] Remove the back arrow from the Shlink list and add a native menu with **Servers** and **Settings**.
   Both a side menu and a top bar menu are available in **Settings** until the final design is chosen.
-- [x] Add a server-wide overview above the search field, between it and the sort hint (e.g. "Newest first").
-  Show **Shlinks** (total links), **Clicks** (excluding bots and orphan visits), and **Tags** (total tags).
+- [x] Add a server-wide overview above the search field, positioned between it and the sort hint (e.g. "Newest first").
+  It displays **Shlinks** (total links), **Clicks** (excluding bots and orphan visits), and **Tags** (total tags).
 - [x] Add a toggle in **Settings** to show or hide the overview.
-- [x] Fetch at most 50 Shlinks per server request. When scrolling, prefetch the next page well before
-  reaching the end of the loaded results.
+- [x] Fetch at most 50 Shlinks per server request and prefetch the next page when scrolling near the end of the loaded results.
 
-## 0.3.x  refinements and tests
+## 0.3.x refinements and tests
 
 The 0.3 series refines and tests the current feature set.
-- [ ] In-App Update check, on/off via Settings, checks per build-tree, info to turn off if installed via an app-store (f-droid, obtainium, accrescent)
+- [ ] In-app update checks, toggleable in Settings, with per-build-tree checks and info about disabling them if installed via an app store (F-Droid, Obtainium, Accrescent)
 
 ### Redirect rules
 
-- [ ] When a destination URL is entered without a scheme (e.g. `orf.at`), try HTTPS first and fall back
-  to HTTP only if HTTPS is not available.
-- [ ] Check whether the destination URL is reachable when it is entered.
-- [ ] Test escaping of free-text condition values thoroughly, especially regex-like input (`.*`, `^`, `$`,
-  `\`, `[ ]`, `( )`, `|`), URL-sensitive characters (`?`, `&`, `=`, `#`, `%`, `+`, `/`), quotes, spaces and
-  non-ASCII text. Values must reach Shlink unchanged and show up unchanged after reloading.
+- [ ] When a destination URL is entered without a scheme (e.g. `orf.at`), try HTTPS first and fall back to HTTP only if HTTPS is unavailable.
+- [ ] Verify that the destination URL is reachable when it is entered.
+- [ ] Thoroughly test escaping of free-text condition values, especially regex-like patterns (`.*`, `^`, `$`,
+  `\`, `[ ]`, `( )`, `|`), URL-sensitive characters (`?`, `&`, `=`, `#`, `%`, `+`, `/`), quotes, spaces, and
+  non-ASCII text. Values must reach Shlink unchanged and appear unchanged after reloading.
 
 ### Statistics
 
-- [ ] Keep seven timeline segments as the default for fast loading. Make the number adjustable in
-  **Settings** with manual input and an info text explaining that finer granularity takes longer to load.
-- [ ] Check whether the current query method is the fastest option. The Shlink web app loads statistics
-  much faster, but its server is nearby; compare under similar network conditions.
+- [ ] Use seven timeline segments by default for fast loading and allow adjusting this in **Settings** via manual input,
+  with explanatory text noting that finer granularity increases load time.
+- [ ] Verify whether the current query method is optimal. The Shlink web app loads statistics considerably faster,
+  but its server is located nearby; compare performance under similar network conditions.
 
 ### Build and dependencies
 
-- [ ] Update the Compose BOM to 2026.11 (Compose 1.13). It needs compileSdk 37.1 (SDK platform in
+- [ ] Update the Compose BOM to 2026.11 (Compose 1.13), which requires compileSdk 37.1 (SDK platform in
   `ci/setup-android.sh`) and replacing the deprecated `ListItem` overload and `VisualTransformation`.
-- [ ] Update Robolectric to 4.18. It needs new Android framework jars; check that Google's Maven Central
-  mirror already has them so CI does not hit Maven Central rate limits.
-- [ ] Remove the `ObsoleteLintCustomCheck` suppression in `lint.xml` once Lifecycle 2.12 is stable.
+- [ ] Update Robolectric to 4.18, which requires new Android framework JARs. Verify that Google's Maven Central
+  mirror already hosts them to prevent CI from hitting Maven Central rate limits.
+- [ ] Remove the `ObsoleteLintCustomCheck` suppression from `lint.xml` once Lifecycle 2.12 becomes stable.
 
-## 0.4.0  Redirect rule sets
+## 0.4.0 Redirect rule sets
 
 A milestone of its own: reusable redirect rule sets, which the Shlink web app does not offer.
 
-- [ ] Manage an unlimited number of named redirect rule sets in **Settings**; their order can be changed.
-- [ ] Apply a rule set automatically to new Shlinks when they are created, either per server or for all
-  servers. Existing Shlinks are not changed.
+- [ ] Manage an unlimited number of named redirect rule sets in **Settings** with customizable ordering.
+- [ ] Automatically apply a rule set to new Shlinks upon creation, either per server or globally. Existing Shlinks remain unchanged.
 - [ ] Save the current rules of a Shlink as a new rule set from its redirect rules screen.
-- [ ] Offer to apply a saved rule set when adding redirect rules to a Shlink.
+- [ ] Offer the option to apply a saved rule set when adding redirect rules to a Shlink.
 
 ## Release channels
 
@@ -84,6 +81,14 @@ A milestone of its own: reusable redirect rule sets, which the Shlink web app do
 | Stable | `app.shlinker` | Release from 1.0.0 on |
 
 ## Towards 1.0.0
+
+### Major Priority: UX Redesign
+
+- [ ] **Complete redesign with Material Design** – Modernize all screens, components, and interactions with two tiers:
+  - **Android 16+ (API 35+):** Full Material 3 Expressive implementation with dynamic springy animations, responsive motion physics, depth effects, background blur, modern typography, updated color themes, and emotionally engaging interactions
+  - **Android 10–15 (API 29–34):** Material 3 / Material You baseline ensuring consistent, modern UX across all supported versions while omitting Expressive-specific features unavailable on older platforms
+
+### Features & Refinements
 
 - [ ] App settings: language, light/dark/system, color scheme
 - [ ] Per-server defaults for new short URLs
@@ -102,21 +107,20 @@ A milestone of its own: reusable redirect rule sets, which the Shlink web app do
 
 ## Distribution
 
-F-Droid is a must. That's why proprietary dependencies, tracking and ads stay out;
-CI checks this on every build.
+F-Droid is essential, which is why the app remains free of proprietary dependencies, tracking, and advertisements.
+CI verifies this on every build.
 
 - [ ] Own F-Droid repo for test builds
 - [ ] Inclusion in the official F-Droid repo
-- [ ] After 4 months from release -> official obtainium, up to 4 months -> an own obtainium to forgejo button (4 months is the obtainium cooldown period)
+- [ ] After 4 months from release → add to official Obtainium; before 4 months → provide a custom Obtainium-to-Forgejo button (4 months is the Obtainium cooldown period)
 - [ ] Accrescent (Rules?)
 - [ ] Google Play Store
 
 ## Ideas for later
 
-Once there is a stable Android release, Shlinker could move to other platforms
-with Compose Multiplatform:
+Once a stable Android release is available, Shlinker could expand to other platforms using Compose Multiplatform:
 
 - Linux as AppImage and on the AUR
 - Windows at some point
 
-There is no code and no schedule for this yet.
+No code or timeline for this expansion currently exists.
