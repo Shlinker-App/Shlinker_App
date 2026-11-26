@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- AGP 9.5 cannot load the lint checks bundled with androidx.lifecycle 2.11 (UnsafeLifecycleWhenUsage,
+         RepeatOnLifecycleWrongUsage). The app does not use the affected APIs. Remove once Lifecycle 2.12 is stable. -->
+    <issue id="ObsoleteLintCustomCheck">
+        <ignore regexp="LifecycleRuntimeIssueRegistry" />
+    </issue>
+</lint>

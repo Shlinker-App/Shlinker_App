@@ -1,8 +1,8 @@
 [versions]
 # Build
-agp = "9.4.1"
+agp = "9.5.3"
 kotlin = "2.4.21"
-ksp = "2.3.12"
+ksp = "2.3.14"
 ktlintGradle = "14.2.0"
 
 # Android SDK
@@ -13,26 +13,26 @@ minSdk = "29"
 # AndroidX
 androidxCore = "1.19.1"
 androidxActivity = "1.13.0"
-androidxLifecycle = "2.11.0"
-androidxNavigation3 = "1.2.0"
-androidxDatastore = "1.2.1"
+androidxLifecycle = "2.11.1"
+androidxNavigation3 = "1.2.2"
+androidxDatastore = "1.3.0"
 androidxPaging = "3.5.3"
 androidxHilt = "1.4.0"
 composeBom = "2026.09.00"
 
 # Libraries
 hilt = "2.60.1"
-ktor = "3.6.0"
-kotlinxSerialization = "1.12.0"
+ktor = "3.6.2"
+kotlinxSerialization = "1.13.0"
 kotlinxCoroutines = "1.11.0"
 junit = "4.13.2"
 turbine = "1.2.1"
-roborazzi = "1.76.0"
+roborazzi = "1.79.0"
 robolectric = "4.17"
 androidxTestRunner = "1.7.0"
 androidxTestExtJunit = "1.3.0"
 reorderable = "3.1.0"
-zxing = "3.5.3"
+zxing = "3.5.4"
 
 [libraries]
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -30,6 +31,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import kotlin.math.floor
@@ -50,10 +52,7 @@ internal fun ShlinkQrDialog(shortUrl: String, onDismiss: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 SelectionContainer { Text(shortUrl) }
-                ShlinkQrCodeContent(
-                    shortUrl,
-                    Modifier.align(Alignment.CenterHorizontally).widthIn(max = maxHeight * 0.6f).fillMaxWidth(),
-                )
+                ShlinkQrCodeContent(shortUrl, maxImageWidth = maxHeight * 0.6f)
             }
         },
         confirmButton = {
@@ -64,18 +63,27 @@ internal fun ShlinkQrDialog(shortUrl: String, onDismiss: () -> Unit) {
 
 /** Generates the QR code on the device and shows it with its scanning hint, or an explanation if it fails. */
 @Composable
-internal fun ShlinkQrCodeContent(shortUrl: String, imageModifier: Modifier) {
+internal fun ShlinkQrCodeContent(shortUrl: String, maxImageWidth: Dp, modifier: Modifier = Modifier) {
     val code by produceState<ShlinkQrCode>(ShlinkQrCode.Loading, shortUrl) {
         value = ShlinkQrCode.Loading
         value = withContext(Dispatchers.Default) { generateShlinkQrCode(shortUrl) }
     }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        QrCodeState(code, shortUrl, maxImageWidth)
+    }
+}
+
+@Composable
+private fun ColumnScope.QrCodeState(code: ShlinkQrCode, shortUrl: String, maxImageWidth: Dp) {
     when (val result = code) {
         ShlinkQrCode.Loading -> CircularProgressIndicator()
         ShlinkQrCode.InvalidUrl -> Text(stringResource(R.string.qr_invalid), color = MaterialTheme.colorScheme.error)
         ShlinkQrCode.EncodingFailed -> Text(stringResource(R.string.qr_failed), color = MaterialTheme.colorScheme.error)
         is ShlinkQrCode.Ready -> {
             val description = stringResource(R.string.qr_description, shortUrl)
-            BoxWithConstraints(imageModifier) {
+            BoxWithConstraints(
+                Modifier.align(Alignment.CenterHorizontally).widthIn(max = maxImageWidth).fillMaxWidth(),
+            ) {
                 val modules = result.modules
                 if (constraints.maxWidth < modules.width) {
                     Text(stringResource(R.string.qr_window_small), color = MaterialTheme.colorScheme.error)

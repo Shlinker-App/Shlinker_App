@@ -44,8 +44,6 @@
     <string name="settings_retry">Try again</string>
     <string name="app_name">Shlinker</string>
     <string name="default_app_tag" translatable="false">shlinker</string>
-    <string name="placeholder_subtitle">Client for Shlink</string>
-    <string name="home_active_server">Active server</string>
     <string name="servers_title">Servers</string>
     <string name="servers_back">Back to shlinks</string>
     <string name="home_add_server">Add server</string>

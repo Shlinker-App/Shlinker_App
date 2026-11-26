@@ -56,6 +56,14 @@ The 0.3 series refines and tests the current feature set.
 - [ ] Check whether the current query method is the fastest option. The Shlink web app loads statistics
   much faster, but its server is nearby; compare under similar network conditions.
 
+### Build and dependencies
+
+- [ ] Update the Compose BOM to 2026.11 (Compose 1.13). It needs compileSdk 37.1 (SDK platform in
+  `ci/setup-android.sh`) and replacing the deprecated `ListItem` overload and `VisualTransformation`.
+- [ ] Update Robolectric to 4.18. It needs new Android framework jars; check that Google's Maven Central
+  mirror already has them so CI does not hit Maven Central rate limits.
+- [ ] Remove the `ObsoleteLintCustomCheck` suppression in `lint.xml` once Lifecycle 2.12 is stable.
+
 ## 0.4.0 – Redirect rule sets
 
 A milestone of its own: reusable redirect rule sets, which the Shlink web app does not offer.

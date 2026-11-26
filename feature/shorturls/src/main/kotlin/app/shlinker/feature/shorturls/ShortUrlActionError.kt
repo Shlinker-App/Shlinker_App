@@ -3,7 +3,7 @@ package app.shlinker.feature.shorturls
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import java.net.URI
 import java.net.URISyntaxException
 
@@ -20,7 +20,7 @@ internal fun openShortUrl(context: Context, url: String): ShortUrlActionError? {
     }
     return launchShortUrlIntent(
         context,
-        Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE),
+        Intent(Intent.ACTION_VIEW, url.toUri()).addCategory(Intent.CATEGORY_BROWSABLE),
     )
 }
 

@@ -22,12 +22,14 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.error
@@ -53,8 +55,9 @@ internal fun ShlinkDateTimeField(
     val name = stringResource(label)
     val zone = ZoneId.systemDefault()
     val parsed = parseShlinkDate(value)?.atZoneSameInstant(zone)
-    var stage by rememberSaveable { mutableStateOf(0) }
+    var stage by rememberSaveable { mutableIntStateOf(0) }
     val invalidDate = stringResource(R.string.edit_error_dates)
+    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
     Column {
         Text(
             name,
@@ -131,7 +134,7 @@ internal fun ShlinkDateTimeField(
             },
         ) {
             Column(
-                Modifier.heightIn(max = LocalConfiguration.current.screenHeightDp.dp * 0.7f)
+                Modifier.heightIn(max = windowHeight * 0.7f)
                     .verticalScroll(rememberScrollState()),
             ) {
                 Text(name)
@@ -157,7 +160,7 @@ internal fun ShlinkDateTimeField(
             title = { Text(name) },
             text = {
                 Column(
-                    Modifier.heightIn(max = LocalConfiguration.current.screenHeightDp.dp * 0.6f)
+                    Modifier.heightIn(max = windowHeight * 0.6f)
                         .verticalScroll(rememberScrollState()),
                 ) {
                     Text(stringResource(R.string.edit_date_zone, zone.id))

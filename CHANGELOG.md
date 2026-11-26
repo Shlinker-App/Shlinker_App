@@ -57,6 +57,12 @@ Every version before 1.0.0 is a development snapshot.
 - Each dev build is also published as a Forgejo pre-release with its changelog section, the APK and its
   SHA-256 file. A tag without a matching changelog section fails before building.
 - README rewritten with the new logo and badges; the local badge files were removed.
+- Build toolchain updated: Gradle 9.9.2, Android Gradle Plugin 9.5.3 and KSP 2.3.14, which removes all
+  deprecation warnings for Gradle 11. Also updated: Ktor 3.6.2, Lifecycle 2.11.1, Navigation3 1.2.2,
+  DataStore 1.3.0, kotlinx-serialization 1.13.0, Roborazzi 1.79.0 and ZXing 3.5.4.
+- Lint cleanups: unused strings removed, window height read from `LocalWindowInfo`, `toUri()` and
+  `mutableIntStateOf` used where lint suggested them, and the QR code composable follows the modifier
+  convention.
 
 ## 0.3.1 – 2026-11-17
 
