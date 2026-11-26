@@ -38,7 +38,9 @@ redirect rules, and the share sheet. See the [changelog](CHANGELOG.md) for detai
 ## 0.3.x refinements and tests
 
 The 0.3 series refines and tests the current feature set.
+
 - [ ] In-app update checks, toggleable in Settings, with per-build-tree checks and info about disabling them if installed via an app store (F-Droid, Obtainium, Accrescent)
+- [ ] Add Tags option during creating Shlinks
 
 ### Redirect rules
 
